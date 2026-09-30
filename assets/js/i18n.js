@@ -77,6 +77,7 @@ window.I18N_EN = {
   "prod.mcp": "A direct link between AutoCAD and Claude",
   "prod.sp": "Drawing comparison and a smart superposition assistant",
   "prod.boq": "Multi-discipline bill of quantities parsing",
+  "prod.cursor": "Mark a room, apartment or floor with one click in AutoCAD and Revit",
   "prod.sign": "Digital client signing",
   "prod.time": "Smart employee time management",
 
@@ -137,8 +138,8 @@ window.I18N_EN = {
   "foot.rights": "© 2026 Pro Algorithm. All rights reserved.",
   "foot.a11y": "Accessibility statement",
 
-  "pp.title": "Six platforms. <span class=\"thin\">One core expertise.</span>",
-  "pp.lead": "Four products for planning and drafting, and two for business operations. All built by the teams that deliver systems for Israel's leading organizations.",
+  "pp.title": "Seven platforms. <span class=\"thin\">One core expertise.</span>",
+  "pp.lead": "Five products for planning and drafting, and two for business operations. All built by the teams that deliver systems for Israel's leading organizations.",
   "pp.g1.lead": "Tools built by people who know every layer, block and command. They work inside the environment your team already uses.",
   "pp.g2.lead": "The same engineering rigor, applied to the processes that run the organization every day.",
   "p.visit": "Visit product site",
@@ -148,7 +149,6 @@ window.I18N_EN = {
   "spec.for": "For",
   "spec.url": "Address",
 
-  "p.agent.tag": "An AI agent that works inside AutoCAD",
   "p.agent.d1": "A smart assistant that lives inside AutoCAD and does real work on the drawing. Describe what you need in words, and the agent plans the steps and carries them out.",
   "p.agent.d2": "Tasks that take a drafter hours, like organizing layers, updating blocks, cleaning files and running checks, are done in minutes and consistently.",
   "p.agent.for": "Architecture and engineering firms, contractors",
@@ -161,7 +161,6 @@ window.I18N_EN = {
   "p.agent.f4t": "Automate repetitive tasks",
   "p.agent.f4p": "A process defined once runs across every file.",
 
-  "p.mcp.tag": "A direct link between AutoCAD and Claude",
   "p.mcp.d1": "A Model Context Protocol server that connects Claude to your drawings. Claude can read the file, understand its structure and act on it from a normal conversation.",
   "p.mcp.d2": "It's the bridge that lets teams bring advanced language models into their planning workflows without building an integration from scratch.",
   "p.mcp.for": "Planning, BIM and development teams",
@@ -174,7 +173,6 @@ window.I18N_EN = {
   "p.mcp.f4t": "Full permission control",
   "p.mcp.f4p": "You decide what the model can access and change.",
 
-  "p.sp.tag": "Drawing comparison and a smart superposition assistant",
   "p.sp.d1": "Overlay revisions and plans from different disciplines, and see immediately what changed and where structure, architecture and MEP clash.",
   "p.sp.d2": "The smart assistant explains every gap in words, ranks it by severity and produces an organized comment list for the team.",
   "p.sp.for": "Planners, project managers and QA",
@@ -187,7 +185,6 @@ window.I18N_EN = {
   "p.sp.f4t": "Automatic comment list",
   "p.sp.f4p": "Ready to share with the planning team.",
 
-  "p.boq.tag": "Multi-discipline bill of quantities parsing",
   "p.boq.d1": "A system that reads bills of quantities from any discipline, understands the item structure and turns long, inconsistent documents into organized data you can work with.",
   "p.boq.d2": "Structure, electrical, plumbing, HVAC and finishes. One document or hundreds, the output stays consistent.",
   "p.boq.for": "Contractors, developers, appraisers and procurement",
@@ -199,8 +196,19 @@ window.I18N_EN = {
   "p.boq.f3p": "Supplier bids shown side by side.",
   "p.boq.f4t": "Export anywhere",
   "p.boq.f4p": "Excel and project management systems.",
+  "p.cursor.visit": "Download",
+  "p.cursor.d1": "Hover over a room in the drawing, it lights up, click and you get a closed polyline with the room name and area. The same tool works at apartment and floor level.",
+  "p.cursor.d2": "In AutoCAD, rooms are detected by our own engine, which understands walls, openings and shelters from the lines alone. In Revit the tool uses the rooms already in the model.",
+  "p.cursor.for": "Architects, drafters and area surveyors",
+  "p.cursor.f1t": "Hover and click",
+  "p.cursor.f1p": "The room highlights under the cursor, one click marks it.",
+  "p.cursor.f2t": "Room, apartment or floor",
+  "p.cursor.f2p": "Switch levels with Enter.",
+  "p.cursor.f3t": "Instant net area",
+  "p.cursor.f3p": "To the wall face, in drawing units, with shelter detection.",
+  "p.cursor.f4t": "One-click install",
+  "p.cursor.f4p": "A single file, no admin rights, no dependencies.",
 
-  "p.sign.tag": "Digital client signing",
   "p.sign.d1": "Send a client a contract, quote or form, and they sign from any device within minutes. No printing, scanning or chasing documents.",
   "p.sign.d2": "Every document is recorded and stored in one place, with full status tracking from sending to signature.",
   "p.sign.env": "Web and mobile",
@@ -214,7 +222,6 @@ window.I18N_EN = {
   "p.sign.f4t": "Secure archive",
   "p.sign.f4p": "All signed documents in one place.",
 
-  "p.time.tag": "Smart employee time management",
   "p.time.d1": "A time reporting and management system that assigns every hour to an employee, client and project, giving management a true picture of time and cost.",
   "p.time.d2": "It detects gaps and anomalies in reporting and produces reports ready for payroll and client billing.",
   "p.time.for": "Service companies, planning firms and enterprises",

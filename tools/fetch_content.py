@@ -247,7 +247,17 @@ def main():
     for name, obj in [("team", team), ("clients", clients), ("press", press), ("posts", clean), ("podcasts", pods)]:
         with open(os.path.join(DATA, f"{name}.json"), "w", encoding="utf-8") as f:
             json.dump(obj, f, ensure_ascii=False, indent=1)
+    write_posts_index(clean)
     print("done")
+
+
+INDEX_FIELDS = ("id", "slug_he", "slug_en", "title_he", "title_en", "excerpt_he", "excerpt_en", "category", "created", "image")
+
+
+def write_posts_index(posts):
+    """posts_index.json: posts.json without the article bodies."""
+    with open(os.path.join(DATA, "posts_index.json"), "w", encoding="utf-8") as f:
+        json.dump([{k: p[k] for k in INDEX_FIELDS} for p in posts], f, ensure_ascii=False, indent=1)
 
 
 if __name__ == "__main__":

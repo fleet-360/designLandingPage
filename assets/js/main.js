@@ -284,7 +284,7 @@
     };
     const mailto = (d) => {
       const body = [`Name: ${d.name}`, `Company: ${d.company}`, `Email: ${d.email}`, `Phone: ${d.phone}`, `Topic: ${d.topic}`, "", d.message].join("\n");
-      location.href = `mailto:info@pro-algorithm.co.il?subject=${encodeURIComponent("Pro Algorithm | " + d.topic)}&body=${encodeURIComponent(body)}`;
+      location.href = `mailto:${form.dataset.mailto}?subject=${encodeURIComponent("Pro Algorithm | " + d.topic)}&body=${encodeURIComponent(body)}`;
     };
 
     form.addEventListener("submit", async (e) => {

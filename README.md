@@ -8,6 +8,8 @@ Static rebuild of the Pro Algorithm site. Hebrew by default, English toggle, eve
 | --- | --- |
 | `src/home.html`, `src/products.html` | Hand-written page bodies (placeholders like `{{PRESS}}` are filled at build time) |
 | `data/*.json` | Content pulled from the old site: blog posts, podcast episodes, team, clients, press |
+| `data/site.json` | Hand-edited shared data used in more than one place: contact details, sister sites, nav, products, stats |
+| `data/posts_index.json` | Posts without the article bodies, rewritten by `fetch_content.py` |
 | `assets/` | CSS, JS (`i18n.js` holds the English strings), images |
 | `tools/fetch_content.py` | Re-pulls posts and podcasts from the Base44 API and downloads images |
 | `tools/optimize_images.py` | Converts images to WebP, trims logo margins, builds the OG card and favicons |

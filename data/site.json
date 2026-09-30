@@ -1,0 +1,42 @@
+{
+ "contact": {
+  "email": "info@pro-algorithm.co.il",
+  "phone": "053-946-2842",
+  "phone_intl": "+972539462842",
+  "office_phone": "072-393-5596",
+  "office_phone_intl": "+972-72-393-5596",
+  "whatsapp": "https://wa.me/972539462842"
+ },
+ "sites": {
+  "buildalgo": "https://www.buildalgo.co.il/",
+  "proalgo": "https://www.pro-algo.com/",
+  "tzach": "https://tzach-dabush.com/"
+ },
+ "nav": [
+  {"href": "/Expertise", "key": "nav.expertise", "he": "מומחיות"},
+  {"href": "/#construction", "key": "nav.construction", "he": "בנייה ותכנון"},
+  {"href": "/Products", "key": "nav.products", "he": "מוצרים"},
+  {"href": "/Blog", "key": "nav.blog", "he": "בלוג"},
+  {"href": "/Podcast", "key": "nav.podcast", "he": "פודקאסט"},
+  {"href": "/About", "key": "nav.about", "he": "אודות"},
+  {"href": "/Contact", "key": "nav.contact", "he": "צור קשר"}
+ ],
+ "product_groups": {
+  "prod.g1": "תכנון ושרטוט",
+  "prod.g2": "תפעול עסקי"
+ },
+ "products": [
+  {"key": "agent", "name": "Pro Agent", "group": "prod.g1", "i18n": "prod.agent", "tagline": "סוכן AI שעובד בתוך AutoCAD", "url": "https://agent.pro-algo.com"},
+  {"key": "mcp", "name": "AutoCAD MCP", "group": "prod.g1", "i18n": "prod.mcp", "tagline": "חיבור ישיר בין AutoCAD ל-Claude", "url": "https://mcp.pro-algo.com/autocad"},
+  {"key": "superposition", "name": "Superposition", "group": "prod.g1", "i18n": "prod.sp", "tagline": "השוואת שרטוטים ועוזר חכם לסופרפוזיציה", "url": "https://superposition.buildalgo.co.il/"},
+  {"key": "boq", "name": "BOQ", "group": "prod.g1", "i18n": "prod.boq", "tagline": "פענוח כתבי כמויות רב-תחומי", "url": "https://boq.buildalgo.co.il/"},
+  {"key": "cursor", "name": "Simple Cursor", "group": "prod.g1", "i18n": "prod.cursor", "tagline": "סימון חדר, דירה וקומה בלחיצה ב-AutoCAD ו-Revit", "url": "https://fleet-360.github.io/simplecursor-download/"},
+  {"key": "sign", "name": "Pro Sign", "group": "prod.g2", "i18n": "prod.sign", "tagline": "החתמת לקוחות דיגיטלית", "url": "https://sign.pro-algo.com"},
+  {"key": "time", "name": "Pro Time", "group": "prod.g2", "i18n": "prod.time", "tagline": "ניהול שעות עובדים חכם", "url": "https://time.pro-algo.com"}
+ ],
+ "stats": [
+  {"n": "50,000", "i18n": "scale.s1", "he": "מ\"ר של קומות משרדים שתוכננו ומוטבו ב-AI"},
+  {"n": "600", "i18n": "scale.s2", "he": "בניינים שלקחנו חלק בתכנונם"},
+  {"n": "4,000", "i18n": "scale.s3", "he": "שרטוטים אדריכליים שעברו דרך המערכות שלנו"}
+ ]
+}

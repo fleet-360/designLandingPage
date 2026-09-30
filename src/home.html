@@ -40,10 +40,8 @@
           <p data-i18n="scale.lead">מאחורי כל מספר עומדים פרויקטים אמיתיים, צוותי תכנון ומערכות שרצות בייצור מדי יום.</p>
         </div>
         <div class="stats reveal">
-          <div class="stat"><div class="stat__n">50,000<sup>+</sup></div><div class="stat__l" data-i18n="scale.s1">מ"ר של קומות משרדים שתוכננו ומוטבו ב-AI</div></div>
-          <div class="stat"><div class="stat__n">600<sup>+</sup></div><div class="stat__l" data-i18n="scale.s2">בניינים שלקחנו חלק בתכנונם</div></div>
-          <div class="stat"><div class="stat__n">4,000<sup>+</sup></div><div class="stat__l" data-i18n="scale.s3">שרטוטים אדריכליים שעברו דרך המערכות שלנו</div></div>
-          <div class="stat"><div class="stat__n">6</div><div class="stat__l" data-i18n="scale.s4">מוצרים עצמאיים בשירות ארגונים</div></div>
+          {{STATS}}
+          <div class="stat"><div class="stat__n">7</div><div class="stat__l" data-i18n="scale.s4">מוצרים עצמאיים בשירות ארגונים</div></div>
         </div>
       </div>
     </section>
@@ -147,14 +145,7 @@
         </div>
 
         <ul class="pindex reveal">
-          <li class="pindex__group" data-i18n="prod.g1">תכנון ושרטוט</li>
-          <li><a href="/Products#agent"><span class="pindex__name">Pro Agent</span><span class="pindex__desc" data-i18n="prod.agent">סוכן AI שעובד בתוך AutoCAD</span><span class="pindex__domain">agent.pro-algo.com</span><i class="ph ph-arrow-left pindex__arrow"></i></a></li>
-          <li><a href="/Products#mcp"><span class="pindex__name">AutoCAD MCP</span><span class="pindex__desc" data-i18n="prod.mcp">חיבור ישיר בין AutoCAD ל-Claude</span><span class="pindex__domain">mcp.pro-algo.com</span><i class="ph ph-arrow-left pindex__arrow"></i></a></li>
-          <li><a href="/Products#superposition"><span class="pindex__name">Superposition</span><span class="pindex__desc" data-i18n="prod.sp">השוואת שרטוטים ועוזר חכם לסופרפוזיציה</span><span class="pindex__domain">superposition.pro-algo.com</span><i class="ph ph-arrow-left pindex__arrow"></i></a></li>
-          <li><a href="/Products#boq"><span class="pindex__name">BOQ</span><span class="pindex__desc" data-i18n="prod.boq">פענוח כתבי כמויות רב-תחומי</span><span class="pindex__domain">boq.pro-algo.com</span><i class="ph ph-arrow-left pindex__arrow"></i></a></li>
-          <li class="pindex__group" data-i18n="prod.g2">תפעול עסקי</li>
-          <li><a href="/Products#sign"><span class="pindex__name">Pro Sign</span><span class="pindex__desc" data-i18n="prod.sign">החתמת לקוחות דיגיטלית</span><span class="pindex__domain">sign.pro-algo.com</span><i class="ph ph-arrow-left pindex__arrow"></i></a></li>
-          <li><a href="/Products#time"><span class="pindex__name">Pro Time</span><span class="pindex__desc" data-i18n="prod.time">ניהול שעות עובדים חכם</span><span class="pindex__domain">time.pro-algo.com</span><i class="ph ph-arrow-left pindex__arrow"></i></a></li>
+          {{PRODUCT_INDEX}}
         </ul>
       </div>
     </section>
@@ -195,11 +186,7 @@
       <div class="wrap contact">
         <div class="reveal">
           <h2 class="h2" data-i18n="contact.title">בואו נבנה את <span class="thin">הפרויקט הבא שלכם.</span></h2>
-          <div class="contact__info">
-            <a href="mailto:info@pro-algorithm.co.il"><i class="ph ph-envelope-simple"></i><span class="ltr">info@pro-algorithm.co.il</span></a>
-            <a href="tel:+972539462842"><i class="ph ph-phone"></i><span class="ltr">053-946-2842</span></a>
-            <a href="https://wa.me/972539462842" target="_blank" rel="noopener"><i class="ph ph-whatsapp-logo"></i><span data-i18n="contact.wa">שיחה בוואטסאפ</span></a>
-          </div>
+          {{CONTACT_INFO}}
         </div>
 
         {{CONTACT_FORM}}

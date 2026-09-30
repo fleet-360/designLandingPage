@@ -20,18 +20,21 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "src")
 DATA = os.path.join(ROOT, "data")
 DIST = os.path.join(ROOT, "dist")
+# "/<repo>" when served from a GitHub Pages project site, "" on a real domain (Netlify, custom domain)
+BASE = os.environ.get("BASE_PATH", "").rstrip("/")
 SITE = "https://www.pro-algorithm.co.il"
 TODAY = date.today().isoformat()
+
+# data/site.json: everything that appears in more than one place (contact, sister sites, nav, products, stats)
+with open(os.path.join(DATA, "site.json"), encoding="utf-8") as _f:
+    S = json.load(_f)
+SITES = S["sites"]
+PRODUCTS = S["products"]
 
 ORG = {
     "name": "Pro Algorithm",
     "name_he": "פרו אלגוריתם",
-    "email": "info@pro-algorithm.co.il",
-    "phone": "053-946-2842",
-    "phone_intl": "+972539462842",
-    "office_phone_intl": "+972-72-393-5596",
-    "whatsapp": "https://wa.me/972539462842",
-    "youtube": "https://www.youtube.com/@ProAlgorithm-israel",
+    **S["contact"],
     "social": {
         "facebook": "https://www.facebook.com/people/%D7%A4%D7%A8%D7%95-%D7%90%D7%9C%D7%92%D7%95%D7%A8%D7%99%D7%AA%D7%9D/61579382173682/",
         "instagram": "https://www.instagram.com/pro.algorithm/",
@@ -109,11 +112,18 @@ def read_src(name):
         return f.read()
 
 
+def rebase(text):
+    """Prefix root-relative URLs (href/src/action attributes, CSS url(), import()) with BASE."""
+    if not BASE:
+        return text
+    return re.sub(r'((?:href|src|action)="|url\(["\']?|import\(")/(?!/)', lambda m: m.group(1) + BASE + "/", text)
+
+
 def write(rel, content):
     path = os.path.join(DIST, rel)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8", newline="\n") as f:
-        f.write(content)
+        f.write(rebase(content))
 
 
 def img(rel):
@@ -182,14 +192,17 @@ def read_minutes(text):
 
 # ---------------------------------------------------------------- layout
 
-NAV = [
-    ("/Expertise", "nav.expertise", "מומחיות"),
-    ("/#construction", "nav.construction", "בנייה ותכנון"),
-    ("/Products", "nav.products", "מוצרים"),
-    ("/Blog", "nav.blog", "בלוג"),
-    ("/Podcast", "nav.podcast", "פודקאסט"),
-    ("/About", "nav.about", "אודות"),
-]
+NAV_BY_KEY = {n["key"]: n for n in S["nav"]}
+NAV = [(n["href"], n["key"], n["he"]) for n in S["nav"] if n["key"] != "nav.contact"]
+
+
+def nav_link(key, cls=""):
+    n = NAV_BY_KEY[key]
+    return f'<a {cls}href="{n["href"]}" data-i18n="{key}">{n["he"]}</a>'
+
+
+def domain(url):
+    return urllib.parse.urlparse(url).netloc.removeprefix("www.")
 
 
 def tracking_head():
@@ -232,9 +245,9 @@ def org_schema():
                     "@type": "ContactPoint", "telephone": ORG["phone_intl"], "email": ORG["email"],
                     "contactType": "sales", "areaServed": "IL", "availableLanguage": ["Hebrew", "English"],
                 }],
-                "sameAs": list(ORG["social"].values()) + ["https://www.buildalgo.co.il/", "https://www.pro-algo.com/"],
+                "sameAs": list(ORG["social"].values()) + [SITES["buildalgo"], SITES["proalgo"]],
                 "founder": [{"@type": "Person", "name": "נועד ג'ורנו", "jobTitle": "CEO"},
-                            {"@type": "Person", "name": "צח דבוש", "jobTitle": "CTO", "url": "https://tzach-dabush.com/"}],
+                            {"@type": "Person", "name": "צח דבוש", "jobTitle": "CTO", "url": SITES["tzach"]}],
             },
             {
                 "@type": "ProfessionalService",
@@ -288,7 +301,7 @@ def header(current):
       </a>
       <nav class="nav" id="nav" aria-label="ראשי" data-i18n-attr="aria-label:nav.label">
         {''.join(links)}
-        <a class="nav__cta" href="/Contact" data-i18n="nav.contact">צור קשר</a>
+        {nav_link("nav.contact", 'class="nav__cta" ')}
       </nav>
       <div class="header__actions">
         <button class="lang" type="button" data-lang-toggle aria-label="Switch to English">EN</button>
@@ -304,16 +317,16 @@ QUICK_LINKS = [
     ("פיתוח אפליקציות", "App Development", "/Contact"),
     ("בינה מלאכותית", "Artificial Intelligence", "/BlogPostPage?slug=" + urllib.parse.quote("בינה-מלאכותית-לעסקים-2024")),
     ("אוטומציה לעסקים", "Business Automation", "/BlogPostPage?slug=" + urllib.parse.quote("אוטומציה-לעסקים-2025")),
-    ("נדל\"ן", "Real Estate", "https://www.buildalgo.co.il/"),
-    ("בנייה ואדריכלות", "Construction & Architecture", "https://www.buildalgo.co.il/"),
+    ("נדל\"ן", "Real Estate", SITES["buildalgo"]),
+    ("בנייה ואדריכלות", "Construction & Architecture", SITES["buildalgo"]),
     ("SaaS", "SaaS", "/BlogPostPage?slug=" + urllib.parse.quote("פיתוח-saas-2025")),
     ("MVP", "MVP", "/BlogPostPage?slug=" + urllib.parse.quote("פיתוח-mvp-2025")),
     ("אבטחת מידע", "Information Security", "/BlogPostPage?slug=" + urllib.parse.quote("אבטחת-מידע-2025")),
     ("פיתוח אתרים", "Website Development", "/BlogPostPage?slug=" + urllib.parse.quote("פיתוח-אתרים-2025-מדריך-מקיף")),
     ("CRM", "CRM Systems", "/BlogPostPage?slug=" + urllib.parse.quote("מערכות-crm-2025")),
-    ("pro-algo", "pro-algo", "https://www.pro-algo.com/"),
-    ("CNN ורשתות נוירונים", "CNN & Neural Networks", "https://tzach-dabush.com/"),
-    ("NLP", "NLP", "https://tzach-dabush.com/"),
+    ("pro-algo", "pro-algo", SITES["proalgo"]),
+    ("CNN ורשתות נוירונים", "CNN & Neural Networks", SITES["tzach"]),
+    ("NLP", "NLP", SITES["tzach"]),
     ("בית תוכנה", "Software House", "/About"),
     ("פודקאסט טכנולוגיה", "Tech Podcast", "/Podcast"),
 ]
@@ -331,6 +344,10 @@ def footer():
                                ("instagram", "Instagram", "instagram-logo"), ("youtube", "YouTube", "youtube-logo"),
                                ("tiktok", "TikTok", "tiktok-logo")]
     )
+    sep = "\n            "
+    company = sep.join(f"<li>{nav_link(k)}</li>" for k in ("nav.about", "nav.expertise", "nav.blog", "nav.podcast", "nav.contact"))
+    products = sep.join(f'<li><a href="/Products#{p["key"]}">{p["name"]}</a></li>' for p in PRODUCTS)
+    sites = sep.join(f'<li><a href="{u}" target="_blank" rel="noopener">{domain(u)}</a></li>' for u in SITES.values())
     return f"""<footer class="footer">
     <div class="wrap">
       <div class="footer__grid">
@@ -342,22 +359,13 @@ def footer():
         <div>
           <h2 class="footer__h" data-i18n="foot.company">החברה</h2>
           <ul>
-            <li><a href="/About" data-i18n="nav.about">אודות</a></li>
-            <li><a href="/Expertise" data-i18n="nav.expertise">מומחיות</a></li>
-            <li><a href="/Blog" data-i18n="nav.blog">בלוג</a></li>
-            <li><a href="/Podcast" data-i18n="nav.podcast">פודקאסט</a></li>
-            <li><a href="/Contact" data-i18n="nav.contact">צור קשר</a></li>
+            {company}
           </ul>
         </div>
         <div>
           <h2 class="footer__h" data-i18n="foot.products">מוצרים</h2>
           <ul>
-            <li><a href="/Products#agent">Pro Agent</a></li>
-            <li><a href="/Products#mcp">AutoCAD MCP</a></li>
-            <li><a href="/Products#superposition">Superposition</a></li>
-            <li><a href="/Products#boq">BOQ</a></li>
-            <li><a href="/Products#sign">Pro Sign</a></li>
-            <li><a href="/Products#time">Pro Time</a></li>
+            {products}
           </ul>
         </div>
         <div>
@@ -369,9 +377,7 @@ def footer():
           </ul>
           <h2 class="footer__h footer__h--gap" data-i18n="foot.sites">האתרים שלנו</h2>
           <ul>
-            <li><a href="https://www.buildalgo.co.il/" target="_blank" rel="noopener">buildalgo.co.il</a></li>
-            <li><a href="https://www.pro-algo.com/" target="_blank" rel="noopener">pro-algo.com</a></li>
-            <li><a href="https://tzach-dabush.com/" target="_blank" rel="noopener">tzach-dabush.com</a></li>
+            {sites}
           </ul>
         </div>
       </div>
@@ -478,7 +484,7 @@ def page(path, *, title, desc, body, title_en, desc_en="", nav=None, og_image=No
 # ---------------------------------------------------------------- shared blocks
 
 def contact_form(source):
-    return f"""<form class="form reveal" name="contact" method="POST" action="/Contact?sent=1" data-netlify="true" netlify-honeypot="bot-field" data-form novalidate>
+    return f"""<form class="form reveal" name="contact" method="POST" action="/Contact?sent=1" data-netlify="true" netlify-honeypot="bot-field" data-form data-mailto="{ORG['email']}" novalidate>
           <input type="hidden" name="form-name" value="contact">
           <input type="hidden" name="source" value="{source}">
           <p class="hp" aria-hidden="true"><label>Leave empty <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
@@ -528,6 +534,21 @@ def contact_info():
             <a href="tel:{ORG['phone_intl']}" data-track="phone"><i class="ph ph-phone" aria-hidden="true"></i><span class="ltr">{ORG['phone']}</span></a>
             <a href="{ORG['whatsapp']}" target="_blank" rel="noopener" data-track="whatsapp"><i class="ph ph-whatsapp-logo" aria-hidden="true"></i><span data-i18n="contact.wa">שיחה בוואטסאפ</span></a>
           </div>"""
+
+
+def stats_cells():
+    return "\n          ".join(
+        f'<div class="stat"><div class="stat__n">{s["n"]}<sup>+</sup></div><div class="stat__l" data-i18n="{s["i18n"]}">{s["he"]}</div></div>'
+        for s in S["stats"])
+
+
+def product_index():
+    rows = []
+    for g, he in S["product_groups"].items():
+        rows.append(f'<li class="pindex__group" data-i18n="{g}">{he}</li>')
+        rows += [f'<li><a href="/Products#{p["key"]}"><span class="pindex__name">{p["name"]}</span><span class="pindex__desc" data-i18n="{p["i18n"]}">{p["tagline"]}</span><span class="pindex__domain">{domain(p["url"])}</span><i class="ph ph-arrow-left pindex__arrow"></i></a></li>'
+                 for p in PRODUCTS if p["group"] == g]
+    return "\n          ".join(rows)
 
 
 def client_wall(clients, heading=True):
@@ -767,9 +788,10 @@ def build_home(d):
                 .replace("{{POSTS}}", posts_teaser(d["posts"]))
                 .replace("{{ORG}}", org_block(d["team"]))
                 .replace("{{FAQ}}", faq_block())
-                .replace("{{CONTACT_FORM}}", contact_form("home")))
-    body = body.replace('<div class="contact__info">', '<div class="contact__info" data-replace>', 1)
-    body = re.sub(r'<div class="contact__info" data-replace>.*?</div>', contact_info(), body, count=1, flags=re.S)
+                .replace("{{CONTACT_FORM}}", contact_form("home"))
+                .replace("{{CONTACT_INFO}}", contact_info())
+                .replace("{{STATS}}", stats_cells())
+                .replace("{{PRODUCT_INDEX}}", product_index()))
     services = {
         "@context": "https://schema.org", "@type": "ItemList", "name": "שירותי Pro Algorithm",
         "itemListElement": [
@@ -790,8 +812,12 @@ def build_home(d):
 
 def build_products(d):
     body = read_src("products.html")
-    items = [("Pro Agent", "agent"), ("AutoCAD MCP", "mcp"), ("Superposition", "superposition"),
-             ("BOQ", "boq"), ("Pro Sign", "sign"), ("Pro Time", "time")]
+    for p in PRODUCTS:
+        for field, val in (("name", p["name"]), ("tagline", p["tagline"]), ("url", p["url"]), ("domain", p["url"].split("://")[1].rstrip("/"))):
+            body = body.replace("{{%s.%s}}" % (p["key"], field), val)
+    for g, he in S["product_groups"].items():
+        body = body.replace("{{%s}}" % g, he)
+    items = [(p["name"], p["key"]) for p in PRODUCTS]
     schema = {
         "@context": "https://schema.org", "@type": "ItemList", "name": "מוצרי Pro Algorithm",
         "itemListElement": [
@@ -804,7 +830,7 @@ def build_products(d):
         "/Products", nav="/Products",
         title="מוצרים | Pro Algorithm - סוכן AI ל-AutoCAD, השוואת שרטוטים וכתבי כמויות",
         title_en="Products | Pro Algorithm",
-        desc="ששת המוצרים של Pro Algorithm: סוכן AI בתוך AutoCAD, MCP ל-AutoCAD ו-Claude, השוואת שרטוטים וסופרפוזיציה, פענוח כתבי כמויות, החתמה דיגיטלית וניהול שעות.",
+        desc="שבעת המוצרים של Pro Algorithm: סוכן AI בתוך AutoCAD, MCP ל-AutoCAD ו-Claude, השוואת שרטוטים וסופרפוזיציה, פענוח כתבי כמויות, סימון חדרים ב-AutoCAD ו-Revit, החתמה דיגיטלית וניהול שעות.",
         body=body, schemas=[schema, breadcrumb([("בית", "/"), ("מוצרים", "/Products")])],
     ))
 
@@ -833,9 +859,7 @@ def build_about(d):
     <section class="section section--tight">
       <div class="wrap">
         <div class="stats reveal">
-          <div class="stat"><div class="stat__n">50,000<sup>+</sup></div><div class="stat__l" data-i18n="scale.s1">מ"ר של קומות משרדים שתוכננו ומוטבו ב-AI</div></div>
-          <div class="stat"><div class="stat__n">600<sup>+</sup></div><div class="stat__l" data-i18n="scale.s2">בניינים שלקחנו חלק בתכנונם</div></div>
-          <div class="stat"><div class="stat__n">4,000<sup>+</sup></div><div class="stat__l" data-i18n="scale.s3">שרטוטים אדריכליים שעברו דרך המערכות שלנו</div></div>
+          {stats_cells()}
           <div class="stat"><div class="stat__n">100%</div><div class="stat__l" data-i18n="about.uptime">זמינות למערכות בייצור</div></div>
         </div>
       </div>
@@ -1091,7 +1115,7 @@ def build_podcast(d):
     <section class="section section--tight">
       <div class="wrap cta-band reveal">
         <h2 class="h2" data-i18n="pod.yt">כל הפרקים <span class="thin">בערוץ היוטיוב שלנו.</span></h2>
-        <a class="btn btn--primary" href="{ORG['youtube']}/videos" target="_blank" rel="noopener"><span data-i18n="pod.sub">לערוץ ביוטיוב</span><i class="ph ph-youtube-logo" aria-hidden="true"></i></a>
+        <a class="btn btn--primary" href="{ORG['social']['youtube']}/videos" target="_blank" rel="noopener"><span data-i18n="pod.sub">לערוץ ביוטיוב</span><i class="ph ph-youtube-logo" aria-hidden="true"></i></a>
       </div>
     </section>"""
     write("Podcast.html", page(
@@ -1114,7 +1138,7 @@ def build_contact(d):
           {contact_info()}
           <dl class="spec" style="margin-top:48px">
             <div><dt data-i18n="contact.hours">שעות פעילות</dt><dd data-i18n="contact.hours.v">ראשון עד חמישי, 09:00 עד 18:00</dd></div>
-            <div><dt data-i18n="contact.office">משרד</dt><dd class="ltr"><a href="tel:{ORG['office_phone_intl']}">072-393-5596</a></dd></div>
+            <div><dt data-i18n="contact.office">משרד</dt><dd class="ltr"><a href="tel:{ORG['office_phone_intl']}">{ORG['office_phone']}</a></dd></div>
           </dl>
         </div>
         {contact_form('contact-page')}
@@ -1126,7 +1150,7 @@ def build_contact(d):
         "/Contact", nav="/Contact",
         title="צור קשר | קבלו הצעת מחיר לפיתוח תוכנה - Pro Algorithm",
         title_en="Contact | Pro Algorithm",
-        desc="צרו קשר עם Pro Algorithm לקבלת הצעת מחיר לפיתוח תוכנה, אפליקציות, מערכות AI ופתרונות לבנייה ואדריכלות. info@pro-algorithm.co.il | 053-946-2842",
+        desc=f"צרו קשר עם Pro Algorithm לקבלת הצעת מחיר לפיתוח תוכנה, אפליקציות, מערכות AI ופתרונות לבנייה ואדריכלות. {ORG['email']} | {ORG['phone']}",
         body=body, schemas=[schema, breadcrumb([("בית", "/"), ("צור קשר", "/Contact")])],
     ))
 
@@ -1198,10 +1222,10 @@ def build_blogpostpage_fallback(d):
     for p in d["posts"]:
         for s in (p["slug_he"], p["slug_en"]):
             if s:
-                mapping[s] = post_file(p)
+                mapping[s] = BASE + post_file(p)
     body = f"""
     <section class="phero"><div class="wrap"><h1>טוען מאמר…</h1><p><a href="/Blog">לכל המאמרים</a></p></div></section>
-    <script>(function(){{var m={json.dumps(mapping, ensure_ascii=False)};var s=new URLSearchParams(location.search).get('slug')||'';location.replace(m[s]||m[decodeURIComponent(s)]||'/Blog');}})();</script>"""
+    <script>(function(){{var m={json.dumps(mapping, ensure_ascii=False)};var s=new URLSearchParams(location.search).get('slug')||'';location.replace(m[s]||m[decodeURIComponent(s)]||'{BASE}/Blog');}})();</script>"""
     write("BlogPostPage.html", page("/BlogPostPage", title="בלוג | Pro Algorithm", title_en="Blog | Pro Algorithm",
                                     desc="הבלוג של Pro Algorithm", body=body, canonical=f"{SITE}/Blog", robots="noindex, follow"))
 
@@ -1265,6 +1289,13 @@ def copy_assets():
     src = os.path.join(ROOT, "assets")
     for sub in ("css", "js"):
         shutil.copytree(os.path.join(src, sub), os.path.join(dst, sub), dirs_exist_ok=True)
+        for n in os.listdir(os.path.join(dst, sub)):
+            p = os.path.join(dst, sub, n)
+            if BASE and os.path.isfile(p):
+                with open(p, encoding="utf-8") as f:
+                    t = f.read()
+                with open(p, "w", encoding="utf-8", newline="\n") as f:
+                    f.write(rebase(t))
     for folder in ("blog", "podcast", "clients", "press", "leaders"):
         os.makedirs(os.path.join(dst, "img", folder), exist_ok=True)
         for n in os.listdir(os.path.join(src, "img", folder)):
