@@ -33,7 +33,10 @@
               <h3>{{agent.name}}</h3>
               <p class="product__tag" data-i18n="prod.agent">{{agent.tagline}}</p>
             </div>
-            <a class="btn btn--ghost btn--sm" href="{{agent.url}}" target="_blank" rel="noopener"><span data-i18n="p.visit">לאתר המוצר</span><i class="ph ph-arrow-up-left"></i></a>
+            <div class="product__actions">
+              <a class="btn btn--primary btn--sm" href="{{agent.download}}" target="_blank" rel="noopener"><span data-i18n="p.download">להורדה</span><i class="ph ph-download-simple"></i></a>
+              <a class="btn btn--ghost btn--sm" href="{{agent.url}}" target="_blank" rel="noopener"><span data-i18n="p.visit">לאתר המוצר</span><i class="ph ph-arrow-up-left"></i></a>
+            </div>
           </div>
           <div>
             <p class="product__desc" data-i18n="p.agent.d1">עוזר חכם שיושב בתוך AutoCAD ומבצע עבודה אמיתית על השרטוט. מתארים במילים מה צריך, והסוכן מתכנן את הצעדים ומבצע אותם.</p>
@@ -59,7 +62,10 @@
               <h3>{{mcp.name}}</h3>
               <p class="product__tag" data-i18n="prod.mcp">{{mcp.tagline}}</p>
             </div>
-            <a class="btn btn--ghost btn--sm" href="{{mcp.url}}" target="_blank" rel="noopener"><span data-i18n="p.visit">לאתר המוצר</span><i class="ph ph-arrow-up-left"></i></a>
+            <div class="product__actions">
+              <a class="btn btn--primary btn--sm" href="/AutoCADMCP"><span data-i18n="p.mcp.guide">מדריך חיבור ל-Claude</span><i class="ph ph-arrow-left"></i></a>
+              <a class="btn btn--ghost btn--sm" href="{{mcp.url}}" target="_blank" rel="noopener"><span data-i18n="p.visit">לאתר המוצר</span><i class="ph ph-arrow-up-left"></i></a>
+            </div>
           </div>
           <div>
             <p class="product__desc" data-i18n="p.mcp.d1">שרת Model Context Protocol שמחבר את Claude לשרטוטים שלכם. Claude יכול לקרוא את הקובץ, להבין את המבנה שלו ולבצע בו פעולות מתוך שיחה רגילה.</p>

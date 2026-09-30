@@ -641,6 +641,7 @@ html[dir="ltr"] .pindex a:hover .pindex__arrow { transform: scaleX(-1) translate
 .product__head { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap; }
 .product h3 { font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 500; margin: 0; letter-spacing: -0.02em; line-height: 1.1; }
 .product__tag { color: var(--redline); font-size: 15px; margin: 10px 0 0; }
+.product__actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .product__desc { color: #c3c8cf; font-size: 18px; margin: 0; max-width: 56ch; }
 .product__desc + .product__desc { margin-block-start: 16px; color: var(--muted); font-size: 16px; }
 .spec { margin: 0; border-block-start: 1px solid var(--line); }

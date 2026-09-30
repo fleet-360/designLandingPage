@@ -810,13 +810,19 @@ def build_home(d):
     ))
 
 
-def build_products(d):
-    body = read_src("products.html")
+def fill_products(body):
+    """{{key.field}} for every product field in site.json, plus {{key.domain}} and {{prod.gN}}."""
     for p in PRODUCTS:
-        for field, val in (("name", p["name"]), ("tagline", p["tagline"]), ("url", p["url"]), ("domain", p["url"].split("://")[1].rstrip("/"))):
-            body = body.replace("{{%s.%s}}" % (p["key"], field), val)
+        for field, val in {**p, "domain": p["url"].split("://")[1].rstrip("/")}.items():
+            if isinstance(val, str):
+                body = body.replace("{{%s.%s}}" % (p["key"], field), val)
     for g, he in S["product_groups"].items():
         body = body.replace("{{%s}}" % g, he)
+    return body
+
+
+def build_products(d):
+    body = fill_products(read_src("products.html"))
     items = [(p["name"], p["key"]) for p in PRODUCTS]
     schema = {
         "@context": "https://schema.org", "@type": "ItemList", "name": "מוצרי Pro Algorithm",
@@ -832,6 +838,26 @@ def build_products(d):
         title_en="Products | Pro Algorithm",
         desc="שבעת המוצרים של Pro Algorithm: סוכן AI בתוך AutoCAD, MCP ל-AutoCAD ו-Claude, השוואת שרטוטים וסופרפוזיציה, פענוח כתבי כמויות, סימון חדרים ב-AutoCAD ו-Revit, החתמה דיגיטלית וניהול שעות.",
         body=body, schemas=[schema, breadcrumb([("בית", "/"), ("מוצרים", "/Products")])],
+    ))
+
+
+def build_mcp(d):
+    """/AutoCADMCP: step-by-step guide for connecting the AutoCAD MCP server to Claude."""
+    mcp = next(p for p in PRODUCTS if p["key"] == "mcp")
+    body = fill_products(read_src("mcp.html"))
+    howto = {
+        "@context": "https://schema.org", "@type": "HowTo", "name": f"חיבור {mcp['name']} ל-Claude",
+        "step": [{"@type": "HowToStep", "position": i + 1, "name": n} for i, n in enumerate([
+            "פותחים Settings ואז Connectors ב-Claude", "לוחצים Add custom connector",
+            f"מדביקים את כתובת השרת {mcp['server']}", "לוחצים Connect ומאשרים את הגישה בחלון של Pro Algorithm",
+            "מפעילים את המחבר בשיחה חדשה"])],
+    }
+    write("AutoCADMCP.html", page(
+        "/AutoCADMCP", nav="/Products",
+        title=f"חיבור {mcp['name']} ל-Claude | מדריך התקנה | Pro Algorithm",
+        title_en=f"Connect {mcp['name']} to Claude | Setup guide | Pro Algorithm",
+        desc="מדריך צעד אחר צעד לחיבור שרת AutoCAD MCP של Pro Algorithm ל-Claude ול-Claude Code: הוספת מחבר מותאם, אישור OAuth, הפעלה בשיחה ופתרון בעיות.",
+        body=body, schemas=[howto, breadcrumb([("בית", "/"), ("מוצרים", "/Products"), (mcp["name"], "/AutoCADMCP")])],
     ))
 
 
@@ -1232,7 +1258,7 @@ def build_blogpostpage_fallback(d):
 
 def build_meta_files(d):
     posts = d["posts"]
-    urls = [("/", "1.0", TODAY), ("/About", "0.8", TODAY), ("/Expertise", "0.8", TODAY), ("/Products", "0.9", TODAY),
+    urls = [("/", "1.0", TODAY), ("/About", "0.8", TODAY), ("/Expertise", "0.8", TODAY), ("/Products", "0.9", TODAY), ("/AutoCADMCP", "0.7", TODAY),
             ("/Blog", "0.8", posts[0]["updated"][:10] if posts else TODAY), ("/Podcast", "0.7", TODAY),
             ("/Contact", "0.8", TODAY), ("/AccessibilityStatement", "0.3", TODAY)]
     urls += [(post_url(p), "0.6", (p["updated"] or TODAY)[:10]) for p in posts]
@@ -1262,7 +1288,8 @@ def build_meta_files(d):
                 lines.append(f"/BlogPostPage slug={s} {post_file(p)} 200")
     lines += ["", "# lowercase and legacy variants of the old routes",
               "/about /About 301", "/blog /Blog 301", "/contact /Contact 301", "/expertise /Expertise 301",
-              "/podcast /Podcast 301", "/products /Products 301", "/accessibilitystatement /AccessibilityStatement 301",
+              "/podcast /Podcast 301", "/products /Products 301", "/autocadmcp /AutoCADMCP 301", "/mcp /AutoCADMCP 301",
+              "/accessibilitystatement /AccessibilityStatement 301",
               "/accessibility-statement /AccessibilityStatement 301", "/accessibility /AccessibilityStatement 301",
               "/blog-post-page /BlogPostPage 301", "/blogpostpage /BlogPostPage 301",
               "/LandingPage / 301", "/landingpage / 301", "/landing-page / 301", "/home / 301", "/Home / 301",
@@ -1325,6 +1352,7 @@ def main():
     copy_assets()
     build_home(d)
     build_products(d)
+    build_mcp(d)
     build_about(d)
     build_expertise(d)
     build_blog(d)

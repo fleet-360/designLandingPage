@@ -1,0 +1,112 @@
+    <section class="phero">
+      <div class="wrap">
+        <nav class="crumbs" aria-label="פירורי לחם"><a href="/" data-i18n="crumb.home">בית</a><i class="ph ph-caret-left" aria-hidden="true"></i><a href="/Products" data-i18n="nav.products">מוצרים</a><i class="ph ph-caret-left" aria-hidden="true"></i><span aria-current="page">{{mcp.name}}</span></nav>
+        <h1 class="reveal" data-i18n="mcp.h1">חיבור {{mcp.name}} <span class="thin">ל-Claude.</span></h1>
+        <p class="reveal" data-i18n="mcp.h1lead">חמישה צעדים, בלי התקנה מקומית. מוסיפים את השרת כמחבר ב-Claude, מאשרים את הגישה בחלון שנפתח, ומתחילים לעבוד על השרטוט מתוך שיחה.</p>
+      </div>
+    </section>
+
+    <section class="section section--tight">
+      <div class="wrap">
+      <div class="prose prose--page" data-prose>
+        <h2>מה צריך לפני שמתחילים</h2>
+        <ul>
+          <li>חשבון Claude בתוכנית שתומכת במחברים מותאמים (Pro, Max, Team או Enterprise), או Claude Code במסוף.</li>
+          <li>חשבון Pro Algorithm. איתו נכנסים בחלון האישור בשלב 4.</li>
+          <li>AutoCAD פתוח עם השרטוט שרוצים לעבוד עליו.</li>
+        </ul>
+
+        <h2>חיבור ב-Claude (אתר או אפליקציה)</h2>
+        <ol>
+          <li><strong>פותחים את ההגדרות.</strong> לוחצים על שם המשתמש בפינה, בוחרים <strong>Settings</strong> ואז <strong>Connectors</strong>.</li>
+          <li><strong>מוסיפים מחבר.</strong> גוללים לתחתית הרשימה ולוחצים <strong>Add custom connector</strong>.</li>
+          <li><strong>ממלאים את הפרטים.</strong> בשדה השם כותבים <code>AutoCAD MCP</code>, ובשדה הכתובת מדביקים:
+            <pre><code>{{mcp.server}}</code></pre>
+            לוחצים <strong>Add</strong>. אין צורך למלא Client ID או Client Secret, השרת רושם את Claude בעצמו.</li>
+          <li><strong>מאשרים את הגישה.</strong> ליד המחבר החדש לוחצים <strong>Connect</strong>. נפתח חלון של Pro Algorithm בכתובת <code>{{mcp.authorize}}</code>. נכנסים עם חשבון Pro Algorithm ומאשרים את ההרשאה <code>autocad</code>. בסיום החלון נסגר והמחבר מסומן כמחובר.</li>
+          <li><strong>מפעילים בשיחה.</strong> פותחים שיחה חדשה, לוחצים על כפתור הכלים (<strong>+</strong> או <strong>Search and tools</strong>) ומוודאים ש-AutoCAD MCP מסומן. עכשיו אפשר לשאול, למשל: "אילו שכבות יש בשרטוט הפתוח?"</li>
+        </ol>
+
+        <h2>חיבור ב-Claude Code</h2>
+        <p>במסוף, מתוך תיקיית הפרויקט:</p>
+        <pre><code>claude mcp add --transport http autocad {{mcp.server}}</code></pre>
+        <p>מריצים <code>claude</code>, מקלידים <code>/mcp</code>, בוחרים <code>autocad</code> ואז <strong>Authenticate</strong>. הדפדפן נפתח לאותו חלון אישור, ואחרי האישור הכלים זמינים בשיחה.</p>
+
+        <h2>מה Claude יכול לעשות אחרי החיבור</h2>
+        <ul>
+          <li>לקרוא את השרטוט: שכבות, בלוקים, ישויות ומאפיינים, ולענות על שאלות מתוך הנתונים עצמם.</li>
+          <li>לבצע שינויים: יצירה ועריכה של ישויות, סידור שכבות, עדכון בלוקים.</li>
+          <li>לבקש אישור לפני פעולות. ב-Claude אפשר לקבוע לכל כלי אם הוא רץ אוטומטית או מבקש אישור בכל פעם.</li>
+        </ul>
+
+        <h2>פתרון בעיות</h2>
+        <ul>
+          <li><strong>חלון האישור לא נפתח.</strong> הדפדפן חסם חלון קופץ. מאשרים חלונות קופצים ל-claude.ai ולוחצים Connect שוב.</li>
+          <li><strong>המחבר מחובר אבל Claude לא רואה כלים.</strong> בודקים ש-AutoCAD פתוח ושיש בו שרטוט פעיל, ואז פותחים שיחה חדשה.</li>
+          <li><strong>שגיאת invalid_token או 401.</strong> ההרשאה פגה. ב-Settings, Connectors לוחצים על המחבר, <strong>Disconnect</strong>, ואז <strong>Connect</strong> מחדש.</li>
+          <li><strong>הכלים לא מופיעים בשיחה קיימת.</strong> מחברים חדשים נטענים רק בשיחות שנפתחו אחרי החיבור.</li>
+        </ul>
+
+        <h2>פרטים טכניים</h2>
+        <table>
+          <tr><th>נקודת קצה</th><td dir="ltr"><code>{{mcp.server}}</code></td></tr>
+          <tr><th>תעבורה</th><td>Streamable HTTP (תקן MCP)</td></tr>
+          <tr><th>אימות</th><td>OAuth 2.1 עם PKCE (S256) ורישום לקוח דינמי</td></tr>
+          <tr><th>הרשאה</th><td><code>autocad</code></td></tr>
+          <tr><th>מטא-דאטה</th><td dir="ltr"><code>{{mcp.origin}}/.well-known/oauth-authorization-server</code></td></tr>
+        </table>
+
+        <p>נתקעתם? <a href="/Contact">כתבו לנו</a> ונחבר אתכם ביחד.</p>
+      </div>
+      <template data-prose-en>
+        <h2>Before you start</h2>
+        <ul>
+          <li>A Claude account on a plan that supports custom connectors (Pro, Max, Team or Enterprise), or Claude Code in the terminal.</li>
+          <li>A Pro Algorithm account. You sign in with it in the approval window in step 4.</li>
+          <li>AutoCAD open with the drawing you want to work on.</li>
+        </ul>
+
+        <h2>Connect in Claude (web or desktop app)</h2>
+        <ol>
+          <li><strong>Open settings.</strong> Click your name in the corner, choose <strong>Settings</strong>, then <strong>Connectors</strong>.</li>
+          <li><strong>Add a connector.</strong> Scroll to the bottom of the list and click <strong>Add custom connector</strong>.</li>
+          <li><strong>Fill in the details.</strong> Name it <code>AutoCAD MCP</code> and paste this as the URL:
+            <pre><code>{{mcp.server}}</code></pre>
+            Click <strong>Add</strong>. Leave Client ID and Client Secret empty. The server registers Claude on its own.</li>
+          <li><strong>Approve access.</strong> Click <strong>Connect</strong> next to the new connector. A Pro Algorithm window opens at <code>{{mcp.authorize}}</code>. Sign in with your Pro Algorithm account and approve the <code>autocad</code> permission. The window closes and the connector shows as connected.</li>
+          <li><strong>Enable it in a chat.</strong> Start a new chat, open the tools button (<strong>+</strong> or <strong>Search and tools</strong>) and make sure AutoCAD MCP is checked. Now ask, for example: "Which layers are in the open drawing?"</li>
+        </ol>
+
+        <h2>Connect in Claude Code</h2>
+        <p>In the terminal, inside your project folder:</p>
+        <pre><code>claude mcp add --transport http autocad {{mcp.server}}</code></pre>
+        <p>Run <code>claude</code>, type <code>/mcp</code>, pick <code>autocad</code> and choose <strong>Authenticate</strong>. Your browser opens the same approval window, and after approving, the tools are available in the session.</p>
+
+        <h2>What Claude can do once connected</h2>
+        <ul>
+          <li>Read the drawing: layers, blocks, entities and properties, and answer questions from the data itself.</li>
+          <li>Make changes: create and edit entities, organize layers, update blocks.</li>
+          <li>Ask before acting. In Claude you can set each tool to run automatically or to ask for approval every time.</li>
+        </ul>
+
+        <h2>Troubleshooting</h2>
+        <ul>
+          <li><strong>The approval window did not open.</strong> Your browser blocked a popup. Allow popups for claude.ai and click Connect again.</li>
+          <li><strong>Connected, but Claude sees no tools.</strong> Check that AutoCAD is open with an active drawing, then start a new chat.</li>
+          <li><strong>invalid_token or 401 error.</strong> The authorization expired. In Settings, Connectors click the connector, <strong>Disconnect</strong>, then <strong>Connect</strong> again.</li>
+          <li><strong>Tools are missing in an existing chat.</strong> New connectors only load in chats started after connecting.</li>
+        </ul>
+
+        <h2>Technical details</h2>
+        <table>
+          <tr><th>Endpoint</th><td dir="ltr"><code>{{mcp.server}}</code></td></tr>
+          <tr><th>Transport</th><td>Streamable HTTP (MCP standard)</td></tr>
+          <tr><th>Auth</th><td>OAuth 2.1 with PKCE (S256) and dynamic client registration</td></tr>
+          <tr><th>Scope</th><td><code>autocad</code></td></tr>
+          <tr><th>Metadata</th><td dir="ltr"><code>{{mcp.origin}}/.well-known/oauth-authorization-server</code></td></tr>
+        </table>
+
+        <p>Stuck? <a href="/Contact">Write to us</a> and we'll get you connected.</p>
+      </template>
+      </div>
+    </section>

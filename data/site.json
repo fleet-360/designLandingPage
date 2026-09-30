@@ -26,8 +26,9 @@
   "prod.g2": "תפעול עסקי"
  },
  "products": [
-  {"key": "agent", "name": "Pro Agent", "group": "prod.g1", "i18n": "prod.agent", "tagline": "סוכן AI שעובד בתוך AutoCAD", "url": "https://agent.pro-algo.com"},
-  {"key": "mcp", "name": "AutoCAD MCP", "group": "prod.g1", "i18n": "prod.mcp", "tagline": "חיבור ישיר בין AutoCAD ל-Claude", "url": "https://mcp.pro-algo.com/autocad"},
+  {"key": "agent", "name": "Pro Agent", "group": "prod.g1", "i18n": "prod.agent", "tagline": "סוכן AI שעובד בתוך AutoCAD", "url": "https://agent.pro-algo.com", "download": "https://auth-cad-core.base44.app/download"},
+  {"key": "mcp", "name": "AutoCAD MCP", "group": "prod.g1", "i18n": "prod.mcp", "tagline": "חיבור ישיר בין AutoCAD ל-Claude", "url": "https://mcp.pro-algo.com/autocad",
+   "origin": "https://acad-agent-server-duebfe3txq-ew.a.run.app", "server": "https://acad-agent-server-duebfe3txq-ew.a.run.app/mcp", "authorize": "https://acad-agent-server-duebfe3txq-ew.a.run.app/oauth/authorize"},
   {"key": "superposition", "name": "Superposition", "group": "prod.g1", "i18n": "prod.sp", "tagline": "השוואת שרטוטים ועוזר חכם לסופרפוזיציה", "url": "https://superposition.buildalgo.co.il/"},
   {"key": "boq", "name": "BOQ", "group": "prod.g1", "i18n": "prod.boq", "tagline": "פענוח כתבי כמויות רב-תחומי", "url": "https://boq.buildalgo.co.il/"},
   {"key": "cursor", "name": "Simple Cursor", "group": "prod.g1", "i18n": "prod.cursor", "tagline": "סימון חדר, דירה וקומה בלחיצה ב-AutoCAD ו-Revit", "url": "https://fleet-360.github.io/simplecursor-download/"},
