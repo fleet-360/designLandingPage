@@ -1,0 +1,58 @@
+[
+ {
+  "outlet": "Globes",
+  "logo": "press/globes.webp",
+  "title": "הסטארט-אפים שיחליפו את האדריכלים",
+  "body": "שתי חברות סטארט-אפ ישראליות מציעות תוכנות שמנסות להחליף אלמנטים מרכזיים בעבודת התכנון",
+  "url": "https://www.globes.co.il/news/article.aspx?did=1001380915"
+ },
+ {
+  "outlet": "Calcalist",
+  "logo": "press/calcalist.webp",
+  "title": "מה יעשה ה-AI לאדריכלות והבנייה?",
+  "body": "השפעת ה-AI על מקצוע האדריכלות והחשש מהחלפת כוח אדם אנושי במכונות",
+  "url": "https://www.calcalist.co.il/real-estate/article/b1hwhj251x"
+ },
+ {
+  "outlet": "Globes",
+  "logo": "press/globes.webp",
+  "title": "אנחנו מחליפים את מהנדסי הבניין ב-AI, מי שיישאר זה רק האדריכל",
+  "body": "סטארט-אפ חדש לשילוב בינה מלאכותית בתכנון",
+  "url": "https://www.globes.co.il/news/article.aspx?did=1001526847"
+ },
+ {
+  "outlet": "Calcalist",
+  "logo": "press/calcalist.webp",
+  "title": "\"המענה לבעיות בענף הנדל\"ן יגיע מ-AI\"",
+  "body": "ענף הנדל\"ן, אחד האיטיים ביותר באימוץ טכנולוגיה, נדחק למצב הדורש שינוי מהותי, והמענה לאתגרים יגיע מ-AI ואימוץ טכנולוגיה בקנה מידה רחב",
+  "url": "https://www.calcalist.co.il/conferences/article/sjbpz9p11wl"
+ },
+ {
+  "outlet": "mako",
+  "logo": "press/mako.webp",
+  "title": "AI וניהול חכם: הדרך של ענף הבנייה להתחדשות וצמיחה",
+  "body": "הטכנולוגיות החדשות שקיימות היום בשוק יכולות לצמצם משמעותית את בעיית הדיור הלאומית",
+  "url": "https://www.mako.co.il/news-business/duns_100-realestate/Article-ebba5c87bde1691026.htm"
+ },
+ {
+  "outlet": "ynet",
+  "logo": "press/ynet.webp",
+  "title": "בינה מלאכותית בעיצוב ואדריכלות: חיובי או שלילי?",
+  "body": "בשנים הקרובות נפח העבודה שייעשה באמצעות בינה מלאכותית ואוטומציה יגיע לכ-40%",
+  "url": "https://www.ynet.co.il/architecture/article/sygzyvxt3"
+ },
+ {
+  "outlet": "Nadlan Center",
+  "logo": "press/nadlan-center.webp",
+  "title": "ה-AI משנה את האדריכלות, האם יחליף אותה?",
+  "body": "משרדי אדריכלים ומעצבי פנים משתמשים ב-AI כדי ליצור הדמיות וסרטונים במהירות ולייעל תהליכים",
+  "url": "https://www.nadlancenter.co.il/article/13052"
+ },
+ {
+  "outlet": "Walla",
+  "logo": "press/walla.webp",
+  "title": "זה כבר כאן: האם אנו לפני מהפכת ה-AI בעולם האדריכלות, העיצוב והבנייה?",
+  "body": "עולם הבינה המלאכותית ישפיע נמרצות על תחומים רבים בענף",
+  "url": "https://home.walla.co.il/item/3647977"
+ }
+]

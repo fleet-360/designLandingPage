@@ -1,0 +1,123 @@
+[
+ {
+  "key": "noad",
+  "name_he": "נועד ג'ורנו",
+  "name_en": "Noad Giorno",
+  "role": "CEO",
+  "expertise_he": "ניהול והובלה",
+  "expertise_en": "Management & Leadership",
+  "bio_he": "בעל ניסיון רב בהובלת צוותים וחברות להצלחה, עם יכולת מוכחת ליישם אסטרטגיות צמיחה ולבנות ארגונים חזקים ומובילים.",
+  "bio_en": "Extensive experience leading teams and companies to success, with a proven ability to execute growth strategies and build strong organizations.",
+  "image": "leaders/noad.webp"
+ },
+ {
+  "key": "tzach",
+  "name_he": "צח דבוש",
+  "name_en": "Tzach Dabush",
+  "role": "CTO",
+  "expertise_he": "אלקטרוניקה ופיתוח Web",
+  "expertise_en": "Electronics & Web Development",
+  "bio_he": "למעלה מ-10 שנות ניסיון בפיתוח מערכות מתקדמות ובניהול צוותים, עם התמחות בהובלת חדשנות והטמעת פתרונות טכנולוגיים פורצי דרך.",
+  "bio_en": "Over 10 years developing advanced systems and managing teams, specializing in leading innovation and deploying breakthrough technology.",
+  "image": "leaders/tzach.webp"
+ },
+ {
+  "key": "ido",
+  "name_he": "עידו טביב",
+  "name_en": "Ido Tabib",
+  "role": "Chief Customer Relations Officer",
+  "expertise_he": "Customer Success & Relations",
+  "expertise_en": "Customer Success & Relations",
+  "bio_he": "סמנכ\"ל קשרי לקוחות המתמחה בניהול קשרי לקוחות אסטרטגיים, הובלת צוותי שירות ובניית חוויות לקוח מיטביות.",
+  "bio_en": "VP of customer relations, specializing in strategic accounts, leading service teams and building excellent customer experiences.",
+  "image": "team/ido.webp"
+ },
+ {
+  "key": "linoy",
+  "name_he": "לינוי",
+  "name_en": "Linoy",
+  "role": "Full-Stack Developer",
+  "expertise_he": "Web Development",
+  "expertise_en": "Web Development",
+  "bio_he": "מפתחת Full-Stack מנוסה עם התמחות ב-React, Node.js ומערכות Cloud מורכבות.",
+  "bio_en": "Experienced full-stack developer specializing in React, Node.js and complex cloud systems.",
+  "image": "team/linoy.webp"
+ },
+ {
+  "key": "ben",
+  "name_he": "בן שואן",
+  "name_en": "Ben Shoan",
+  "role": "Backend Developer",
+  "expertise_he": "Server & Database",
+  "expertise_en": "Server & Database",
+  "bio_he": "מתכנת באקאנד מנוסה המתמחה בבניית מערכות צד שרת יציבות ומדרגיות.",
+  "bio_en": "Experienced backend developer building stable, scalable server-side systems.",
+  "image": "team/ben.webp"
+ },
+ {
+  "key": "shlomi",
+  "name_he": "שלומי טפירו",
+  "name_en": "Shlomi Tapiro",
+  "role": "AI & Automation Developer",
+  "expertise_he": "Neural Networks",
+  "expertise_en": "Neural Networks",
+  "bio_he": "מתכנת עם ניסיון עשיר באוטומציות ורשתות נוירונים, מומחה בפתרונות AI מתקדמים.",
+  "bio_en": "Developer with deep experience in automation and neural networks, expert in advanced AI solutions.",
+  "image": "team/shlomi.webp"
+ },
+ {
+  "key": "omer",
+  "name_he": "עומר טולדנו",
+  "name_en": "Omer Toledano",
+  "role": "AI & Data Science Specialist",
+  "expertise_he": "Artificial Intelligence & Data Science",
+  "expertise_en": "Artificial Intelligence & Data Science",
+  "bio_he": "מומחית AI ומדעי הנתונים עם תואר שני מבן גוריון, מתמחה בפתרונות AI מתקדמים, למידת מכונה ואנליזת נתונים מורכבת.",
+  "bio_en": "AI and data science specialist with a master's degree from Ben-Gurion University, focused on machine learning and complex data analysis.",
+  "image": "team/omer.webp"
+ },
+ {
+  "key": "evelina",
+  "name_he": "אבלינה שיימן",
+  "name_en": "Evelina Sheiman",
+  "role": "Sales Manager",
+  "expertise_he": "Sales Management",
+  "expertise_en": "Sales Management",
+  "bio_he": "מנהלת מכירות מנוסה עם יכולות הובלת צוותים, בניית קשרי לקוחות אסטרטגיים ועמידה ביעדים.",
+  "bio_en": "Experienced sales manager leading teams, building strategic client relationships and meeting targets.",
+  "image": "team/evelina.webp"
+ },
+ {
+  "key": "revital",
+  "name_he": "רויטל יגאלי",
+  "name_en": "Revital Yigali",
+  "role": "Sales Manager",
+  "expertise_he": "Sales and Customer Service",
+  "expertise_en": "Sales and Customer Service",
+  "bio_he": "בעלת ניסיון במכירות פרונטליות וטלפוניות, בניית קשרי לקוחות, והובלת תהליכי מכירה משלב ההיכרות ועד סגירת העסקה.",
+  "bio_en": "Experienced in in-person and phone sales, building client relationships and leading the sales process from first contact to close.",
+  "image": "team/revital.webp"
+ },
+ {
+  "key": "yaniv",
+  "name_he": "יניב סיביליה",
+  "name_en": "Yaniv Sibilia",
+  "role": "Operations Manager",
+  "expertise_he": "Operations and Logistics",
+  "expertise_en": "Operations and Logistics",
+  "bio_he": "אחראי על תיאום מערכי עבודה, ניהול צוותים ותהליכי תפעול, ושיפור זרימת העבודה בארגון לשם יעילות מרבית.",
+  "bio_en": "Coordinates work streams, teams and operations, improving organizational workflow for maximum efficiency.",
+  "image": "team/yaniv.webp"
+ },
+ {
+  "key": "liat",
+  "name_he": "ליאת אוברוב",
+  "name_en": "Liat Ovrov",
+  "role": "Accounting Manager",
+  "expertise_he": "Accounting Management",
+  "expertise_en": "Accounting Management",
+  "bio_he": "בעלת ניסיון בניהול מערכות חשבונאיות מקצה לקצה וליווי הנהלה בקבלת החלטות מבוססות נתונים.",
+  "bio_en": "Experienced in managing end-to-end accounting systems and supporting management in data-driven decisions.",
+  "image": "team/liat.webp"
+ }
+]

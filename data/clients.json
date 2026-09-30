@@ -1,0 +1,68 @@
+[
+ {
+  "key": "idf",
+  "name_he": "צה\"ל",
+  "name_en": "Israel Defense Forces",
+  "image": "clients/idf.webp"
+ },
+ {
+  "key": "mod",
+  "name_he": "משרד הביטחון",
+  "name_en": "Israel Ministry of Defense",
+  "image": "clients/mod.webp"
+ },
+ {
+  "key": "rafael",
+  "name_he": "רפאל",
+  "name_en": "Rafael Advanced Defense Systems",
+  "image": "clients/rafael.webp"
+ },
+ {
+  "key": "mafat",
+  "name_he": "מפא\"ת",
+  "name_en": "MAFAT - Directorate of Defense R&D",
+  "image": "clients/mafat.webp"
+ },
+ {
+  "key": "tau",
+  "name_he": "אוניברסיטת תל אביב",
+  "name_en": "Tel Aviv University",
+  "image": "clients/tau.webp"
+ },
+ {
+  "key": "bar-ilan",
+  "name_he": "אוניברסיטת בר-אילן",
+  "name_en": "Bar-Ilan University",
+  "image": "clients/bar-ilan.webp"
+ },
+ {
+  "key": "acb",
+  "name_he": "התאחדות הקבלנים בוני הארץ",
+  "name_en": "Israel Builders Association",
+  "image": "clients/acb.webp"
+ },
+ {
+  "key": "pekerman",
+  "name_he": "פקרמן הנדסה ואדריכלות",
+  "name_en": "Pekerman Engineering & Architecture",
+  "image": "clients/pekerman.webp"
+ },
+ {
+  "key": "redmark",
+  "name_he": "רדמרק אדריכלות וניהול פרויקטים",
+  "name_en": "Redmark Architecture & Project Management",
+  "image": "clients/redmark.webp"
+ },
+ {
+  "key": "aspire-home",
+  "name_he": "אספייר הום",
+  "name_en": "Aspire Home Audio Plus",
+  "image": "clients/aspire-home.webp"
+ },
+ {
+  "key": "mydesk",
+  "name_he": "myDESK",
+  "name_en": "myDESK",
+  "image": "clients/mydesk.webp"
+ }
+]
