@@ -552,15 +552,18 @@ def product_index():
 
 
 def client_wall(clients, heading=True):
+    logos = [c for c in clients if c.get("image")]
+    li = lambda c, hidden="": f'<li{hidden}><img src="{img(c["image"])}" alt="{"" if hidden else esc(c["name_he"])}" loading="lazy" decoding="async" width="180" height="80"></li>'
+    # two rows; each repeats its logos (aria-hidden) so the mobile marquee loops seamlessly
+    half = (len(logos) + 1) // 2
     items = "".join(
-        f'<li><img src="{img(c["image"])}" alt="{esc(c["name_he"])}" loading="lazy" decoding="async" width="180" height="80"></li>'
-        for c in clients if c.get("image")
-    )
+        f'<ul class="logo-row{" logo-row--rev" if i else ""}">{"".join(map(li, row))}{"".join(li(c, " aria-hidden=\"true\"") for c in row)}</ul>'
+        for i, row in enumerate((logos[:half], logos[half:])) if row)
     head = '<h2 class="clients__label" data-i18n="clients.title">ארגונים שבוחרים לעבוד איתנו</h2>' if heading else ""
     return f"""<section class="clients" aria-label="לקוחות" data-i18n-attr="aria-label:clients.label">
       <div class="wrap">
         {head}
-        <ul class="logo-wall">{items}</ul>
+        <div class="logo-wall">{items}</div>
       </div>
     </section>"""
 

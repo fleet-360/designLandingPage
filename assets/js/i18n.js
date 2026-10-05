@@ -35,7 +35,6 @@ window.I18N_EN = {
   "scale.s1": "m² of office floors planned and optimized with AI",
   "scale.s2": "buildings we took part in planning",
   "scale.s3": "architectural drawings processed by our systems",
-  "scale.s4": "standalone products serving organizations",
 
   "div.title": "One group. <span class=\"thin\">Five divisions.</span>",
   "div.lead": "From core system development to AI engineers embedded on site. Each division runs independently, and all of them share the same engineering foundation.",
