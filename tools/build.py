@@ -546,7 +546,7 @@ def product_index():
     rows = []
     for g, he in S["product_groups"].items():
         rows.append(f'<li class="pindex__group" data-i18n="{g}">{he}</li>')
-        rows += [f'<li><a href="/Products#{p["key"]}"><span class="pindex__name">{p["name"]}</span><span class="pindex__desc" data-i18n="{p["i18n"]}">{p["tagline"]}</span><span class="pindex__domain">{domain(p["url"])}</span><i class="ph ph-arrow-left pindex__arrow"></i></a></li>'
+        rows += [f'<li><a href="/Products#{p["key"]}"><span class="pindex__name">{p["name"]}</span><span class="pindex__desc" data-i18n="{p["i18n"]}">{p["tagline"]}</span><span class="pindex__domain">{domain(p["url"]) if "url" in p else ""}</span><i class="ph ph-arrow-left pindex__arrow"></i></a></li>'
                  for p in PRODUCTS if p["group"] == g]
     return "\n          ".join(rows)
 
@@ -816,7 +816,7 @@ def build_home(d):
 def fill_products(body):
     """{{key.field}} for every product field in site.json, plus {{key.domain}} and {{prod.gN}}."""
     for p in PRODUCTS:
-        for field, val in {**p, "domain": p["url"].split("://")[1].rstrip("/")}.items():
+        for field, val in ({**p, "domain": p["url"].split("://")[1].rstrip("/")} if "url" in p else p).items():
             if isinstance(val, str):
                 body = body.replace("{{%s.%s}}" % (p["key"], field), val)
     for g, he in S["product_groups"].items():
