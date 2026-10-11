@@ -1,4 +1,4 @@
-"""Static site generator for pro-algorithm.co.il.
+"""Static site generator for buildalgo.co.il.
 
 Reads src/*.html fragments and data/*.json, writes a complete static site to dist/.
 URLs mirror the previous Base44 site (/About, /Blog, /BlogPostPage?slug=...) so search
@@ -22,7 +22,7 @@ DATA = os.path.join(ROOT, "data")
 DIST = os.path.join(ROOT, "dist")
 # "/<repo>" when served from a GitHub Pages project site, "" on a real domain (Netlify, custom domain)
 BASE = os.environ.get("BASE_PATH", "").rstrip("/")
-SITE = "https://www.pro-algorithm.co.il"
+SITE = "https://www.buildalgo.co.il"
 TODAY = date.today().isoformat()
 
 # data/site.json: everything that appears in more than one place (contact, sister sites, nav, products, stats)
@@ -44,12 +44,11 @@ ORG = {
     },
 }
 
+# same IDs as the previous buildalgo.co.il site
 TRACKING = {
-    "gtm": "GTM-M6R6J2RX",
-    "ga4": "G-55V8GB74X0",
-    "ads": "AW-17743261966",
-    "fb_pixel": "2695574117489883",
-    "hotjar": 6744701,
+    "ga4": "G-YKK2W4RD2V",
+    "fb_pixel": "915447618249159",
+    "hotjar": 6744736,
 }
 
 KEYWORDS = "בית תוכנה, פיתוח אפליקציות, פיתוח תוכנה, בית תוכנה ישראלי, פיתוח אפליקציות לעסקים, חברת פיתוח תוכנה, AI, אוטומציה, פיתוח מערכת SaaS, BIM, Revit, AutoCAD, בינה מלאכותית לבנייה"
@@ -144,9 +143,9 @@ def en(text):
     return f' data-en="{esc(text)}"' if text else ""
 
 
-def post_url(p, lang="he"):
-    slug = p["slug_he"] if lang == "he" and p["slug_he"] else (p["slug_en"] or p["slug_he"])
-    return f"/BlogPostPage?slug={urllib.parse.quote(slug)}"
+def post_url(p):
+    # the static file itself: on GitHub Pages /BlogPostPage?slug= is only a noindex JS redirect
+    return post_file(p)
 
 
 def post_file(p):
@@ -208,11 +207,9 @@ def domain(url):
 def tracking_head():
     t = TRACKING
     return f"""
-  <!-- Google Tag Manager -->
-  <script>(function(w,d,s,l,i){{w[l]=w[l]||[];w[l].push({{'gtm.start':new Date().getTime(),event:'gtm.js'}});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);}})(window,document,'script','dataLayer','{t['gtm']}');</script>
-  <!-- Google tag (GA4 + Ads) -->
+  <!-- Google tag (GA4) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id={t['ga4']}"></script>
-  <script>window.dataLayer=window.dataLayer||[];function gtag(){{dataLayer.push(arguments);}}gtag('js',new Date());gtag('config','{t['ga4']}');gtag('config','{t['ads']}');</script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){{dataLayer.push(arguments);}}gtag('js',new Date());gtag('config','{t['ga4']}');</script>
   <!-- Meta Pixel -->
   <script>!function(f,b,e,v,n,t,s){{if(f.fbq)return;n=f.fbq=function(){{n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)}};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','{t['fb_pixel']}');fbq('track','PageView');</script>
   <!-- Hotjar -->
@@ -221,8 +218,7 @@ def tracking_head():
 
 def tracking_body():
     t = TRACKING
-    return f"""<noscript><iframe src="https://www.googletagmanager.com/ns.html?id={t['gtm']}" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-  <noscript><img height="1" width="1" style="display:none" alt="" src="https://www.facebook.com/tr?id={t['fb_pixel']}&amp;ev=PageView&amp;noscript=1"></noscript>"""
+    return f"""<noscript><img height="1" width="1" style="display:none" alt="" src="https://www.facebook.com/tr?id={t['fb_pixel']}&amp;ev=PageView&amp;noscript=1"></noscript>"""
 
 
 def org_schema():
@@ -484,8 +480,8 @@ def page(path, *, title, desc, body, title_en, desc_en="", nav=None, og_image=No
 # ---------------------------------------------------------------- shared blocks
 
 def contact_form(source):
-    return f"""<form class="form reveal" name="contact" method="POST" action="/Contact?sent=1" data-netlify="true" netlify-honeypot="bot-field" data-form data-mailto="{ORG['email']}" novalidate>
-          <input type="hidden" name="form-name" value="contact">
+    # posted as JSON to the contact API the previous buildalgo site used; it accepts exactly name, phone and email
+    return f"""<form class="form reveal" data-form data-endpoint="{ORG['form_api']}" novalidate>
           <input type="hidden" name="source" value="{source}">
           <p class="hp" aria-hidden="true"><label>Leave empty <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
           <div class="field">
@@ -494,31 +490,14 @@ def contact_form(source):
             <span class="err" data-err="name"></span>
           </div>
           <div class="field">
-            <label for="f-company-{source}" data-i18n="form.company">ארגון</label>
-            <input id="f-company-{source}" name="company" autocomplete="organization">
+            <label for="f-phone-{source}" data-i18n="form.phone">טלפון</label>
+            <input id="f-phone-{source}" name="phone" type="tel" autocomplete="tel" required dir="ltr">
+            <span class="err" data-err="phone"></span>
           </div>
-          <div class="field">
+          <div class="field field--full">
             <label for="f-email-{source}" data-i18n="form.email">אימייל</label>
             <input id="f-email-{source}" name="email" type="email" autocomplete="email" required dir="ltr">
             <span class="err" data-err="email"></span>
-          </div>
-          <div class="field">
-            <label for="f-phone-{source}" data-i18n="form.phone">טלפון</label>
-            <input id="f-phone-{source}" name="phone" type="tel" autocomplete="tel" dir="ltr">
-          </div>
-          <div class="field field--full">
-            <label for="f-topic-{source}" data-i18n="form.topic">תחום הפנייה</label>
-            <select id="f-topic-{source}" name="topic">
-              <option data-i18n="form.t1">טכנולוגיה לבנייה ואדריכלות</option>
-              <option data-i18n="form.t2">מוצרי Pro Algorithm</option>
-              <option data-i18n="form.t3">פיתוח מערכת לארגון</option>
-              <option data-i18n="form.t4">הטמעת AI</option>
-              <option data-i18n="form.t5">צוותי פיתוח ומומחים</option>
-            </select>
-          </div>
-          <div class="field field--full">
-            <label for="f-msg-{source}" data-i18n="form.msg">על מה נדבר?</label>
-            <textarea id="f-msg-{source}" name="message"></textarea>
           </div>
           <div class="form__foot">
             <button class="btn btn--primary" type="submit"><span data-i18n="form.send">שליחת פנייה</span><i class="ph ph-arrow-left" aria-hidden="true"></i></button>
@@ -1259,11 +1238,67 @@ def build_blogpostpage_fallback(d):
                                     desc="הבלוג של Pro Algorithm", body=body, canonical=f"{SITE}/Blog", robots="noindex, follow"))
 
 
+# addresses of the previous buildalgo.co.il site (its vercel.json short links and blog posts) -> where that content lives now
+# "post:<slug_en>" resolves to that post's page
+LEGACY = {
+    "ai": "post:graph-neural-networks-architectural-ai",
+    "gnn": "post:graph-neural-networks-architectural-ai",
+    "בינה-מלאכותית": "post:graph-neural-networks-architectural-ai",
+    "אדריכלות": "post:graph-neural-networks-architectural-ai",
+    "הנדסה": "/#construction",
+    "construction": "/#construction",
+    "בנייה": "/#construction",
+    "תכנון": "/#construction",
+    "build": "/#construction",
+    "bim": "/#construction",
+    "revit": "/#construction",
+    "automation": "/#construction",
+    "אוטומציה": "/#construction",
+    "pro-algorithm": "post:buildalgo-ai-construction-real-estate",
+    "פרו-אלגוריתם": "post:buildalgo-ai-construction-real-estate",
+    "real-estate": "post:buildalgo-ai-construction-real-estate",
+    "נדלן": "post:buildalgo-ai-construction-real-estate",
+    "pro-algo": "post:pro-algorithm-boutique-software-house",
+    "contact": "/Contact",
+    "blog": "/Blog",
+    "podcast": "/Podcast",
+    "media": "/#press",
+    "מגורים": "/",
+    "blog/gnn-autonomous-planning": "post:graph-neural-networks-architectural-ai",
+    "blog/hybrid-quality-control": "/#construction",
+    "blog/dwg-to-bim-transformation": "/#construction",
+    "blog/pro-algorithm-main-site": "post:buildalgo-ai-construction-real-estate",
+    "blog/pro-algorithm-software-house": "post:pro-algorithm-boutique-software-house",
+    "blog/tzach-dabush-portfolio": "post:tzach-dabush-ai-nlp-research",
+}
+
+
+def build_legacy_redirects(d):
+    """GitHub Pages has no server-side redirects, so each old address gets a redirect page.
+    It goes in <path>/index.html: a folder can't clash with Contact.html on a case-insensitive disk."""
+    by_slug = {p["slug_en"]: post_file(p) for p in d["posts"] if p.get("slug_en")}
+    for path, target in LEGACY.items():
+        if target.startswith("post:"):
+            target = by_slug.get(target[5:], "/Blog")
+        write(f"{path}/index.html", f"""<!doctype html>
+<html lang="he">
+<head>
+  <meta charset="utf-8">
+  <title>Pro Algorithm</title>
+  <meta name="robots" content="noindex">
+  <link rel="canonical" href="{esc(SITE + target)}">
+  <meta http-equiv="refresh" content="0; url={esc(BASE + target)}">
+</head>
+<body><a href="{esc(target)}">{esc(SITE + target)}</a></body>
+</html>
+""")
+
+
 def build_meta_files(d):
     posts = d["posts"]
     urls = [("/", "1.0", TODAY), ("/About", "0.8", TODAY), ("/Expertise", "0.8", TODAY), ("/Products", "0.9", TODAY), ("/AutoCADMCP", "0.7", TODAY),
             ("/Blog", "0.8", posts[0]["updated"][:10] if posts else TODAY), ("/Podcast", "0.7", TODAY),
-            ("/Contact", "0.8", TODAY), ("/AccessibilityStatement", "0.3", TODAY)]
+            ("/Contact", "0.8", TODAY), ("/AccessibilityStatement", "0.3", TODAY), ("/catalog/", "0.6", TODAY)]
     urls += [(post_url(p), "0.6", (p["updated"] or TODAY)[:10]) for p in posts]
     xml = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     for u, pr, lm in urls:
@@ -1280,7 +1315,7 @@ def build_meta_files(d):
     }, ensure_ascii=False, indent=2))
 
     # Netlify: keep every old URL alive
-    # set www.pro-algorithm.co.il as the primary domain in Netlify; it redirects the apex itself
+    # set www.buildalgo.co.il as the primary domain in Netlify; it redirects the apex itself
     lines = ["# Generated by tools/build.py", ""]
     lines.append("# blog posts keep their original /BlogPostPage?slug= address (rewrite, not redirect)")
     for p in posts:
@@ -1340,6 +1375,11 @@ def copy_assets():
         os.path.join(DIST, "favicon.ico"), sizes=[(16, 16), (32, 32), (48, 48)])
 
 
+def copy_catalog():
+    """The flipbook from the previous buildalgo site, served as-is at /catalog/ (its bundle uses absolute /catalog/ paths)."""
+    shutil.copytree(os.path.join(ROOT, "catalog"), os.path.join(DIST, "catalog"), dirs_exist_ok=True)
+
+
 def main():
     # clear files but tolerate folders held open by OneDrive or the preview server
     if os.path.exists(DIST):
@@ -1353,6 +1393,7 @@ def main():
                     pass
     d = {k: load(k) for k in ("team", "clients", "press", "posts", "podcasts")}
     copy_assets()
+    copy_catalog()
     build_home(d)
     build_products(d)
     build_mcp(d)
@@ -1365,6 +1406,7 @@ def main():
     build_accessibility(d)
     build_404()
     build_blogpostpage_fallback(d)
+    build_legacy_redirects(d)
     build_meta_files(d)
     n = sum(len(f) for _, _, f in os.walk(DIST))
     print(f"built {n} files into dist/ ({len(d['posts'])} posts, {len(d['podcasts'])} episodes)")

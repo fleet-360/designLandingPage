@@ -5,7 +5,8 @@
   "phone_intl": "+972539462842",
   "office_phone": "072-393-5596",
   "office_phone_intl": "+972-72-393-5596",
-  "whatsapp": "https://wa.me/972539462842"
+  "whatsapp": "https://wa.me/972539462842",
+  "form_api": "https://api.fleet360.co.il/contact/buildings"
  },
  "sites": {
   "buildalgo": "https://www.buildalgo.co.il/",

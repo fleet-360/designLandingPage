@@ -110,21 +110,14 @@ window.I18N_EN = {
   "contact.title": "Let's build <span class=\"thin\">your next project.</span>",
   "contact.wa": "Chat on WhatsApp",
   "form.name": "Full name",
-  "form.company": "Organization",
   "form.email": "Email",
   "form.phone": "Phone",
-  "form.topic": "Topic",
-  "form.t1": "Construction and architecture technology",
-  "form.t2": "Pro Algorithm products",
-  "form.t3": "Enterprise system development",
-  "form.t4": "AI implementation",
-  "form.t5": "Development teams and specialists",
-  "form.msg": "What would you like to discuss?",
   "form.send": "Send inquiry",
   "form.note": "We'll get back to you within one business day.",
   "form.err.name": "Please enter your name.",
+  "form.err.phone": "Please enter a valid phone number, for example 050-123-4567.",
   "form.err.email": "Please enter a valid email address, for example name@company.com.",
-  "form.ok": "Your email app is opening with the inquiry ready to send.",
+  "form.err.send": "We couldn't send the form. Please try again in a moment, or reach us by phone or WhatsApp.",
 
   "foot.about": "An Israeli technology group building software, AI and products for planning, construction and the enterprise.",
   "foot.solutions": "Solutions",
@@ -244,8 +237,9 @@ window.I18N_EN = {
 
 window.I18N_HE_EXTRA = {
   "form.err.name": "נא למלא שם.",
+  "form.err.phone": "נא להזין מספר טלפון תקין, למשל 050-123-4567.",
   "form.err.email": "נא להזין כתובת אימייל תקינה, למשל name@company.com.",
-  "form.ok": "תוכנת הדואר שלכם נפתחת עם הפנייה מוכנה לשליחה."
+  "form.err.send": "לא הצלחנו לשלוח את הטופס. נסו שוב בעוד רגע, או פנו אלינו בטלפון או בוואטסאפ."
 };
 
 Object.assign(window.I18N_EN, {

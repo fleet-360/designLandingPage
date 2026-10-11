@@ -271,7 +271,7 @@
     pixel("Contact", { method: kind });
   });
 
-  /* ---------- Contact form (Netlify Forms, mailto fallback) ---------- */
+  /* ---------- Contact form (JSON to the fleet360 contact API) ---------- */
 
   document.querySelectorAll("[data-form]").forEach((form) => {
     const status = form.querySelector("[data-status]");
@@ -282,39 +282,43 @@
       input.setAttribute("aria-invalid", msg ? "true" : "false");
       if (slot) slot.textContent = msg || "";
     };
-    const mailto = (d) => {
-      const body = [`Name: ${d.name}`, `Company: ${d.company}`, `Email: ${d.email}`, `Phone: ${d.phone}`, `Topic: ${d.topic}`, "", d.message].join("\n");
-      location.href = `mailto:${form.dataset.mailto}?subject=${encodeURIComponent("Pro Algorithm | " + d.topic)}&body=${encodeURIComponent(body)}`;
-    };
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const fd = new FormData(form);
-      const d = Object.fromEntries(fd);
-      const nameOk = (d.name || "").trim().length > 1;
-      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((d.email || "").trim());
+      const d = Object.fromEntries(new FormData(form));
+      // the API validates exactly these three: name 2+ chars, phone 9-20 chars, a valid email
+      const lead = { name: (d.name || "").trim(), phone: (d.phone || "").trim(), email: (d.email || "").trim() };
+      const nameOk = lead.name.length > 1;
+      const phoneOk = lead.phone.replace(/\D/g, "").length >= 9 && lead.phone.length <= 20;
+      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lead.email);
       showErr("name", nameOk ? "" : t("form.err.name"));
+      showErr("phone", phoneOk ? "" : t("form.err.phone"));
       showErr("email", emailOk ? "" : t("form.err.email"));
       if (!nameOk) return form.elements.name.focus();
+      if (!phoneOk) return form.elements.phone.focus();
       if (!emailOk) return form.elements.email.focus();
+      // bots fill the hidden field: show the thank-you but send nothing
+      if (d["bot-field"]) {
+        form.reset();
+        status.textContent = t("form.done");
+        return;
+      }
 
       submit.disabled = true;
       status.textContent = t("form.sending");
       try {
-        const res = await fetch("/", {
+        const res = await fetch(form.dataset.endpoint, {
           method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams(fd).toString()
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(lead)
         });
         if (!res.ok) throw new Error(res.status);
         form.reset();
         status.textContent = t("form.done");
-        track("generate_lead", { form: d.source, topic: d.topic });
-        pixel("Lead", { content_category: d.topic });
+        track("generate_lead", { form: d.source });
+        pixel("Lead");
       } catch {
-        // not on Netlify (local preview or another host): hand off to the mail app
-        status.textContent = t("form.ok");
-        mailto(d);
+        status.textContent = t("form.err.send");
       } finally {
         submit.disabled = false;
       }

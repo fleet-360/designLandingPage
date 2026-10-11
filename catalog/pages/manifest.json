@@ -1,0 +1,278 @@
+{
+  "generatedAt": "2026-05-24T13:18:08.512Z",
+  "source": "/assets/flipbook.pdf",
+  "scale": 2,
+  "aspectRatio": 0.7072446555819477,
+  "pages": [
+    {
+      "pageNumber": 1,
+      "file": "page-01.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 2,
+      "file": "page-02.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 3,
+      "file": "page-03.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 4,
+      "file": "page-04.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 5,
+      "file": "page-05.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 6,
+      "file": "page-06.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 7,
+      "file": "page-07.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 8,
+      "file": "page-08.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 9,
+      "file": "page-09.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 10,
+      "file": "page-10.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 11,
+      "file": "page-11.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 12,
+      "file": "page-12.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 13,
+      "file": "page-13.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 14,
+      "file": "page-14.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 15,
+      "file": "page-15.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": true,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 16,
+      "file": "page-16.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": true,
+      "isTransparent": true,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 17,
+      "file": "page-17.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 18,
+      "file": "page-18.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 19,
+      "file": "page-19.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 20,
+      "file": "page-20.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 21,
+      "file": "page-21.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": true,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 22,
+      "file": "page-22.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": true,
+      "isTransparent": true,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 23,
+      "file": "page-23.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 24,
+      "file": "page-24.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 25,
+      "file": "page-25.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 26,
+      "file": "page-26.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 27,
+      "file": "page-27.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 28,
+      "file": "page-28.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 29,
+      "file": "page-29.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    },
+    {
+      "pageNumber": 30,
+      "file": "page-30.jpg",
+      "width": 1191,
+      "height": 1684,
+      "isComposite": false,
+      "isTransparent": false,
+      "isBlank": false
+    }
+  ]
+}
