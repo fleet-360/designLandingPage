@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>מגדלי אקרו: הצבה ובקרת מרווחים | דמו אינטראקטיבי · Pro Algorithm</title>
+<meta name="description" content="דמו אינטראקטיבי של תוסף AutoCAD להצבת מגדלי תמיכה מתחת לתקרה: קריאת מפלסים וקורות, כללי המהנדס לפי עובי התקרה, גריד אחד לכל חדר עם קורות ראשיות, בדיקת מרווחים חיה, ורשימת ציוד לספק לאקסל.">
+<link rel="canonical" href="https://www.buildalgo.co.il/catalog/akro/">
+<meta property="og:title" content="מגדלי אקרו: הצבה ובקרת מרווחים | Pro Algorithm">
+<meta property="og:image" content="https://www.buildalgo.co.il/assets/img/brand/og.jpg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/brand/icon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/catalog/shell/shell.css">
+<!--tracking-->
+<style>
+/* drawing */
+.bay { stroke: none; transition: fill-opacity .3s, opacity .3s; }
+.step1 .bay { cursor: pointer; }
+.step1 .bay:hover { fill-opacity: .2; }
+.bay.hl { fill-opacity: .2 !important; }
+.wall { fill: #2b343b; stroke: #8c979c; stroke-width: 2; fill-rule: evenodd; }
+.win { fill: #111519; stroke: #7e8c95; stroke-width: 1.5; }
+.win line { stroke: #7e8c95; stroke-width: 1.5; }
+.win.crit rect { stroke: #ff9f5b; stroke-width: 4; fill: rgba(255, 159, 91, .18); }
+.hid { stroke: #6f7680; stroke-width: 2; stroke-dasharray: 16 10; fill: none; }
+.sb rect { fill: #b9a4ff; fill-opacity: .1; stroke: #b9a4ff; stroke-width: 2.5; stroke-dasharray: 14 9; }
+.sb text { font-family: var(--mono); font-size: 26px; fill: #cdbfff; text-anchor: middle; dominant-baseline: central; paint-order: stroke; stroke: #111519; stroke-width: 6px; stroke-linejoin: round; pointer-events: none; }
+.step1 .sb { cursor: pointer; }
+.step1 .sb:hover rect, .sb.hl rect { fill-opacity: .35; stroke-width: 4; }
+.faint .sb rect { fill-opacity: .04; stroke-opacity: .45; }
+.faint .sb text, .faint .hid { display: none; }
+.edge { fill: none; stroke: #c9d1d4; stroke-width: 3; }
+.pz { fill: none; stroke: #8c979c; stroke-width: 2; stroke-dasharray: 10 8; opacity: .5; pointer-events: none; }
+.tag text { font-family: var(--mono); fill: #edeef0; text-anchor: middle; dominant-baseline: central; paint-order: stroke; stroke: #111519; stroke-width: 7px; stroke-linejoin: round; }
+.tag .t1 { font-size: 46px; font-weight: 600; }
+.tag .t2 { font-size: 28px; fill: #a1a7b0; }
+
+/* towers */
+.tw { cursor: pointer; }
+.tw .pl { fill: var(--c); fill-opacity: .1; stroke: var(--c); stroke-width: 3; transition: fill-opacity .2s; }
+.tw .fr { fill: none; stroke: var(--c); stroke-width: 1.5; opacity: .55; }
+.tw .ld { stroke: var(--c); stroke-width: 5; }
+.tw .xb { stroke: var(--c); stroke-width: 1.5; opacity: .45; }
+.tw .jk { fill: #111519; stroke: #edeef0; stroke-width: 3; }
+.tw .lb { font-family: var(--mono); font-size: 30px; fill: #edeef0; text-anchor: middle; dominant-baseline: central; pointer-events: none; paint-order: stroke; stroke: #111519; stroke-width: 6px; opacity: 0; transition: opacity .2s; }
+.labels .tw .lb { opacity: 1; }
+.tw:hover .pl { fill-opacity: .25; }
+.tw.sel .pl { stroke: #fff; stroke-width: 6; stroke-dasharray: 18 10; fill-opacity: .25; }
+.tw.sel .lb { opacity: 1; }
+.tw.bad .pl { stroke: var(--bad); fill: var(--bad); fill-opacity: .2; stroke-width: 6; }
+.tw.bad .lb { opacity: 1; fill: #ffc9cf; }
+.tw.ghost { pointer-events: none; opacity: .5; }
+.tw.nobeam .pl { stroke-dasharray: 6 6; }
+.tw .in.pop { animation: twpop .45s var(--ease-out) both; }
+@keyframes twpop { from { opacity: 0; transform: scale(.4); } }
+.dragging .tw { cursor: grabbing; }
+.step4 .tw { cursor: grab; }
+
+/* beams */
+.bm { fill: #e0b130; fill-opacity: .85; stroke: #111519; stroke-width: 1.5; pointer-events: none; }
+.bm.fade { animation: bmin .5s ease both; }
+@keyframes bmin { from { opacity: 0; } }
+.step4 .bm { fill-opacity: .45; }
+
+/* dimensions */
+.dim line { stroke: var(--dc); stroke-width: 2; }
+.dim line.tk { stroke-width: 3; }
+.dim line.ex { stroke-width: 1.2; opacity: .6; }
+.dim text { font-family: var(--mono); font-size: 24px; fill: var(--dc); text-anchor: middle; paint-order: stroke; stroke: #111519; stroke-width: 6px; stroke-linejoin: round; }
+.dim { --dc: #8c979c; }
+.dim.chain { --dc: #d6c15c; }
+.dim.chain text { font-size: 21px; }
+.dim.ok { --dc: #c9d1d4; }
+.dim.bad { --dc: #ff5d6c; }
+.dim.warn { --dc: #ffb547; }
+.dim.bad text { font-weight: 600; font-size: 28px; }
+.dim.fade { animation: bmin .6s ease both; }
+.hide-tw #gTow, .hide-bm #gBeam, .hide-dim #gChain, .hide-pz #gPZ { display: none; }
+.vm circle { fill: none; stroke-width: 5; }
+.vm text { font-family: var(--mono); font-size: 24px; font-weight: 600; text-anchor: middle; dominant-baseline: central; paint-order: stroke; stroke: #111519; stroke-width: 6px; pointer-events: none; }
+.vm.hard circle { stroke: var(--bad); } .vm.hard text { fill: var(--bad); }
+.vm.soft circle { stroke: var(--warn); stroke-dasharray: 10 6; } .vm.soft text { fill: var(--warn); }
+
+/* side palette bits */
+.bays { display: flex; flex-direction: column; gap: 6px; }
+.bayrow { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 8px; align-items: center; border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; cursor: pointer; font-size: 12.5px; background: none; text-align: start; width: 100%; }
+.bayrow:hover, .bayrow.on { background: var(--redline-soft); border-color: var(--redline); }
+.bayrow .id { width: 26px; height: 26px; border-radius: 6px; display: grid; place-items: center; font-family: var(--mono); font-weight: 600; color: var(--ink); }
+.bayrow .meta { color: var(--muted); display: block; font-size: 11.5px; }
+.bayrow .sbid { width: auto; min-width: 34px; padding: 0 5px; background: #b9a4ff; font-size: 11px; }
+.warn-t { color: var(--warn) !important; font-weight: 600; }
+.bad-t { color: var(--bad) !important; font-weight: 600; }
+.dim-t { display: block; margin-top: 4px; font-size: 11.5px; }
+.tcard .kv .wide { grid-column: 1 / -1; border-inline-end: 0 !important; }
+.iss .pill .mono { font-size: 10px; opacity: .8; }
+.layers { display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; }
+.layers label, .layers div { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 3px 0; border-bottom: 1px dashed var(--line); cursor: pointer; }
+.layers > :last-child { border-bottom: 0; }
+.layers code { font-family: var(--mono); font-size: 11.5px; direction: ltr; }
+.layers input { accent-color: var(--redline); }
+.rules { display: flex; flex-direction: column; gap: 6px; }
+.rule { display: grid; grid-template-columns: 26px minmax(0, 1fr) 54px 62px 62px; gap: 6px; align-items: center; font-size: 12.5px; }
+.rule .id { width: 26px; height: 26px; border-radius: 6px; display: grid; place-items: center; font-family: var(--mono); font-weight: 600; color: var(--ink); }
+.rule .meta { color: var(--muted); font-size: 11px; display: block; }
+.rule.hd { color: var(--muted); font-size: 11px; font-weight: 600; }
+.d-side select, .d-side input[type="number"] { font: inherit; font-family: var(--mono); font-size: 12.5px; background: var(--ink); color: var(--text); border: 1px solid var(--line-strong); border-radius: 5px; padding: 4px 6px; width: 100%; direction: ltr; min-width: 0; }
+.d-side select:focus, .d-side input[type="number"]:focus { border-color: var(--redline); outline: none; }
+.mini { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+.mini th, .mini td { padding: 4px 6px; border-bottom: 1px solid var(--line); text-align: start; }
+.mini th { color: var(--muted); font-weight: 600; font-size: 10.5px; }
+.mini td.num { font-family: var(--mono); text-align: left; direction: ltr; }
+.mini th.num { text-align: left; }
+.mini tr.on td { background: var(--redline-soft); }
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) 72px; gap: 10px; align-items: center; font-size: 12.5px; }
+.pair span.u { color: var(--muted); font-size: 11px; display: block; }
+.pair.hd span.u { display: inline; }
+.pair.hd { margin-bottom: -4px; }
+.fixed { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); padding: 0; margin: 0; list-style: none; }
+.fixed li::before { content: "■ "; color: var(--redline); font-size: 9px; }
+.types { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; font-size: 12px; }
+.types label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.types input { accent-color: var(--redline); }
+.types .sw { width: 10px; height: 10px; }
+.issues { max-height: 330px; }
+.iss { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 7px 10px; border-bottom: 1px solid var(--line); font-size: 12.5px; cursor: pointer; }
+.iss:last-child { border-bottom: 0; }
+.iss:hover, .iss.on { background: var(--redline-soft); }
+.iss .tx { min-width: 0; }
+.iss .tx small { display: block; color: var(--muted); font-size: 11px; }
+.empty { padding: 12px; text-align: center; color: var(--ok); font-size: 13px; }
+.tcard .kv div { font-size: 12px; }
+.beamlens { display: flex; gap: 6px; flex-wrap: wrap; }
+.beamlens span { font-family: var(--mono); font-size: 12px; background: var(--ink-3); border-radius: 5px; padding: 3px 8px; }
+.beamlens b { color: #e0b130; }
+@media (max-width: 600px) { .d-legend { font-size: 9.5px; padding: 3px 6px; gap: 1px; } .d-legend i { width: 8px; height: 8px; } }
+</style>
+</head>
+<body>
+<script src="/catalog/shell/shell.js"></script>
+<script src="/catalog/akro/demo.js"></script>
+</body>
+</html>

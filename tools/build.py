@@ -816,9 +816,9 @@ def build_products(d):
     }
     write("Products.html", page(
         "/Products", nav="/Products",
-        title="מוצרים | Pro Algorithm - סוכן AI ל-AutoCAD, השוואת שרטוטים וכתבי כמויות",
+        title="מוצרים | Pro Algorithm - סוכן AI ל-AutoCAD, MCP והשוואת שרטוטים",
         title_en="Products | Pro Algorithm",
-        desc="שבעת המוצרים של Pro Algorithm: סוכן AI בתוך AutoCAD, MCP ל-AutoCAD ו-Claude, השוואת שרטוטים וסופרפוזיציה, פענוח כתבי כמויות, סימון חדרים ב-AutoCAD ו-Revit, החתמה דיגיטלית וניהול שעות.",
+        desc="ששת המוצרים של Pro Algorithm: סוכן AI בתוך AutoCAD, MCP ל-AutoCAD ו-Claude, השוואת שרטוטים וסופרפוזיציה, סימון חדרים ב-AutoCAD ו-Revit, החתמה דיגיטלית וניהול שעות.",
         body=body, schemas=[schema, breadcrumb([("בית", "/"), ("מוצרים", "/Products")])],
     ))
 
@@ -1299,6 +1299,7 @@ def build_meta_files(d):
     urls = [("/", "1.0", TODAY), ("/About", "0.8", TODAY), ("/Expertise", "0.8", TODAY), ("/Products", "0.9", TODAY), ("/AutoCADMCP", "0.7", TODAY),
             ("/Blog", "0.8", posts[0]["updated"][:10] if posts else TODAY), ("/Podcast", "0.7", TODAY),
             ("/Contact", "0.8", TODAY), ("/AccessibilityStatement", "0.3", TODAY), ("/catalog/", "0.6", TODAY)]
+    urls += [(f"/catalog/{x['slug']}/", "0.6", TODAY) for x in live_demos()]
     urls += [(post_url(p), "0.6", (p["updated"] or TODAY)[:10]) for p in posts]
     xml = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     for u, pr, lm in urls:
@@ -1376,8 +1377,80 @@ def copy_assets():
 
 
 def copy_catalog():
-    """The flipbook from the previous buildalgo site, served as-is at /catalog/ (its bundle uses absolute /catalog/ paths)."""
-    shutil.copytree(os.path.join(ROOT, "catalog"), os.path.join(DIST, "catalog"), dirs_exist_ok=True)
+    """Interactive demos under /catalog/<slug>/ (each its own page on the shared shell in catalog/shell/), copied as-is.
+    Demo pages mark where the site's tracking goes with <!--tracking-->."""
+    dst = os.path.join(DIST, "catalog")
+    shutil.copytree(os.path.join(ROOT, "catalog"), dst, dirs_exist_ok=True, ignore=shutil.ignore_patterns("*.md"))
+    for base, _, files in os.walk(dst):
+        for n in files:
+            if not n.endswith(".html"):
+                continue
+            p = os.path.join(base, n)
+            with open(p, encoding="utf-8") as f:
+                t = f.read()
+            if "<!--tracking-->" not in t:
+                continue
+            t = t.replace("<!--tracking-->", tracking_head(), 1)
+            t = re.sub(r"<body([^>]*)>", lambda m: m.group(0) + "\n" + tracking_body(), t, count=1)
+            with open(p, "w", encoding="utf-8", newline="\n") as f:
+                f.write(t)
+
+
+def live_demos():
+    return [x for x in load("demos") if os.path.exists(os.path.join(ROOT, "catalog", x["slug"], "index.html"))]
+
+
+def build_catalog():
+    demos = live_demos()
+    cats = list(dict.fromkeys(x["discipline"] for x in demos))
+    chips = "".join(
+        f'<button type="button" class="chip{" is-on" if k == "all" else ""}" data-filter="{esc(k)}" aria-pressed="{"true" if k == "all" else "false"}">{esc(h)}</button>'
+        for k, h in [("all", "הכל")] + [(c, c) for c in cats]
+    )
+
+    def card(x):
+        thumb = f"/catalog/{x['slug']}/thumb.svg"
+        has_thumb = os.path.exists(os.path.join(ROOT, "catalog", x["slug"], "thumb.svg"))
+        return f"""<article class="post-card demo-card" data-cat="{esc(x['discipline'])}">
+            <a href="/catalog/{x['slug']}/" class="post-card__link">
+              <span class="post-card__img">{f'<img src="{thumb}" alt="" loading="lazy" decoding="async" width="1200" height="675">' if has_thumb else ''}</span>
+              <span class="post-card__meta"><span>{esc(x['discipline'])}</span><span class="ltr">{esc(x['tool'])}</span></span>
+              <span class="post-card__title">{esc(x['title'])}</span>
+              <span class="post-card__excerpt">{esc(x['tagline'])}</span>
+            </a>
+          </article>"""
+
+    body = page_hero("קטלוג <span class=\"thin\">אינטראקטיבי.</span>",
+                     "לא עוד חוברת לדפדוף. כל מוצר כאן הוא דמו חי על שרטוט אמיתי: לחצו, גררו, בחרו, וראו מה התוסף עושה בשניות.",
+                     "catalog.h1", "catalog.lead", [("בית", "/", "crumb.home"), ("קטלוג", None, None)])
+    body += f"""
+    <section class="section section--tight">
+      <div class="wrap">
+        <div class="chips" role="group" aria-label="סינון לפי תחום">{chips}</div>
+        <div class="post-grid post-grid--all" data-posts>{''.join(card(x) for x in demos)}</div>
+      </div>
+    </section>
+    <section class="section" id="contact">
+      <div class="wrap contact">
+        <div class="reveal">
+          <h2 class="h2">רוצים לראות את זה <span class="thin">על השרטוטים שלכם?</span></h2>
+          {contact_info()}
+        </div>
+        {contact_form("catalog")}
+      </div>
+    </section>"""
+    schema = {
+        "@context": "https://schema.org", "@type": "CollectionPage", "name": "קטלוג אינטראקטיבי | Pro Algorithm",
+        "url": f"{SITE}/catalog/", "inLanguage": "he-IL",
+        "hasPart": [{"@type": "WebPage", "name": x["title"], "url": f"{SITE}/catalog/{x['slug']}/"} for x in demos],
+    }
+    write("catalog/index.html", page(
+        "/catalog/", nav=None,
+        title="קטלוג אינטראקטיבי: דמואים חיים של תוספי AutoCAD ו־Revit | Pro Algorithm",
+        title_en="Interactive catalog | Pro Algorithm",
+        desc="דמואים אינטראקטיביים של מוצרי Pro Algorithm על שרטוטים אמיתיים: חזיתות, מטבחים, שינויי דיירים, חשמל, אינסטלציה, מגדלי אקרו, השוואת שרטוטים וכתבי כמויות.",
+        body=body, schemas=[schema, breadcrumb([("בית", "/"), ("קטלוג", "/catalog/")])],
+    ))
 
 
 def main():
@@ -1407,6 +1480,7 @@ def main():
     build_404()
     build_blogpostpage_fallback(d)
     build_legacy_redirects(d)
+    build_catalog()
     build_meta_files(d)
     n = sum(len(f) for _, _, f in os.walk(DIST))
     print(f"built {n} files into dist/ ({len(d['posts'])} posts, {len(d['podcasts'])} episodes)")

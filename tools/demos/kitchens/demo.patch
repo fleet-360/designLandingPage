@@ -1,0 +1,958 @@
+diff --git a/src/App.tsx b/src/App.tsx
+index 347b113..0920b97 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -1,27 +1,22 @@
+-import { useEffect, useMemo, useState } from 'react';
+-import { AltBar } from './components/AltBar';
++import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+ import { CatalogPanel } from './components/CatalogPanel';
+-import { Dashboard } from './components/Dashboard';
+-import { ShapeReview } from './components/ShapeReview';
+ import { FinishPanel } from './components/FinishPanel';
+ import { Inspector } from './components/Inspector';
+ import { MaterialFan } from './components/MaterialFan';
+ import { useCatalog } from './data/useCatalog';
+ import { programme } from './data/finishes';
+-import { fmtEur, layout, placementPrice } from './model/layout';
++import { layout } from './model/layout';
+ import { Presentation } from './presentation/Presentation';
+-import { Dossier } from './dossier/Dossier';
+ import { useStore, type View } from './store';
+ import { ElevationView, PlanView } from './views/Drawings2D';
+-import { View3D } from './views/View3D';
++
++// three.js / react-three-fiber load in their own chunk, so the editor shell and the catalog show up first
++const View3D = lazy(() => import('./views/View3D').then((m) => ({ default: m.View3D })));
+ 
+ const VIEWS: { id: View; label: string }[] = [
+-  { id: 'dashboard', label: 'לוח הפרויקט' },
+-  { id: 'review', label: 'בדיקת צורות' },
+   { id: 'plan', label: 'תוכנית' },
+   { id: '3d', label: 'תלת-ממד' },
+   { id: 'elevation', label: 'חזיתות' },
+-  { id: 'dossier', label: 'תיק מטבח (PDF)' },
+   { id: 'presentation', label: 'מצגת ללקוח' },
+ ];
+ 
+@@ -30,6 +25,7 @@ export default function App() {
+   const set = useStore((s) => s.set);
+   const project = useStore((s) => s.project);
+   const update = useStore((s) => s.update);
++  const reset = useStore((s) => s.reset);
+   const canUndo = useStore((s) => s.past.length > 0);
+   const canRedo = useStore((s) => s.future.length > 0);
+   const catalog = useCatalog();
+@@ -52,71 +48,55 @@ export default function App() {
+   }, []);
+ 
+   const placements = useMemo(() => layout(project, catalog.byCode), [project, catalog]);
+-  const total = placements.reduce((acc, p) => acc + (placementPrice(p, catalog.prices) ?? 0), 0);
+   const prog = programme(project.finishes.frontProgramme);
+-  const editing = view !== 'dashboard' && view !== 'review';
+ 
+   return (
+     <div className={`app ${view === 'presentation' ? 'app-presentation' : ''}`}>
+       <header className="topbar no-print">
+-        <div className="brand-mark">@brand@ <span>studio</span></div>
++        <div className="brand-mark">סטודיו מטבחים <span>Pro Algorithm</span></div>
+         <nav className="tabs">
+           {VIEWS.map((v) => <button key={v.id} className={view === v.id ? 'on' : ''} onClick={() => set(() => ({ view: v.id }))}>{v.label}</button>)}
+         </nav>
+-        {editing && (
+-          <>
+-            <div className="project-fields">
+-              <input className="input inline" value={project.client} onChange={(e) => update((p) => { p.client = e.target.value; })} placeholder="לקוח" />
+-            </div>
+-            <div className="total">
+-              <span className="muted">{placements.length} יחידות · קבוצת מחיר {prog.priceGroup}</span>
+-              <b>{fmtEur(total)}</b>
+-            </div>
+-            <div className="row gap">
+-              <button className="btn" title="בטל (Ctrl+Z)" disabled={!canUndo} onClick={() => useStore.getState().undo()}>↶</button>
+-              <button className="btn" title="שחזר (Ctrl+Shift+Z)" disabled={!canRedo} onClick={() => useStore.getState().redo()}>↷</button>
+-              <button className="btn" onClick={() => setShowFinishes((v) => !v)}>גימורים</button>
+-              <button className="btn" onClick={() => setShowFan(true)}>מניפת חומרים</button>
+-              <button className="btn primary" onClick={() => set(() => ({ view: 'dossier', autoExport: true }))}>ייצוא PDF</button>
+-            </div>
+-          </>
+-        )}
++        <div className="project-fields">
++          <input className="input inline" value={project.client} onChange={(e) => update((p) => { p.client = e.target.value; })} placeholder="לקוח" aria-label="שם הלקוח במצגת" />
++        </div>
++        <div className="total">
++          <span className="muted">{placements.length} יחידות</span>
++          <b>{prog.name}</b>
++        </div>
++        <div className="row gap top-actions">
++          <button className="btn" title="בטל (Ctrl+Z)" aria-label="בטל" disabled={!canUndo} onClick={() => useStore.getState().undo()}>↶</button>
++          <button className="btn" title="שחזר (Ctrl+Shift+Z)" aria-label="שחזר" disabled={!canRedo} onClick={() => useStore.getState().redo()}>↷</button>
++          <button className="btn" onClick={() => setShowFinishes((v) => !v)}>גימורים</button>
++          <button className="btn" onClick={() => setShowFan(true)}>מניפת חומרים</button>
++          <button className="btn primary" onClick={() => { set(() => ({ view: 'presentation' })); setTimeout(() => window.print(), 300); }}>ייצוא PDF</button>
++          <button className="btn ghost" title="חזרה למטבח הדוגמה" onClick={() => { if (confirm('לאפס את המטבח ולחזור לדוגמה?')) reset(); }}>איפוס</button>
++        </div>
+       </header>
+ 
+       {showFan && (
+         <div className="fan-overlay no-print" onClick={() => setShowFan(false)}>
+           <div className="fan-panel" onClick={(e) => e.stopPropagation()}>
+-            <div className="fan-panel-head"><b>מניפת חומרים @brand@ @line@</b><span className="muted">לחיצה על דוגמית מחילה אותה על המטבח הפתוח</span><button className="btn small" onClick={() => setShowFan(false)}>סגור</button></div>
++            <div className="fan-panel-head"><b>מניפת חומרים</b><span className="muted">לחיצה על דוגמית מחילה אותה על המטבח הפתוח</span><button className="btn small" onClick={() => setShowFan(false)}>סגור</button></div>
+             <MaterialFan finishes={project.finishes} onPick={(patch) => update((p) => { Object.assign(p.finishes, patch); })} />
+           </div>
+         </div>
+       )}
+-      {view === 'dashboard' ? (
+-        <main className="stage board-stage"><Dashboard /></main>
+-      ) : view === 'review' ? (
+-        <main className="stage review-stage"><ShapeReview /></main>
+-      ) : view === 'dossier' ? (
+-        <main className="stage presentation-stage">
+-          <AltBar />
+-          <Dossier />
+-        </main>
+-      ) : view === 'presentation' ? (
++      {view === 'presentation' ? (
+         <main className="stage presentation-stage">
+-          <AltBar />
+           <Presentation />
+         </main>
+       ) : (
+         <div className="editor">
+-          <AltBar />
+           <div className="workspace">
+             <CatalogPanel />
+             <main className="stage">
+-              {view === '3d' && <View3D />}
++              {view === '3d' && <Suspense fallback={<div className="loading-3d">טוען תלת-ממד…</div>}><View3D /></Suspense>}
+               {view === 'plan' && <PlanView />}
+               {view === 'elevation' && <ElevationView />}
+               {showFinishes && (
+                 <div className="finish-dock no-print">
+-                  <div className="finish-dock-head"><b>גימורים</b><span className="muted">{prog.name} · {project.finishes.frontColour}</span></div>
++                  <div className="finish-dock-head"><b>גימורים</b><span className="muted">{prog.name} · {project.finishes.frontColour}</span><button className="btn small ghost" onClick={() => setShowFinishes(false)}>סגור</button></div>
+                   <FinishPanel />
+                 </div>
+               )}
+diff --git a/src/components/CatalogPanel.tsx b/src/components/CatalogPanel.tsx
+index f3cfb82..93e04a5 100644
+--- a/src/components/CatalogPanel.tsx
++++ b/src/components/CatalogPanel.tsx
+@@ -1,7 +1,7 @@
+ import { useMemo, useState } from 'react';
+ import { CATEGORY_LABELS, describe, type Article, type Category } from '../data/catalog';
+ import { useCatalog } from '../data/useCatalog';
+-import { fmtEur, priceEntry, priceOf } from '../model/layout';
++import { priceEntry } from '../model/layout';
+ import { useStore } from '../store';
+ import { Thumb } from '../views/drawings';
+ import { slotColours } from '../data/finishes';
+@@ -35,7 +35,7 @@ export function CatalogPanel() {
+   return (
+     <aside className="panel catalog">
+       <div className="panel-head">
+-        <h2>קטלוג @brand@ @line@</h2>
++        <h2>קטלוג יחידות</h2>
+         <div className="muted">{catalog.ready ? `${catalog.articles.length.toLocaleString()} פריטים` : 'טוען…'} · מוסיף אל: <b>{run?.name ?? '—'}</b></div>
+       </div>
+       <div className="tabs small">
+@@ -52,7 +52,7 @@ export function CatalogPanel() {
+       </div>
+       <div className="list">
+         {items.slice(0, limit).map((a) => (
+-          <CatalogItem key={a.code} a={a} frontHex={frontHex} price={priceOf(a.code, project.finishes, catalog.prices)} desc={describe(a, priceEntry(a.code, catalog.prices))} onAdd={() => addUnit(a.code)} />
++          <CatalogItem key={a.code} a={a} frontHex={frontHex} desc={describe(a, priceEntry(a.code, catalog.prices))} onAdd={() => addUnit(a.code)} />
+         ))}
+         {items.length > limit && <button className="btn ghost" onClick={() => setLimit(limit + 200)}>הצג עוד ({items.length - limit})</button>}
+         {catalog.ready && items.length === 0 && <div className="muted pad">לא נמצאו פריטים</div>}
+@@ -61,7 +61,7 @@ export function CatalogPanel() {
+   );
+ }
+ 
+-function CatalogItem({ a, frontHex, price, desc, onAdd }: { a: Article; frontHex: string; price: number | null; desc: string; onAdd: () => void }) {
++function CatalogItem({ a, frontHex, desc, onAdd }: { a: Article; frontHex: string; desc: string; onAdd: () => void }) {
+   return (
+     <button className="item" onClick={onAdd} title="הוסף לקיר הפעיל">
+       <Thumb a={a} fill={frontHex} size={54} />
+@@ -69,7 +69,7 @@ function CatalogItem({ a, frontHex, price, desc, onAdd }: { a: Article; frontHex
+         <div className="item-title">{desc}</div>
+         <div className="item-sub"><code>{a.code}</code> · {a.w}×{a.d}×{a.h}</div>
+       </div>
+-      <div className="item-price">{fmtEur(price)}</div>
++      <div className="item-add" aria-hidden="true">+</div>
+     </button>
+   );
+ }
+diff --git a/src/components/FinishPanel.tsx b/src/components/FinishPanel.tsx
+index 39d2f52..194f605 100644
+--- a/src/components/FinishPanel.tsx
++++ b/src/components/FinishPanel.tsx
+@@ -23,7 +23,7 @@ export function FinishPanel() {
+     <div className="finishes">
+       <div className="finish-group">
+         <label className="field">
+-          <span>פריסט @line@</span>
++          <span>קומפוזיציה מוכנה</span>
+           <select value="" onChange={(e) => { const pr = PRESETS.find((x) => x.id === e.target.value); if (pr) update((p) => { p.finishes = { ...pr.finishes }; }); }}>
+             <option value="">בחרו…</option>
+             {PRESETS.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+@@ -48,7 +48,7 @@ export function FinishPanel() {
+         <label className="field">
+           <span>חזיתות · תוכנית</span>
+           <select value={finishes.frontProgramme} onChange={(e) => setF({ frontProgramme: e.target.value, frontColour: programme(e.target.value).colours[0].id })}>
+-            {FRONT_PROGRAMMES.map((p) => <option key={p.id} value={p.id}>{p.name} · PG {p.priceGroup}</option>)}
++            {FRONT_PROGRAMMES.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+           </select>
+         </label>
+         <Swatches list={prog.colours} value={finishes.frontColour} onPick={(id) => setF({ frontColour: id })} />
+diff --git a/src/components/Inspector.tsx b/src/components/Inspector.tsx
+index 0c010b8..32c70be 100644
+--- a/src/components/Inspector.tsx
++++ b/src/components/Inspector.tsx
+@@ -1,7 +1,7 @@
+ import { describe, openingText } from '../data/catalog';
+ import { useCatalog } from '../data/useCatalog';
+ import { FRONT_PROGRAMMES, programme } from '../data/finishes';
+-import { fmtEur, freeOf, layout, normDeg, priceEntry, priceOf, rotatedAboutCentre, runLength } from '../model/layout';
++import { freeOf, layout, normDeg, priceEntry, rotatedAboutCentre, runLength } from '../model/layout';
+ import { FUNC_LABELS, useStore, type Func, type Opening, type Run, type WallId } from '../store';
+ import { clampOpening, isOpeningId, OPENING_DEFAULTS, OPENING_LABELS, type OpeningKind } from '../model/openings';
+ import { Thumb } from '../views/drawings';
+@@ -36,7 +36,6 @@ export function Inspector() {
+               <div className="item-sub"><code>{article.code}</code></div>
+               <div className="item-sub">{article.w} × {article.d} × {article.h} מ"מ</div>
+               <div className="item-sub">{openingText(article)}</div>
+-              <div className="price">{fmtEur(priceOf(article.code, { ...project.finishes, ...unit.finishes }, catalog.prices))}</div>
+             </div>
+           </div>
+           {(priceEntry(article.code, catalog.prices)?.lines ?? []).length > 0 && (
+@@ -169,7 +168,7 @@ export function Inspector() {
+           ))}
+         </div>
+         <div className="field-label">חלונות ודלתות (הוספה: בתוכנית, כפתור "+ חלון")</div>
+-        {(project.room.openings ?? []).length === 0 && <div className="muted">אין. אם החלון לא זוהה בתוכנית, יש להוסיף אותו ידנית.</div>}
++        {(project.room.openings ?? []).length === 0 && <div className="muted">אין. הוספה בתוכנית: כפתור "+ חלון" או "+ דלת" ואז לחיצה על הקיר.</div>}
+         <div className="runs">
+           {(project.room.openings ?? []).map((o) => (
+             <button key={o.id} className={`run ${selected === o.id ? 'on' : ''}`} onClick={() => set(() => ({ selected: o.id }))}>
+@@ -224,7 +223,6 @@ function OpeningEditor({ o, onClose }: { o: Opening; onClose: () => void }) {
+   return (
+     <section>
+       <div className="panel-head"><h2>{OPENING_LABELS[o.kind]} נבחר</h2></div>
+-      {o.source === 'read' && <div className="muted">זוהה אוטומטית בתוכנית האדריכל – לבדיקה.</div>}
+       <div className="row gap">
+         <label className="field"><span>סוג</span>
+           <select value={o.kind} onChange={(e) => { const k = e.target.value as OpeningKind; patch({ kind: k, sill: OPENING_DEFAULTS[k].sill, head: OPENING_DEFAULTS[k].head }); }}>
+diff --git a/src/components/MaterialFan.tsx b/src/components/MaterialFan.tsx
+index 3ea7b32..d415498 100644
+--- a/src/components/MaterialFan.tsx
++++ b/src/components/MaterialFan.tsx
+@@ -18,7 +18,7 @@ export function MaterialFan({ finishes, compact = false, onPick }: { finishes?:
+         <h3>Fronts · programmes and colours</h3>
+         {FRONT_PROGRAMMES.map((p) => (
+           <div key={p.id} className="fan-row">
+-            <div className="fan-row-head"><b>{p.name}</b><span className="muted">{p.id} · price group {p.priceGroup}</span></div>
++            <div className="fan-row-head"><b>{p.name}</b><span className="muted">{p.colours.length} colour{p.colours.length > 1 ? 's' : ''}</span></div>
+             <div className="fan-swatches">
+               {p.colours.map((c) => (
+                 <Swatch key={c.id} c={c} on={finishes?.frontProgramme === p.id && finishes.frontColour === c.id}
+diff --git a/src/data/catalog.ts b/src/data/catalog.ts
+index 8d7d1cf..d5cd732 100644
+--- a/src/data/catalog.ts
++++ b/src/data/catalog.ts
+@@ -59,18 +59,29 @@ export const CATEGORY_LABELS: Record<Category, { he: string; en: string }> = {
+   other: { he: 'אחר', en: 'Other' },
+ };
+ 
++/** Static data lives next to the app (Vite `base`), e.g. /catalog/kitchens/catalog/index.json. */
++const DATA = `${import.meta.env.BASE_URL}catalog/`;
++
+ let indexPromise: Promise<Article[]> | null = null;
+ let pricePromise: Promise<Record<string, PriceEntry>> | null = null;
+ const meshCache = new Map<string, Promise<Mesh>>();
+ 
+ export function loadIndex(): Promise<Article[]> {
+-  if (!indexPromise) indexPromise = fetch('/catalog/index.json').then((r) => r.json());
++  if (!indexPromise) indexPromise = fetch(`${DATA}index.json`).then((r) => r.json());
+   return indexPromise;
+ }
+ 
++/** Public demo: article descriptions only (desc.json, no prices; empty in the published demo). */
+ export function loadPrices(): Promise<Record<string, PriceEntry>> {
+   if (!pricePromise) {
+-    pricePromise = fetch('/catalog/prices.json').then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
++    pricePromise = fetch(`${DATA}desc.json`)
++      .then((r) => (r.ok ? r.json() : {}))
++      .then((d: Record<string, { desc: string; lines?: string[] }>) => {
++        const out: Record<string, PriceEntry> = {};
++        for (const [code, e] of Object.entries(d)) out[code] = { desc: e.desc, lines: e.lines ?? [], prices: [], page: 0, notes: '' };
++        return out;
++      })
++      .catch(() => ({}));
+   }
+   return pricePromise;
+ }
+@@ -78,7 +89,7 @@ export function loadPrices(): Promise<Record<string, PriceEntry>> {
+ export function loadMesh(code: string): Promise<Mesh> {
+   let p = meshCache.get(code);
+   if (!p) {
+-    p = fetch(`/catalog/mesh/${encodeURIComponent(code)}.json`).then((r) => r.json());
++    p = fetch(`${DATA}mesh/${encodeURIComponent(code)}.json`).then((r) => r.json());
+     meshCache.set(code, p);
+   }
+   return p;
+diff --git a/src/data/finishes.ts b/src/data/finishes.ts
+index 084fc12..20bdee2 100644
+--- a/src/data/finishes.ts
++++ b/src/data/finishes.ts
+@@ -11,7 +11,6 @@ export interface FrontProgramme {
+   id: string;        // programme code, e.g. "ML1x"
+   name: string;
+   kind: 'laminate' | 'lacquer' | 'veneer' | 'metal' | 'linoleum';
+-  priceGroup: number; // 1..8 -> column in the price list
+   gloss: number;      // 0 matt .. 1 high gloss (used by the 3D material)
+   colours: Colour[];
+ }
+@@ -31,29 +30,29 @@ const LACQUER_COLOURS = [
+ 
+ export const FRONT_PROGRAMMES: FrontProgramme[] = [
+   {
+-    id: 'DFK4', name: 'Laminate', kind: 'laminate', priceGroup: 1, gloss: 0.15,
++    id: 'DFK4', name: 'Laminate', kind: 'laminate', gloss: 0.15,
+     colours: [C('Q8', 'alpine white 3', '#F2F0EB'), C('15', 'kaolin', '#E4DED2'), C('B8', 'gravel', '#8E8A82'), C('Q9', 'flint', '#6B6965'), C('17', 'graphite', '#474846')],
+   },
+-  { id: 'ML1x', name: 'Mat lacquer', kind: 'lacquer', priceGroup: 3, gloss: 0.2, colours: LACQUER_COLOURS },
+-  { id: 'SIL1', name: 'Silk lacquer (ultra-matt)', kind: 'lacquer', priceGroup: 3, gloss: 0.05, colours: LACQUER_COLOURS },
++  { id: 'ML1x', name: 'Matt lacquer', kind: 'lacquer', gloss: 0.2, colours: LACQUER_COLOURS },
++  { id: 'SIL1', name: 'Ultra-matt lacquer', kind: 'lacquer', gloss: 0.05, colours: LACQUER_COLOURS },
+   {
+-    id: 'HL1x', name: 'Brilliant lacquer (high gloss)', kind: 'lacquer', priceGroup: 6, gloss: 0.9,
++    id: 'HL1x', name: 'High-gloss lacquer', kind: 'lacquer', gloss: 0.9,
+     colours: [C('49', 'white', '#F8F7F4'), ...LACQUER_COLOURS.slice(1)],
+   },
+-  { id: 'LLAX', name: 'Linoleum / aluminium', kind: 'linoleum', priceGroup: 6, gloss: 0.05, colours: [C('33', 'anthracite', '#33353A')] },
++  { id: 'LLAX', name: 'Linoleum / aluminium', kind: 'linoleum', gloss: 0.05, colours: [C('33', 'anthracite', '#33353A')] },
+   {
+-    id: 'EIVH', name: 'Oak veneer, vertical', kind: 'veneer', priceGroup: 5, gloss: 0.25,
++    id: 'EIVH', name: 'Oak veneer, vertical', kind: 'veneer', gloss: 0.25,
+     colours: [C('57', 'natural', '#C9A67A', 'wood'), C('56', 'natural grey', '#A89A86', 'wood'), C('58', 'black-brown', '#4A3A30', 'wood'), C('85', 'bronze-brown', '#7A5C44', 'wood'), C('84', 'black-grey', '#4C4A47', 'wood')],
+   },
+   {
+-    id: 'NUVH', name: 'Walnut veneer, vertical', kind: 'veneer', priceGroup: 5, gloss: 0.25,
++    id: 'NUVH', name: 'Walnut veneer, vertical', kind: 'veneer', gloss: 0.25,
+     colours: [C('57', 'natural', '#6E4F3A', 'wood')],
+   },
+   {
+-    id: 'A1Ax', name: 'Aluminium', kind: 'metal', priceGroup: 6, gloss: 0.6,
++    id: 'A1Ax', name: 'Aluminium', kind: 'metal', gloss: 0.6,
+     colours: [C('21', 'aluminium natural', '#C4C6C8', 'metal'), C('22', 'aluminium grey', '#9A9C9E', 'metal'), C('37', 'aluminium bronze', '#8C7A66', 'metal'), C('41', 'aluminium sand beige', '#C9BBA6', 'metal')],
+   },
+-  { id: 'CNxx', name: 'Stainless steel', kind: 'metal', priceGroup: 7, gloss: 0.7, colours: [C('39', 'stainless steel', '#B9BCBE', 'metal')] },
++  { id: 'CNxx', name: 'Stainless steel', kind: 'metal', gloss: 0.7, colours: [C('39', 'stainless steel', '#B9BCBE', 'metal')] },
+ ];
+ 
+ export const WORKTOPS: Colour[] = [
+@@ -70,7 +69,7 @@ export const WORKTOPS: Colour[] = [
+ 
+ /** @line@ opening systems (manual p.46-47): handle-free touch fittings, or bar handles G1/G7 (196 mm, 25 mm below the top edge). */
+ export const HANDLES: Colour[] = [
+-  C('TOUCH', 'Handle-free · touch / e-touch', '#E9E7E2'),
++  C('TOUCH', 'Handle-free · touch opening', '#E9E7E2'),
+   C('G1-AL', 'Bar handle G1 aluminium', '#C4C6C8', 'metal'),
+   C('G1-CN', 'Bar handle G1 stainless steel', '#B9BCBE', 'metal'),
+   C('G7-AL', 'Bar handle G7 aluminium', '#C4C6C8', 'metal'),
+@@ -129,10 +128,10 @@ export const DEFAULT_FINISHES: Finishes = {
+ 
+ /** Ready-made @line@ compositions. */
+ export const PRESETS: { id: string; name: string; finishes: Finishes }[] = [
+-  { id: 'alpine', name: '@line@ alpine white · stainless', finishes: { ...DEFAULT_FINISHES } },
+-  { id: 'graphite', name: '@line@ graphite · wall-hung', finishes: { ...DEFAULT_FINISHES, frontProgramme: 'ML1x', frontColour: '17', carcass: '17', plinth: '95', worktop: 'ST', mounting: 'wallhung', wallPanel: 'AL' } },
+-  { id: 'aluminium', name: '@line@ aluminium · oak', finishes: { ...DEFAULT_FINISHES, frontProgramme: 'A1Ax', frontColour: '22', carcass: 'AL', worktop: 'OK', wallPanel: 'AL', island: 'units' } },
+-  { id: 'oak', name: '@line@ oak · laminate graphite', finishes: { ...DEFAULT_FINISHES, frontProgramme: 'EIVH', frontColour: '57', carcass: '15', worktop: 'LG', plinth: '17', wallPanel: 'FRONT' } },
++  { id: 'alpine', name: 'Alpine white · stainless', finishes: { ...DEFAULT_FINISHES } },
++  { id: 'graphite', name: 'Graphite · wall-hung', finishes: { ...DEFAULT_FINISHES, frontProgramme: 'ML1x', frontColour: '17', carcass: '17', plinth: '95', worktop: 'ST', mounting: 'wallhung', wallPanel: 'AL' } },
++  { id: 'aluminium', name: 'Aluminium · oak', finishes: { ...DEFAULT_FINISHES, frontProgramme: 'A1Ax', frontColour: '22', carcass: 'AL', worktop: 'OK', wallPanel: 'AL', island: 'units' } },
++  { id: 'oak', name: 'Oak · laminate graphite', finishes: { ...DEFAULT_FINISHES, frontProgramme: 'EIVH', frontColour: '57', carcass: '15', worktop: 'LG', plinth: '17', wallPanel: 'FRONT' } },
+ ];
+ 
+ export function programme(id: string): FrontProgramme {
+diff --git a/src/data/idb.ts b/src/data/idb.ts
+index cf4f9c3..1738d35 100644
+--- a/src/data/idb.ts
++++ b/src/data/idb.ts
+@@ -1,5 +1,5 @@
+ /** Tiny IndexedDB key-value store for large blobs (snapshots, renders) that do not fit in localStorage. */
+-const DB = '@brand@-studio', STORE = 'kv';
++const DB = 'pa-kitchens-demo', STORE = 'kv';
+ 
+ function open(): Promise<IDBDatabase> {
+   return new Promise((ok, err) => {
+diff --git a/src/index.css b/src/index.css
+index eaaff76..90b1da5 100644
+--- a/src/index.css
++++ b/src/index.css
+@@ -253,3 +253,63 @@ code { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+ .review-canvas-tools .rot-warn { color: #9a6400; font-weight: 600; }
+ .review-reread { background: #fff8e8; border: 1px solid #f0d9a8; border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+ .review-reread code { direction: ltr; text-align: left; font-size: 11px; background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 4px 6px; word-break: break-all; }
++
++/* ------------------------------------------------------------------ public demo build */
++.editor { grid-template-rows: minmax(0, 1fr); }
++.item-add { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; color: var(--muted); font-size: 16px; line-height: 1; }
++.item:hover .item-add { border-color: var(--ink); color: var(--ink); }
++.total b { font-size: 14px; font-weight: 500; direction: ltr; }
++.brand-mark { direction: rtl; white-space: nowrap; letter-spacing: 0; font-size: 18px; }
++.brand-mark span { margin-left: 0; margin-inline-start: 8px; font-size: 11px; letter-spacing: .14em; }
++.loading-3d { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); }
++.finish-dock-head .btn { margin-inline-start: auto; }
++.snap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
++.snap-img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 4px; background: #eee; display: block; }
++.presentation > .render-panel { width: min(420mm, calc(100% - 24px)); }
++.catalog > .tabs button { flex: 1 1 0; min-width: 0; padding: 6px 3px; }
++
++/* A3 pages scaled to the screen (print keeps 1:1) */
++@media screen and (max-width: 1700px) { .presentation .page { zoom: .8; } }
++@media screen and (max-width: 1380px) { .presentation .page { zoom: .6; } }
++@media screen and (max-width: 1000px) { .presentation .page { zoom: .44; } }
++@media screen and (max-width: 720px) { .presentation .page { zoom: .3; } .presentation { gap: 12px; padding: 12px 0 40px; } }
++@media screen and (max-width: 500px) { .presentation .page { zoom: .215; } }
++
++@media (max-width: 1280px) {
++  .project-fields { display: none; }
++}
++
++/* phones and small tablets: one column, the drawing first, panels underneath */
++@media (max-width: 900px) {
++  .app { grid-template-rows: auto minmax(0, 1fr); }
++  .topbar { flex-wrap: wrap; gap: 8px; padding: 8px 10px; overflow: visible; }
++  .brand-mark { font-size: 16px; }
++  .brand-mark span { display: none; }
++  .total { display: none; }
++  .top-actions { margin-inline-start: auto; min-width: 0; overflow-x: auto; gap: 6px; }
++  .top-actions .btn { padding: 6px 8px; font-size: 12px; }
++  .topbar .tabs { order: 3; width: 100%; }
++  .topbar .tabs button { flex: 1 1 0; padding: 7px 4px; }
++  .editor { display: block; overflow-y: auto; }
++  .workspace { display: flex; flex-direction: column; min-height: auto; }
++  .workspace > .stage { order: -1; flex: 0 0 auto; height: 58vh; min-height: 300px; border-bottom: 1px solid var(--line); }
++  .panel { flex: 0 0 auto; overflow: visible; border-inline-end: 0; }
++  .panel.catalog { height: 78vh; overflow: hidden; }
++  .panel.inspector { border-inline-start: 0; border-top: 1px solid var(--line); }
++  .view3d-tools { flex-wrap: wrap; gap: 6px 10px; padding: 6px 10px; inset-inline-end: 12px; }
++  .drawing-view { padding: 10px; gap: 12px; }
++  .drawing-view .hint { position: static; align-self: stretch; }
++  .drawing-view .hint > div:not(:first-child) { display: none; }
++  .zoom-tools { flex-wrap: wrap; justify-content: flex-end; inset-inline-start: 8px; bottom: 8px; inset-inline-end: 8px; }
++  .sheet { padding: 8px; }
++  .sheet .elev { height: 34vh; }
++  .finish-dock { max-height: 72%; overflow: auto; inset-inline-start: 8px; inset-inline-end: 8px; bottom: 8px; }
++  .fan-overlay { padding: 12px 8px; }
++  .fan-panel { padding: 14px 12px 20px; }
++  .fan-panel-head { flex-wrap: wrap; }
++  .fan-row { grid-template-columns: minmax(0, 1fr); }
++  .fan-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
++  .render-head { gap: 8px; }
++  .bw-panel { max-width: calc(100vw - 16px); padding: 10px; }
++  .bw-img { max-width: calc(100vw - 40px); }
++}
+diff --git a/src/main.tsx b/src/main.tsx
+index 2239905..f29ed9c 100644
+--- a/src/main.tsx
++++ b/src/main.tsx
+@@ -2,9 +2,11 @@ import { StrictMode } from 'react';
+ import { createRoot } from 'react-dom/client';
+ import './index.css';
+ import App from './App.tsx';
++import { DemoChrome } from './demo/DemoChrome';
+ 
+ createRoot(document.getElementById('root')!).render(
+   <StrictMode>
++    <DemoChrome />
+     <App />
+   </StrictMode>,
+ );
+diff --git a/src/model/claddings.ts b/src/model/claddings.ts
+index be9ead8..9d48a71 100644
+--- a/src/model/claddings.ts
++++ b/src/model/claddings.ts
+@@ -103,7 +103,7 @@ export function claddings(pl: Placement[], backs: { run: Run; len: number; depth
+   for (const p of pl.filter((q) => q.unit.func === 'dishwasher' && q.run.level !== 'upper')) {
+     const w = p.w <= 450 ? 346 : 496, code = p.w <= 450 ? CODES.dwHandle45 : CODES.dwHandle60;
+     out.push({ kind: 'dwHandle', code, p, run: p.run, x: (p.w - w) / 2, y: -35, z: p.h - 35, w, d: 35, h: 10,
+-      note: `ידית למדיח ${p.w <= 450 ? 45 : 60} (bar handle G2, aluminium · ברשימת הלקוח 506260AM)`, qty: 1, size: `${cm(w)} × 3.5 × 1` });
++      note: `ידית למדיח ${p.w <= 450 ? 45 : 60} (bar handle G2, aluminium)`, qty: 1, size: `${cm(w)} × 3.5 × 1` });
+   }
+   // the sink under the worktop of every sink unit
+   for (const p of pl.filter((q) => q.unit.func === 'sink' && q.run.level !== 'upper')) {
+diff --git a/src/model/layout.ts b/src/model/layout.ts
+index b076ace..21ee6d2 100644
+--- a/src/model/layout.ts
++++ b/src/model/layout.ts
+@@ -1,5 +1,5 @@
+ import type { Article, PriceEntry } from '../data/catalog';
+-import { FLOAT_GAP, programme, type Finishes } from '../data/finishes';
++import { FLOAT_GAP, type Finishes } from '../data/finishes';
+ import type { FreePlacement, Func, PlacedUnit, Project, Run, WallId } from '../store';
+ 
+ export interface Placement {
+@@ -149,30 +149,11 @@ export function guessFunc(a: Article): Func {
+   return 'storage';
+ }
+ 
+-/** Price-list entry for a code; "E" variants (83EU60 -> 83U60) share the base article's price. */
++/** Description entry for a code; "E" variants (83EU60 -> 83U60) share the base article's text. */
+ export function priceEntry(code: string, prices: Record<string, PriceEntry>): PriceEntry | undefined {
+   return prices[code] ?? prices[code.replace(/^(\d\d)E/, '$1')];
+ }
+ 
+-export function priceOf(code: string, finishes: Finishes, prices: Record<string, PriceEntry>): number | null {
+-  const e = priceEntry(code, prices);
+-  if (!e) return null;
+-  const pg = programme(finishes.frontProgramme).priceGroup;
+-  const v = e.prices[pg - 1] ?? e.prices.find((x) => x != null) ?? null;
+-  return v ?? null;
+-}
+-
+-/** per-metre articles (ceiling scribe panel, plinth) are priced by the length they are planned at */
+-const PER_METRE = /^50(DBF|LS)/;
+-export function placementPrice(p: Placement, prices: Record<string, PriceEntry>): number | null {
+-  const v = priceOf(p.article.code, p.finishes, prices);
+-  return v == null ? null : PER_METRE.test(p.article.code) ? Math.round(v * p.w / 1000) : v;
+-}
+-
+-export function fmtEur(v: number | null): string {
+-  return v == null ? '—' : v.toLocaleString('en-US', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+-}
+-
+ export function wallName(wall: WallId): string {
+   return { A: 'Elevation A', B: 'Elevation B', C: 'Elevation C', D: 'Elevation D' }[wall];
+ }
+diff --git a/src/store.ts b/src/store.ts
+index 2e40879..d1885cb 100644
+--- a/src/store.ts
++++ b/src/store.ts
+@@ -1,12 +1,7 @@
+ import { create } from 'zustand';
+ import { DEFAULT_FINISHES, type Finishes } from './data/finishes';
+ import { idbGet, idbSet } from './data/idb';
+-import type { AltStatus, KitchenMeta, PortfolioFile } from './model/portfolio';
+ import { SEED_PROJECT } from './seed';
+-import type { ShapeFix } from './model/shapeFix';
+-
+-const SHAPES_KEY = '@brand@-studio-shapes';   // browser copy of the checked shapes (the repo files are the reference)
+-const readShapes = (): Record<string, ShapeFix> => { try { return JSON.parse(localStorage.getItem(SHAPES_KEY) ?? '{}'); } catch { return {}; } };
+ 
+ export type WallId = 'A' | 'B' | 'C' | 'D';
+ export type Level = 'floor' | 'upper';
+@@ -86,10 +81,9 @@ export interface Project {
+   finishes: Finishes;
+   runs: Run[];
+   snapshots: Snapshot[];
+-  meta?: KitchenMeta;      // set when the kitchen belongs to a portfolio alternative
+ }
+ 
+-export type View = 'dashboard' | '3d' | 'plan' | 'elevation' | 'presentation' | 'dossier' | 'review';
++export type View = '3d' | 'plan' | 'elevation' | 'presentation';
+ 
+ interface State {
+   project: Project;
+@@ -98,11 +92,6 @@ interface State {
+   activeRun: string;            // Run.id receiving new units
+   lang: 'he' | 'en';
+   mono: boolean;                // plan / elevations drawn as black & white sheets
+-  autoExport: boolean;          // dossier: download the PDF as soon as it is ready (one-click export)
+-  portfolio: PortfolioFile | null;
+-  currentAlt: string;           // alternative id, or 'standalone'
+-  statuses: Record<string, AltStatus>;
+-  drafted: Record<string, boolean>;   // alternatives that already have a kitchen saved
+   past: Project[];                    // undo stack (oldest first)
+   future: Project[];                  // redo stack (nearest first)
+   set: (fn: (s: State) => Partial<State> | void) => void;
+@@ -112,8 +101,6 @@ interface State {
+   /** Group the updates of one gesture (a drag) into a single undo step. */
+   beginGroup: () => void;
+   endGroup: () => void;
+-  /** Persist a kitchen for an alternative (and show it if it is the open one). */
+-  saveKitchen: (altId: string, p: Project) => void;
+   addUnit: (code: string, runId?: string) => void;
+   removeUnit: (id: string) => void;
+   moveUnit: (id: string, dir: -1 | 1) => void;
+@@ -128,20 +115,12 @@ interface State {
+   setSnapshotRender: (id: string, render: string | undefined) => void;
+   removeSnapshot: (id: string) => void;
+   reset: () => void;
+-  setPortfolio: (p: PortfolioFile) => void;
+-  openKitchen: (altId: string, fallback: () => Project | null, view?: View) => Promise<boolean>;
+-  setStatus: (altId: string, status: AltStatus) => void;
+-  savedKitchen: (altId: string) => Project | null;
+-  /** kitchen shapes checked on the review screen (model/shapeFix.ts), per alternative */
+-  shapes: Record<string, ShapeFix>;
+-  loadShapes: (portfolioId: string) => Promise<void>;
+-  saveShape: (portfolioId: string, fix: ShapeFix) => Promise<boolean>;
+ }
+ 
+ export const uid = () => Math.random().toString(36).slice(2, 9);
+ 
+-const KEY = (alt: string) => `@brand@-studio-kitchen:${alt}`;
+-const STATUS_KEY = '@brand@-studio-status';
++const KEY = (alt: string) => `pa-kitchens-demo:${alt}`;
++const ALT = 'standalone';
+ 
+ function readKitchen(alt: string): Project | null {
+   try {
+@@ -153,17 +132,6 @@ function readKitchen(alt: string): Project | null {
+   return null;
+ }
+ 
+-function draftedMap(): Record<string, boolean> {
+-  const out: Record<string, boolean> = {};
+-  try {
+-    for (let i = 0; i < localStorage.length; i++) {
+-      const k = localStorage.key(i) ?? '';
+-      if (k.startsWith('@brand@-studio-kitchen:')) out[k.slice('@brand@-studio-kitchen:'.length)] = true;
+-    }
+-  } catch { /* ignore */ }
+-  return out;
+-}
+-
+ let warned = false;
+ /** Kitchen JSON (small) goes to localStorage; snapshots/renders (large) go to IndexedDB. */
+ function save(alt: string, p: Project) {
+@@ -174,74 +142,6 @@ function save(alt: string, p: Project) {
+   void idbSet(`snaps:${alt}`, snapshots);
+ }
+ 
+-function readStatuses(): Record<string, AltStatus> {
+-  try { return JSON.parse(localStorage.getItem(STATUS_KEY) ?? '{}'); } catch { return {}; }
+-}
+-
+-const OPT_SWAP_KEY = '@brand@-studio-migrated:opt-swap-2026-10';
+-const swapOptId = (id: string) => id.replace(/-opt([12])$/, (_, k: string) => `-opt${k === '1' ? '2' : '1'}`);
+-const swapOptName = (s: string) => s.replace(/\bOPT ([12])\b/g, (_, k: string) => `OPT ${k === '1' ? '2' : '1'}`);
+-
+-/** One-time repair (October 2026): the architect's deck is right-to-left (OPT 1 is the right-hand image) but the
+- *  importer numbered the images left-to-right, so everything saved for "<type>-opt1" belongs to "<type>-opt2" and
+- *  vice versa. The plan files were swapped on disk; this swaps the kitchens, statuses and snapshots saved in the browser. */
+-function migrateOptSwap() {
+-  try {
+-    if (localStorage.getItem(OPT_SWAP_KEY)) return;
+-    const prefix = '@brand@-studio-kitchen:';
+-    const keys: string[] = [];
+-    for (let i = 0; i < localStorage.length; i++) {
+-      const k = localStorage.key(i) ?? '';
+-      if (k.startsWith(prefix) && /-opt[12]$/.test(k)) keys.push(k);
+-    }
+-    const entries = keys.map((k) => [k, localStorage.getItem(k) ?? ''] as const);
+-    for (const [k] of entries) localStorage.removeItem(k);
+-    for (const [k, raw] of entries) {
+-      let out = raw;
+-      try {
+-        const p = JSON.parse(raw) as Project;
+-        if (p.meta?.altId) p.meta.altId = swapOptId(p.meta.altId);
+-        if (typeof p.name === 'string') p.name = swapOptName(p.name);
+-        out = JSON.stringify(p);
+-      } catch { /* keep as is */ }
+-      localStorage.setItem(KEY(swapOptId(k.slice(prefix.length))), out);
+-    }
+-    const statuses = readStatuses();
+-    const swapped: Record<string, AltStatus> = {};
+-    for (const [id, v] of Object.entries(statuses)) swapped[/-opt[12]$/.test(id) ? swapOptId(id) : id] = v;
+-    localStorage.setItem(STATUS_KEY, JSON.stringify(swapped));
+-    // snapshots / renders live in IndexedDB: swap each pair once
+-    const bases = new Set(keys.map((k) => k.slice(prefix.length).replace(/-opt[12]$/, '')));
+-    void (async () => {
+-      for (const b of bases) {
+-        const [one, two] = await Promise.all([idbGet<Project['snapshots']>(`snaps:${b}-opt1`), idbGet<Project['snapshots']>(`snaps:${b}-opt2`)]);
+-        await Promise.all([idbSet(`snaps:${b}-opt1`, two ?? []), idbSet(`snaps:${b}-opt2`, one ?? [])]);
+-      }
+-    })();
+-    localStorage.setItem(OPT_SWAP_KEY, new Date().toISOString());
+-  } catch { /* storage unavailable */ }
+-}
+-
+-/** The architect's plan behind a saved kitchen must carry the same option number as the kitchen itself
+- *  (the plan files were swapped on disk). Idempotent, so it may run on every start. */
+-function repairUnderlayNames() {
+-  try {
+-    const prefix = '@brand@-studio-kitchen:';
+-    for (let i = 0; i < localStorage.length; i++) {
+-      const k = localStorage.key(i) ?? '';
+-      const m = /-opt([12])$/.exec(k);
+-      if (!k.startsWith(prefix) || !m) continue;
+-      const p = JSON.parse(localStorage.getItem(k) ?? 'null') as Project | null;
+-      const src = p?.meta?.underlay?.src;
+-      if (!src) continue;
+-      const fixed = src.replace(/_opt[12](?=\.)/, `_opt${m[1]}`);
+-      if (fixed !== src) { p!.meta!.underlay!.src = fixed; localStorage.setItem(k, JSON.stringify(p)); }
+-    }
+-  } catch { /* ignore */ }
+-}
+-migrateOptSwap();
+-repairUnderlayNames();
+-
+ const HISTORY_MAX = 100;
+ let grouping = false, groupPushed = false;
+ /** After undo/redo keep the selection only if that unit still exists. */
+@@ -249,20 +149,15 @@ function keepSelection(p: Project, selected: string | null): string | null {
+   return selected && p.runs.some((r) => r.units.some((u) => u.id === selected)) ? selected : null;
+ }
+ 
+-const initial = readKitchen('standalone') ?? structuredClone(SEED_PROJECT);
++const initial = readKitchen(ALT) ?? structuredClone(SEED_PROJECT);
+ 
+ export const useStore = create<State>((set, get) => ({
+   project: initial,
+-  view: 'dashboard',
++  view: '3d',
+   selected: null,
+   activeRun: initial.runs[0]?.id ?? '',
+   lang: 'he',
+   mono: true,
+-  autoExport: false,
+-  portfolio: null,
+-  currentAlt: 'standalone',
+-  statuses: readStatuses(),
+-  drafted: draftedMap(),
+   past: [],
+   future: [],
+   set: (fn) => set((s) => fn(s) ?? {}),
+@@ -270,12 +165,12 @@ export const useStore = create<State>((set, get) => ({
+     const cur = get().project;
+     const p = structuredClone(cur);
+     fn(p);
+-    save(get().currentAlt, p);
++    save(ALT, p);
+     // one undo step per gesture: a drag pushes only its first update
+     const push = !grouping || !groupPushed;
+     if (grouping) groupPushed = true;
+     set({
+-      project: p, drafted: { ...get().drafted, [get().currentAlt]: true },
++      project: p,
+       ...(push ? { past: [...get().past, cur].slice(-HISTORY_MAX), future: [] } : {}),
+     });
+   },
+@@ -284,22 +179,18 @@ export const useStore = create<State>((set, get) => ({
+     const prev = past.pop();
+     if (!prev) return;
+     const cur = get().project;
+-    save(get().currentAlt, prev);
++    save(ALT, prev);
+     set({ project: prev, past, future: [cur, ...get().future].slice(0, HISTORY_MAX), selected: keepSelection(prev, get().selected) });
+   },
+   redo: () => {
+     const [next, ...future] = get().future;
+     if (!next) return;
+     const cur = get().project;
+-    save(get().currentAlt, next);
++    save(ALT, next);
+     set({ project: next, future, past: [...get().past, cur].slice(-HISTORY_MAX), selected: keepSelection(next, get().selected) });
+   },
+   beginGroup: () => { grouping = true; groupPushed = false; },
+   endGroup: () => { grouping = false; groupPushed = false; },
+-  saveKitchen: (altId, p) => {
+-    save(altId, p);
+-    set({ drafted: { ...get().drafted, [altId]: true }, ...(get().currentAlt === altId ? { project: p, past: [], future: [] } : {}) });
+-  },
+   addUnit: (code, runId) => {
+     const id = uid();
+     const rid = runId ?? get().activeRun;
+@@ -363,48 +254,15 @@ export const useStore = create<State>((set, get) => ({
+   removeSnapshot: (id) => get().update((p) => { p.snapshots = p.snapshots.filter((x) => x.id !== id); }),
+   reset: () => {
+     const p = structuredClone(SEED_PROJECT);
+-    save('standalone', p);
+-    set({ project: p, selected: null, activeRun: p.runs[0].id, currentAlt: 'standalone', past: [], future: [] });
+-  },
+-  setPortfolio: (p) => set({ portfolio: p }),
+-  savedKitchen: (altId) => readKitchen(altId),
+-  shapes: readShapes(),
+-  loadShapes: async (pid) => {
+-    try {
+-      const r = await fetch(`/api/shapes/${pid}`);
+-      if (!r.ok || !(r.headers.get('content-type') ?? '').includes('json')) return;
+-      const repo = (await r.json()) as Record<string, ShapeFix>;
+-      // the repo files win; a browser copy saved while the API was down is kept until it reaches the repo
+-      const shapes = { ...readShapes(), ...repo };
+-      try { localStorage.setItem(SHAPES_KEY, JSON.stringify(shapes)); } catch { /* ignore */ }
+-      set({ shapes });
+-    } catch { /* no dev API: keep the browser copy */ }
+-  },
+-  saveShape: async (pid, fix) => {
+-    const shapes = { ...get().shapes, [fix.altId]: fix };
+-    try { localStorage.setItem(SHAPES_KEY, JSON.stringify(shapes)); } catch { /* ignore */ }
+-    set({ shapes });
+-    try {
+-      const r = await fetch(`/api/shapes/${pid}/${fix.altId}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(fix) });
+-      return r.ok;
+-    } catch { return false; }
+-  },
+-  /** Switch the editor to an alternative's kitchen (saved one, else the provided draft). */
+-  openKitchen: async (altId, fallback, view = '3d') => {
+-    let p = readKitchen(altId);
+-    if (!p) {
+-      p = fallback();
+-      if (!p) return false;
+-      save(altId, p);
+-    }
+-    const snaps = (await idbGet<Project['snapshots']>(`snaps:${altId}`)) ?? [];
+-    p = { ...p, snapshots: snaps };
+-    set({ project: p, currentAlt: altId, selected: null, activeRun: p.runs[0]?.id ?? '', view, drafted: { ...get().drafted, [altId]: true }, past: [], future: [] });
+-    return true;
+-  },
+-  setStatus: (altId, status) => {
+-    const statuses = { ...get().statuses, [altId]: status };
+-    try { localStorage.setItem(STATUS_KEY, JSON.stringify(statuses)); } catch { /* ignore */ }
+-    set({ statuses });
++    save(ALT, p);
++    set({ project: p, selected: null, activeRun: p.runs[0].id, past: [], future: [] });
+   },
+ }));
++
++// snapshots live in IndexedDB (too large for localStorage): bring back the ones of the last visit
++void idbGet<Project['snapshots']>(`snaps:${ALT}`).then((snaps) => {
++  if (!snaps?.length) return;
++  const cur = useStore.getState().project;
++  const known = new Set(cur.snapshots.map((x) => x.id));
++  useStore.setState({ project: { ...cur, snapshots: [...snaps.filter((x) => !known.has(x.id)), ...cur.snapshots].slice(-4) } });
++});
+diff --git a/src/views/Drawings2D.tsx b/src/views/Drawings2D.tsx
+index 58057a4..3432b2c 100644
+--- a/src/views/Drawings2D.tsx
++++ b/src/views/Drawings2D.tsx
+@@ -88,11 +88,10 @@ export function PlanView() {
+   const update = useStore((s) => s.update);
+   const catalog = useCatalog();
+   const drag = useRef<DragState | null>(null);
+-  const [underlay, setUnderlay] = useState(true);
+   const mono = useStore((s) => s.mono);
+   // view lock: every drag pans the drawing, units can only be selected (remembered between sessions)
+-  const [locked, setLocked] = useState(() => { try { return localStorage.getItem('@brand@-studio-view-lock') === '1'; } catch { return false; } });
+-  const toggleLock = () => setLocked((v) => { try { localStorage.setItem('@brand@-studio-view-lock', v ? '0' : '1'); } catch { /* ignore */ } return !v; });
++  const [locked, setLocked] = useState(() => { try { return localStorage.getItem('pa-kitchens-demo-view-lock') === '1'; } catch { return false; } });
++  const toggleLock = () => setLocked((v) => { try { localStorage.setItem('pa-kitchens-demo-view-lock', v ? '0' : '1'); } catch { /* ignore */ } return !v; });
+   const { setFree, patchUnit, moveUnit, removeUnit, beginGroup, endGroup } = useStore.getState();
+ 
+   // placing a window / door: the next click on the plan puts it on the nearest wall
+@@ -242,7 +241,6 @@ export function PlanView() {
+         <div>חלון / דלת: כפתור "+ חלון" ואז לחיצה על הקיר · גרירה לאורך הקיר (או לקיר אחר) · חצים להזזה · Delete להסרה · מידות בחלונית הצד</div>
+         <div>יחידה מסומנת: עיגול לסיבוב · ריבוע בפינה לשינוי גודל · חצים להזזה · R לסיבוב · Delete להסרה · Ctrl+Z / Ctrl+Shift+Z לביטול ושחזור</div>
+         <MonoToggle />
+-        {project.meta?.underlay && <label className="toggle"><input type="checkbox" checked={underlay} onChange={(e) => setUnderlay(e.target.checked)} /> תוכנית האדריכל ברקע</label>}
+       </div>
+       <ZoomPane toolbar={<>
+         {!locked && (['window', 'door'] as OpeningKind[]).map((k) => (
+@@ -256,7 +254,7 @@ export function PlanView() {
+           {locked ? '🔒 תצוגה נעולה' : '🔓 נעל תצוגה'}
+         </button>
+       </>}>
+-        <PlanSVG project={project} catalog={catalog} selected={selected} onSelect={(id) => set(() => ({ selected: id }))} underlay={underlay} mono={mono}
++        <PlanSVG project={project} catalog={catalog} selected={selected} onSelect={(id) => set(() => ({ selected: id }))} mono={mono}
+           onDragStart={locked || placing ? undefined : onDragStart} onDrag={locked || placing ? undefined : onDrag} onDragEnd={() => { drag.current = null; endGroup(); }}
+           onPick={placing && !locked ? onPick : undefined} className="fit" />
+       </ZoomPane>
+diff --git a/src/views/View3D.tsx b/src/views/View3D.tsx
+index ad15847..a52f494 100644
+--- a/src/views/View3D.tsx
++++ b/src/views/View3D.tsx
+@@ -13,7 +13,7 @@ import type { Opening, Project, Run, WallId } from '../store';
+ import { wallBox, wallPieces } from '../model/openings';
+ import { useStore } from '../store';
+ import { useCatalog } from '../data/useCatalog';
+-import { proceduralTexture } from './textures';
++import { proceduralTexture } from './textures3d';
+ import { buildGeometries, edgeMat } from './geometry';
+ import { perspectiveFor } from './perspective';
+ 
+@@ -477,7 +477,7 @@ export function View3D() {
+             <img className="bw-img" src={bw} alt="perspective" />
+             <div className="row gap">
+               <button className="btn primary" onClick={() => { addSnapshot(bw, 'Perspective B&W'); setBw(null); }}>הוסף למצגת</button>
+-              <a className="btn" href={bw} download={`perspective-${project.meta?.altId ?? 'kitchen'}.png`}>הורד PNG</a>
++              <a className="btn" href={bw} download="kitchen-perspective.png">הורד PNG</a>
+               <button className="btn" onClick={() => setBw(null)}>סגור</button>
+             </div>
+           </div>
+diff --git a/src/views/drawings.tsx b/src/views/drawings.tsx
+index ef7faf6..875fc78 100644
+--- a/src/views/drawings.tsx
++++ b/src/views/drawings.tsx
+@@ -10,7 +10,6 @@ import { claddings, sinkFor } from '../model/claddings';
+ import { HOB, hobLayout } from '../model/hob';
+ import { type Opening, type Project, type Run, type WallId } from '../store';
+ import { wallBand } from '../model/openings';
+-import { frameTransform } from '../model/shapeFix';
+ import type { Catalog } from '../data/useCatalog';
+ 
+ import { textureDataUrl, type TextureKind } from './textures';
+@@ -521,7 +520,6 @@ interface PlanProps {
+   onPick?: (x: number, y: number) => void;
+   showLabels?: boolean;
+   showDims?: boolean;
+-  underlay?: boolean;   // draw the architect's plan image behind the kitchen (project.meta.underlay)
+   /** Black & white sheet: no finish colours or textures. */
+   mono?: boolean;
+   /** Key plan of an elevation sheet: this FRONT marker is drawn filled, the others muted. */
+@@ -532,11 +530,8 @@ interface PlanProps {
+   className?: string;
+ }
+ 
+-export function PlanSVG({ project, catalog, selected, onSelect, onDragStart, onDrag, onDragEnd, onPick, showLabels = true, showDims = true, underlay = false, mono = false, highlightFront, fit, onScale, className }: PlanProps) {
++export function PlanSVG({ project, catalog, selected, onSelect, onDragStart, onDrag, onDragEnd, onPick, showLabels = true, showDims = true, mono = false, highlightFront, fit, onScale, className }: PlanProps) {
+   const { width: W, depth: D } = project.room;
+-  const ul = underlay && project.meta?.underlay ? project.meta.underlay : null;
+-  // image pixel (px,py) -> world mm: x = (px - kx0) * cmpx * 10 ; y = D - (py - ky0) * cmpx * 10
+-  const ulScale = ul ? ul.cmPerPx * 10 : 1;
+   const placements = layout(project, catalog.byCode);
+   const refs = unitRefs(project, catalog.byCode);
+   const svgRef = useRef<SVGSVGElement>(null);
+@@ -652,13 +647,6 @@ export function PlanSVG({ project, catalog, selected, onSelect, onDragStart, onD
+             seg('C', W, -wallT, wallT, D + 2 * wallT, W, 0, W, D),
+           ];
+         })()}
+-        {ul && (
+-          <g transform={`translate(${-ul.kitchenBoxPx[0] * ulScale} ${D + ul.kitchenBoxPx[1] * ulScale}) scale(${ulScale} ${-ulScale})`} opacity={0.55} pointerEvents="none">
+-            {ul.rotate !== undefined && ul.origSize
+-              ? <image href={`/projects/${project.meta!.portfolioId}/plans/${ul.src}`} width={ul.origSize[0]} height={ul.origSize[1]} preserveAspectRatio="none" transform={frameTransform(ul.origSize, ul.rotate)} />
+-              : <image href={`/projects/${project.meta!.portfolioId}/plans/${ul.src}`} width={ul.imageSize[0]} height={ul.imageSize[1]} preserveAspectRatio="none" />}
+-          </g>
+-        )}
+         {/* windows and doors (room.openings): cut out of the wall band, drawn in its thickness */}
+         {(project.room.openings ?? []).map((o) => (
+           <OpeningPlan key={o.id} o={o} room={project.room} t={wallT} fs={fs} paper={mono ? BW.paper : '#f7f5f1'}
+diff --git a/src/views/textures.ts b/src/views/textures.ts
+index f531e95..19dc33b 100644
+--- a/src/views/textures.ts
++++ b/src/views/textures.ts
+@@ -1,7 +1,4 @@
+ /** Procedural material textures (canvas, no network assets). Greyscale – the material colour tints them. */
+-import * as THREE from 'three';
+-
+-const cache = new Map<string, THREE.CanvasTexture>();
+ 
+ function noise2(seed: number) {
+   // small value-noise helper
+@@ -80,20 +77,9 @@ function metal(size: number) {
+ 
+ export type TextureKind = 'wood' | 'stone' | 'metal';
+ 
+-/** Texture sized so that one repeat is `tileMm` millimetres in UV space (UVs are generated in mm/1000). */
+-export function proceduralTexture(kind: TextureKind): THREE.CanvasTexture {
+-  let t = cache.get(kind);
+-  if (t) return t;
+-  const size = 512;
+-  const c = kind === 'wood' ? wood(size) : kind === 'stone' ? stone(size) : metal(size);
+-  t = new THREE.CanvasTexture(c);
+-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+-  const tileMm = kind === 'wood' ? 600 : kind === 'stone' ? 1400 : 500;
+-  t.repeat.set(1000 / tileMm, 1000 / tileMm);
+-  t.anisotropy = 8;
+-  t.colorSpace = THREE.SRGBColorSpace;
+-  cache.set(kind, t);
+-  return t;
++/** Greyscale canvas of a material texture (the 3D view wraps it in a THREE.CanvasTexture, see textures3d.ts). */
++export function textureCanvas(kind: TextureKind, size: number): HTMLCanvasElement {
++  return kind === 'wood' ? wood(size) : kind === 'stone' ? stone(size) : metal(size);
+ }
+ 
+ /** Data-URL version for the 2D drawings: a black layer whose alpha is the texture darkness, so a plain

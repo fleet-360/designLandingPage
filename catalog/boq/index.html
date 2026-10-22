@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>כתב כמויות אוטומטי מסט שרטוטים | דמו אינטראקטיבי · Pro Algorithm</title>
+<meta name="description" content="דמו אינטראקטיבי של BOQ-AI: מגיליונות אדריכלות, חשמל ואינסטלציה של בית פרטי לכתב כמויות לפי פרקי המפרט הכללי. כל סעיף מקושר למקור בשרטוט, עם בקרות בין הגיליונות, תמחור לדוגמה וייצוא לאקסל.">
+<link rel="canonical" href="https://www.buildalgo.co.il/catalog/boq/">
+<meta property="og:title" content="כתב כמויות אוטומטי מסט שרטוטים | Pro Algorithm">
+<meta property="og:image" content="https://www.buildalgo.co.il/assets/img/brand/og.jpg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/brand/icon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/catalog/shell/shell.css">
+<link rel="preload" href="/catalog/boq/data.json" as="fetch" crossorigin>
+<!--tracking-->
+<style>
+/* canvas: one aspect for every sheet so switching sheets doesn't move the layout */
+#d-svg { aspect-ratio: 3 / 2; background: var(--cad-bg); }
+@media (max-width: 640px) { #d-svg { aspect-ratio: 6 / 5; } }
+#d-svg .hit { cursor: pointer; }
+#d-svg text { font-family: var(--font); pointer-events: none; }
+.pulse { animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { stroke-opacity: 1; } 50% { stroke-opacity: .35; } }
+.reveal { animation: reveal .45s var(--ease-out) both; }
+@keyframes reveal { from { opacity: 0; } to { opacity: 1; } }
+.d-boot { padding: 40px 16px; color: var(--muted); text-align: center; }
+
+/* sheet tabs over the canvas (like layout tabs in CAD) */
+.stabs { position: absolute; top: 8px; left: 10px; display: flex; gap: 4px; flex-wrap: wrap; max-width: calc(54% - 10px); direction: ltr; }
+.stabs button { font: 500 11px var(--mono); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--cad-grid); background: rgba(13, 16, 19, .9); color: var(--cad-dim); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.stabs button i { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.stabs button:hover { color: var(--text); }
+.stabs button.on { color: var(--text); border-color: var(--line-strong); background: #1c232a; }
+
+/* step 1: sheet cards */
+.sheets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sc { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--ink-3); cursor: pointer; text-align: start; padding: 0; display: flex; flex-direction: column; transition: border-color .16s; }
+.sc:hover { border-color: var(--line-strong); }
+.sc.on { border-color: var(--redline); box-shadow: inset 0 0 0 1px var(--redline); }
+.sc .th { display: block; width: 100%; aspect-ratio: 3 / 2; background: var(--cad-bg); }
+.sc .th svg { display: block; width: 100%; height: 100%; }
+.sc .m { padding: 6px 9px 8px; display: flex; flex-direction: column; gap: 3px; font-size: 12px; }
+.sc .m .r { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.sc .m b { font-family: var(--mono); font-size: 12px; font-weight: 600; direction: ltr; }
+.sc .m span.s { color: var(--muted); font-size: 11.5px; }
+.dtag { font-size: 10.5px; border-radius: 99px; padding: 1px 8px; font-weight: 600; white-space: nowrap; }
+.layers { display: flex; flex-direction: column; }
+.layers label { display: flex; align-items: center; gap: 8px; font-size: 12.5px; padding: 5px 0; border-bottom: 1px dashed var(--line); cursor: pointer; }
+.layers label:last-child { border-bottom: 0; }
+.layers label .grow { flex: 1; }
+.layers label code { font-family: var(--mono); font-size: 11px; color: var(--muted); direction: ltr; }
+.layers input { accent-color: var(--redline); width: 15px; height: 15px; }
+
+/* step 2: processing */
+.proc { display: flex; flex-direction: column; gap: 6px; }
+.pr { border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px 8px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 3px 9px; align-items: center; cursor: pointer; font-size: 12.5px; background: none; color: inherit; text-align: start; font: inherit; }
+.pr:hover { border-color: var(--line-strong); }
+.pr.on { border-color: var(--line-strong); background: var(--ink-3); }
+.pr .code { font-family: var(--mono); font-size: 12px; font-weight: 600; direction: ltr; }
+.pr .bar { grid-column: 1 / -1; height: 3px; background: var(--ink-4); border-radius: 2px; overflow: hidden; }
+.pr .bar i { display: block; height: 100%; width: 0; background: var(--redline); transition: width .28s var(--ease-out); }
+.pr.done .bar i { background: var(--ok); }
+.pr .st { grid-column: 1 / -1; color: var(--muted); font-size: 11.5px; min-height: 1.5em; }
+.insp { border: 1px dashed var(--line-strong); border-radius: 6px; padding: 8px 10px; font-size: 12.5px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+.insp b { color: var(--text); }
+.insp .kv2 { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; }
+.insp .kv2 span:nth-child(odd) { color: var(--faint); }
+.insp .kv2 span:nth-child(even) { color: var(--text); }
+.chk { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px; }
+.chk label { display: flex; align-items: center; gap: 7px; font-size: 12.5px; cursor: pointer; padding: 3px 0; }
+.chk input { accent-color: var(--redline); width: 15px; height: 15px; }
+
+/* step 3: symbol classification */
+.sym { width: 34px; height: 34px; background: var(--cad-bg); border-radius: 5px; border: 1px solid var(--cad-grid); display: block; flex: none; }
+.sym.big { width: 64px; height: 64px; }
+.clist { border: 1px solid var(--line); border-radius: 6px; overflow: hidden auto; max-height: 300px; }
+.cg { padding: 5px 10px; font-size: 11px; color: var(--muted); background: var(--ink-3); border-bottom: 1px solid var(--line); font-weight: 600; position: sticky; top: 0; z-index: 1; }
+.cl { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 9px; align-items: center; padding: 6px 10px; border-bottom: 1px solid var(--line); cursor: pointer; font-size: 12.5px; transition: background .12s; }
+.cl:last-child { border-bottom: 0; }
+.cl:hover, .cl.on { background: var(--redline-soft); }
+.cl .t { min-width: 0; }
+.cl .t div { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cl .t .mt { color: var(--muted); font-size: 11.5px; }
+.cdet { border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px; background: var(--ink-3); }
+.cdet .top { display: flex; gap: 10px; align-items: center; }
+.cdet .top .t { min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; }
+.cdet .top .t b { font-size: 13.5px; }
+.cdet .why { font-size: 12px; color: var(--muted); }
+.cdet select { width: 100%; font: inherit; font-size: 13px; background: var(--ink); color: var(--text); border: 1px solid var(--line-strong); border-radius: 6px; padding: 6px 8px; }
+.cdet .row { justify-content: space-between; }
+.progress { height: 6px; background: var(--ink-4); border-radius: 3px; overflow: hidden; }
+.progress i { display: block; height: 100%; background: var(--ok); transition: width .3s var(--ease-out); }
+
+/* step 4: BOQ by chapter */
+.boq { border: 1px solid var(--line); border-radius: 6px; overflow: hidden auto; max-height: min(46vh, 420px); }
+.chs .chh { position: sticky; top: 0; z-index: 1; background: var(--ink-3); padding: 6px 10px; font-size: 11.5px; font-weight: 600; display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--line); }
+.chs .chh span { color: var(--muted); font-weight: 500; }
+.bl { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; gap: 8px; padding: 6px 10px; border-bottom: 1px solid var(--line); font-size: 12.5px; cursor: pointer; align-items: center; transition: background .12s; }
+.bl:hover, .bl.on { background: var(--redline-soft); }
+.bl .c { font-family: var(--mono); font-size: 10.5px; color: var(--muted); direction: ltr; text-align: right; }
+.bl .ds { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bl .q { font-family: var(--mono); font-size: 12px; white-space: nowrap; }
+.bl.ns .ds, .bl.ns .q { color: var(--faint); }
+.bl.u .ds { color: var(--warn); }
+.ldet { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.ldet .ch { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 12px; background: var(--ink-3); border-bottom: 1px solid var(--line); }
+.ldet .ch b { font-family: var(--mono); direction: ltr; }
+.ldet .bd2 { padding: 10px 12px; display: flex; flex-direction: column; gap: 7px; font-size: 12.5px; }
+.ldet .qq { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.ldet .qq .v { font-family: var(--mono); font-size: 20px; font-weight: 600; white-space: nowrap; }
+.ldet ul { margin: 0; padding-inline-start: 18px; color: var(--muted); display: flex; flex-direction: column; gap: 2px; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.chip { font: 500 11px var(--mono); padding: 3px 8px; border-radius: 99px; border: 1px solid var(--line-strong); background: var(--ink); color: var(--text); cursor: pointer; direction: ltr; }
+.chip:hover { border-color: var(--redline); }
+.sets { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+.sets label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--muted); background: var(--ink-3); border-radius: 6px; padding: 6px 8px; }
+.sets input { width: 100%; font: 600 14px var(--mono); background: transparent; border: 0; border-bottom: 1px solid var(--line-strong); color: var(--text); padding: 2px 0; direction: ltr; text-align: right; }
+.sets input:focus { outline: none; border-bottom-color: var(--redline); }
+
+.qa { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.qr { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; align-items: start; padding: 7px 10px; border-bottom: 1px solid var(--line); font-size: 12px; cursor: pointer; transition: background .12s; }
+.qr:last-child { border-bottom: 0; }
+.qr:hover, .qr.on { background: var(--redline-soft); }
+.qr .pill { justify-content: center; padding: 1px 0; min-width: 20px; text-align: center; }
+.qr b { display: block; font-size: 12.5px; }
+.qr span span { color: var(--muted); line-height: 1.4; }
+
+/* step 5: pricing table */
+.d-table td.desc { white-space: normal; min-width: 240px; max-width: 460px; line-height: 1.35; }
+.d-table td.code { font-family: var(--mono); font-size: 11.5px; color: var(--muted); direction: ltr; text-align: right; }
+.d-table tr.grp td { font-size: 12.5px; }
+.d-table tr.grp td.num { font-weight: 700; }
+.d-table tr.miss td { background: var(--warn-soft); }
+.d-table tr.ns td { color: var(--faint); }
+.d-table tr.u td.desc { color: var(--warn); }
+.d-table tr.flash td { animation: flash .8s ease-out; }
+@keyframes flash { from { background: var(--redline-soft); } to { background: transparent; } }
+.d-table input { width: 86px; text-align: left; }
+.d-table input.ov { border-color: var(--info); color: var(--info); }
+.d-table input.need { border-color: var(--warn); }
+.d-table .rs { background: none; border: 0; color: var(--info); cursor: pointer; padding: 0 4px; font-size: 13px; }
+.d-table tfoot td { font-weight: 600; border-bottom: 0; }
+.d-table tfoot tr.gt td { font-size: 14px; font-weight: 700; border-top: 2px solid var(--text); }
+.tots { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.tots div { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 7px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.tots div:last-child { border-bottom: 0; background: var(--redline-soft); font-weight: 700; font-size: 14px; }
+.tots span { color: var(--muted); }
+.tots b { font-family: var(--mono); font-weight: 600; }
+.tots input { width: 52px; font: 600 12px var(--mono); background: var(--ink); color: var(--text); border: 1px solid var(--line-strong); border-radius: 4px; padding: 2px 5px; direction: ltr; margin-inline-start: 6px; }
+.bars { display: flex; flex-direction: column; gap: 5px; }
+.bars div { display: grid; grid-template-columns: 112px minmax(0, 1fr) 76px; gap: 8px; align-items: center; font-size: 12px; }
+.bars div > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.bars i { display: block; height: 8px; border-radius: 2px; background: var(--redline); min-width: 2px; transition: width .3s var(--ease-out); }
+.bars b { font-family: var(--mono); font-weight: 500; font-size: 11.5px; text-align: left; direction: ltr; }
+@media (max-width: 1020px) { .boq { max-height: 360px; } }
+@media (max-width: 640px) {
+  .stabs { top: auto; bottom: 8px; left: auto; right: 10px; max-width: calc(100% - 64px); flex-wrap: nowrap; }
+  .stabs button { padding: 3px 6px; font-size: 10.5px; gap: 4px; }
+  .d-table td.desc { min-width: 170px; }
+}
+</style>
+</head>
+<body>
+<script src="/catalog/shell/shell.js"></script>
+<script src="/catalog/boq/demo.js"></script>
+</body>
+</html>

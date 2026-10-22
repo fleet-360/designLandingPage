@@ -1,0 +1,1085 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>אינסטלציה: סיווג קווים, אורכים ואביזרים | דמו אינטראקטיבי · Pro Algorithm</title>
+<meta name="description" content="דמו אינטראקטיבי של תוסף AutoCAD לאינסטלציה: מיפוי שכבות למערכת, חומר וקוטר, מדידת אורכים ושיפועים, בדיקת רומים, ספירת קולטנים, נקודות ואביזרים לפי חדר, וכתב כמויות לאקסל.">
+<link rel="canonical" href="https://www.buildalgo.co.il/catalog/plumbing/">
+<meta property="og:title" content="אינסטלציה: סיווג קווים, אורכים ואביזרים | Pro Algorithm">
+<meta property="og:image" content="https://www.buildalgo.co.il/assets/img/brand/og.jpg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/brand/icon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/catalog/shell/shell.css">
+<!--tracking-->
+<style>
+#d-svg .bg-fill { fill: #262d34; }
+#d-svg .bg-wall { fill: none; stroke: #59646b; stroke-width: 1; vector-effect: non-scaling-stroke; }
+#d-svg .bg-arch { fill: none; stroke: #39434b; stroke-width: .8; vector-effect: non-scaling-stroke; }
+#d-svg .bg-axis { fill: none; stroke: #232a31; stroke-width: 1; stroke-dasharray: 14 4 2 4; vector-effect: non-scaling-stroke; }
+#d-svg .room rect { fill: transparent; stroke: none; }
+#d-svg .room text { font-family: var(--font); font-size: 36px; fill: #55606a; text-anchor: middle; pointer-events: none; transition: fill .2s; }
+#d-svg .room text .a { font-family: var(--mono); font-size: 26px; }
+#d-svg.st4 .room { cursor: pointer; }
+#d-svg.st4 .room rect { stroke: #3a444d; stroke-width: 1; stroke-dasharray: 5 4; vector-effect: non-scaling-stroke; }
+#d-svg.st4 .room:hover rect { fill: rgba(255, 91, 46, .05); }
+#d-svg.st4 .room.on rect { fill: rgba(255, 91, 46, .09); stroke: var(--redline); stroke-dasharray: none; stroke-width: 1.5; }
+#d-svg.st4 .room text { fill: #7d8892; }
+#d-svg.st4 .room.on text { fill: #f2f5f6; }
+#d-svg .run path { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+#d-svg .run .v { transition: stroke .35s ease, opacity .25s, stroke-width .2s; pointer-events: none; }
+#d-svg .run .dbl { pointer-events: none; }
+#d-svg .run .hit { stroke: transparent; stroke-width: 14; pointer-events: stroke; cursor: pointer; }
+#d-svg .run.dim { opacity: .14; }
+#d-svg .run.hl .v { stroke-width: 5 !important; }
+#d-svg .run.hide { display: none; }
+#d-svg .run.unk .v { stroke-dasharray: 6 5; }
+#d-svg.st4 .run { opacity: .4; }
+#d-svg.st4 .run .hit, #d-svg.st5 .run .hit { pointer-events: none; }
+#d-svg .dlab { font-family: var(--mono); font-size: 28px; fill: #e9eef1; paint-order: stroke; stroke: #111519; stroke-width: 9px; pointer-events: none; }
+#d-svg .lvl circle { fill: #111519; stroke: var(--warn); stroke-width: 6; }
+#d-svg .lvl text { font-family: var(--mono); font-size: 30px; fill: var(--warn); paint-order: stroke; stroke: #111519; stroke-width: 9px; direction: ltr; }
+#d-svg .lvl.ok circle { stroke: var(--ok); }
+#d-svg .lvl.ok text { fill: var(--ok); }
+#d-svg .mark { fill: none; stroke: var(--warn); stroke-width: 2; stroke-dasharray: 6 4; vector-effect: non-scaling-stroke; pointer-events: none; }
+#d-svg .fit, #d-svg .pt { display: none; }
+#d-svg.st4 .fit, #d-svg.st4 .pt { display: inline; }
+#d-svg .fit.off, #d-svg .pt.off { display: none !important; }
+#d-svg .fit { pointer-events: none; }
+#d-svg .pt { cursor: help; }
+#d-svg .fit.out, #d-svg .pt.out { opacity: .22; }
+#sel { fill: rgba(255, 91, 46, .08); stroke: var(--redline); stroke-width: 1.5; stroke-dasharray: 6 4; vector-effect: non-scaling-stroke; pointer-events: none; }
+.selecting #d-svg { cursor: crosshair; }
+.pl-tip { position: absolute; z-index: 5; pointer-events: none; background: rgba(13, 16, 19, .95); border: 1px solid var(--line-strong); border-radius: 7px; padding: 7px 10px; font-size: 12px; line-height: 1.45; color: var(--text); min-width: 150px; max-width: 250px; box-shadow: 0 6px 24px rgba(0, 0, 0, .4); }
+.pl-tip b { font-weight: 600; }
+.pl-tip .m { color: var(--muted); }
+.pl-tip .mono { direction: ltr; unicode-bidi: isolate; }
+/* side palette */
+.inv { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.inv label { display: grid; grid-template-columns: 16px 12px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 10px; border-bottom: 1px solid var(--line); font-size: 12.5px; cursor: pointer; }
+.inv label:last-child { border-bottom: 0; }
+.inv label:hover { background: var(--ink-3); }
+.inv input { accent-color: var(--redline); width: 15px; height: 15px; margin: 0; }
+.inv code, .map code, .lay code { font-family: var(--mono); font-size: 12px; direction: ltr; unicode-bidi: isolate; }
+.inv .meta { color: var(--muted); font-family: var(--mono); font-size: 11.5px; white-space: nowrap; }
+.inv .sub { grid-column: 3 / 5; color: var(--faint); font-size: 11px; margin-top: -3px; }
+.cal { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 2px 10px; font-size: 12px; color: var(--muted); }
+.cal b { color: var(--text); font-family: var(--mono); font-weight: 500; text-align: left; direction: ltr; }
+.cal .ok { color: var(--ok); }
+.map { display: flex; flex-direction: column; gap: 6px; }
+.mrow { border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; transition: border-color .2s, background .2s; }
+.mrow:hover { border-color: var(--line-strong); }
+.mrow.unk { border-color: var(--warn); background: var(--warn-soft); }
+.mrow .top { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.mrow .mat { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-size: 11.5px; color: var(--muted); }
+.mrow .info { display: flex; justify-content: space-between; gap: 8px; font-size: 11.5px; color: var(--muted); flex-wrap: wrap; }
+.mrow .tgt { font-family: var(--mono); font-size: 11px; color: var(--faint); direction: ltr; text-align: left; }
+.mrow .sug { display: flex; gap: 8px; align-items: center; justify-content: space-between; font-size: 12px; color: var(--warn); }
+.mrow .why { font-size: 11.5px; color: var(--faint); }
+select.sel { font: inherit; font-size: 12.5px; background: var(--ink); color: var(--text); border: 1px solid var(--line-strong); border-radius: 5px; padding: 3px 6px; max-width: 170px; }
+select.sel.sm { font-size: 11.5px; padding: 1px 4px; font-family: var(--mono); direction: ltr; }
+select.sel:focus { outline: none; border-color: var(--redline); }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-strong); background: var(--ink-3); border-radius: 99px; padding: 3px 10px; font-size: 12px; cursor: pointer; color: var(--text); }
+.chip i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.chip.off { opacity: .45; }
+.chip.on { border-color: var(--redline); background: var(--redline-soft); }
+.grp { border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+.grp .gh { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 7px 10px; background: var(--ink-3); font-size: 13px; font-weight: 600; }
+.grp .gh .mono { font-weight: 600; }
+.grp .gh small { font-weight: 400; color: var(--muted); font-size: 11px; }
+.grp .dr { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 5px 10px; padding-inline-start: 30px; border-top: 1px solid var(--line); font-size: 12.5px; cursor: pointer; }
+.grp .dr:hover, .grp .dr.on { background: var(--redline-soft); }
+.grp .dr .n { color: var(--muted); font-size: 11.5px; }
+.dlist { display: flex; flex-direction: column; gap: 6px; max-height: 360px; overflow: auto; }
+.dlist > * { flex: none; }
+.pick { border: 1px dashed var(--line-strong); border-radius: 7px; padding: 8px 10px; font-size: 12.5px; display: flex; flex-direction: column; gap: 3px; }
+.pick .row { justify-content: space-between; }
+.qa { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+.qa .qh { padding: 7px 10px; background: var(--ink-3); font-size: 12px; font-weight: 600; display: flex; justify-content: space-between; gap: 8px; }
+.qa .qi { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; padding: 7px 10px; border-top: 1px solid var(--line); font-size: 12px; cursor: pointer; }
+.qa .qi:hover, .qa .qi.on { background: var(--ink-3); }
+.qa .qi.on { box-shadow: inset 3px 0 0 var(--redline); }
+.qa .qi .t { min-width: 0; }
+.qa .qi .s { color: var(--muted); font-size: 11.5px; grid-column: 1 / 3; }
+.qa .qi .s .mono { direction: ltr; unicode-bidi: isolate; }
+.qa .qi .act { grid-column: 1 / 3; display: flex; gap: 6px; flex-wrap: wrap; }
+.cnt { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+.cnt div { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 10px; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+.cnt div:last-child { border-bottom: 0; }
+.cnt b { font-family: var(--mono); font-weight: 600; }
+.cnt .bys { display: block; font-size: 11px; line-height: 1.4; }
+.cnt .h { background: var(--ink-3); color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .03em; }
+.cnt .sz { font-family: var(--mono); color: var(--muted); font-size: 11.5px; direction: ltr; unicode-bidi: isolate; }
+.ico { width: 14px; height: 14px; display: block; }
+.ftog { display: flex; gap: 6px 10px; flex-wrap: wrap; }
+.ftog label { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); cursor: pointer; }
+.ftog input { accent-color: var(--redline); margin: 0; }
+.tabs { display: flex; gap: 4px; padding: 8px 10px; background: var(--ink-2); border-bottom: 1px solid var(--line); position: sticky; left: 0; flex-wrap: wrap; }
+.tabs button { font: inherit; font-size: 12.5px; border: 1px solid var(--line); background: var(--ink-3); color: var(--muted); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+.tabs button[aria-selected="true"] { border-color: var(--redline); color: var(--text); background: var(--redline-soft); }
+.tabs .sp { flex: 1; }
+.tabs .fn { font-family: var(--mono); font-size: 11px; color: var(--faint); align-self: center; direction: ltr; }
+.d-table td .sw { vertical-align: -1px; margin-inline-end: 6px; }
+.d-table td.mono, .d-table td code { font-family: var(--mono); font-size: 12px; }
+.d-table td code { direction: ltr; unicode-bidi: isolate; }
+.d-table td.mut { color: var(--muted); }
+.d-table td.desc { white-space: normal; min-width: 280px; }
+.d-table td.desc .mono { direction: ltr; unicode-bidi: isolate; }
+.d-table td .ok { color: var(--ok); }
+.d-table td .bad { color: var(--warn); }
+.waste { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; }
+.waste input { width: 64px; font: inherit; font-family: var(--mono); background: var(--ink); color: var(--text); border: 1px solid var(--line-strong); border-radius: 5px; padding: 3px 6px; direction: ltr; text-align: center; }
+.waste input:focus { outline: none; border-color: var(--redline); }
+@media (max-width: 600px) {
+  #d-svg { aspect-ratio: 1 / 1; }
+  .d-legend { display: none; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .stats.c3 { grid-template-columns: repeat(3, 1fr); }
+  .stats b { font-size: 16px; }
+  select.sel { max-width: 150px; }
+}
+</style>
+</head>
+<body>
+<script src="/catalog/shell/shell.js"></script>
+<script>
+(async () => {
+/* ---------- systems, materials and the source layers of the sample sheet ---------- */
+const SYS = {
+  SWG: { name: "ביוב", code: "SWG", color: "#e3a13b", grav: true },
+  RAIN: { name: "מי גשם", code: "RAIN", color: "#7591ff", grav: true },
+  DRN: { name: "ניקוז", code: "DRAIN", color: "#31c9b0", grav: true },
+  CW: { name: "מים קרים", code: "WTR-CW", color: "#3fb8f5" },
+  HW: { name: "מים חמים", code: "WTR-HW", color: "#ff8fa3" },
+  FIRE: { name: "כיבוי אש — ברזי כיבוי וגלגלונים", short: "ברזי כיבוי", code: "FIRE-HR", color: "#ff5d5d" },
+  SPR: { name: "ספרינקלרים", code: "SP", color: "#d66bf0" },
+  GAS: { name: "גז", code: "GAS", color: "#f2ea6d" },
+  NONE: { name: "לא לספירה", code: null, color: "#59646b" },
+};
+const SYS_ORDER = ["SWG", "RAIN", "DRN", "CW", "HW", "FIRE", "SPR", "GAS"];
+const sname = (s) => SYS[s].short || SYS[s].name;
+// pipe materials as written in a bill of quantities; bar = stock length for ordering (m)
+const MAT = {
+  HDPE: { n: "HDPE", d: "צינור פוליאתילן HDPE בריתוך", bar: 5 },
+  PVC: { n: "PVC", d: "צינור PVC קשיח", bar: 6 },
+  PPA: { n: "PP אקוסטי", d: "צינור פוליפרופילן אקוסטי (מינרלי)", bar: 3 },
+  GALV: { n: "פלדה מגולבנת SCH40", d: "צינור פלדה מגולבנת סקדיול 40", bar: 6 },
+  BLK40: { n: "פלדה שחורה SCH40, גרוב", d: "צינור פלדה שחורה סקדיול 40, חיבורי גרוב, צבוע אדום", bar: 6 },
+  BLK10: { n: "פלדה שחורה SCH10, גרוב", d: "צינור פלדה שחורה סקדיול 10, חיבורי גרוב, צבוע אדום", bar: 6 },
+  PPR: { n: "PPR", d: "צינור PPR בריתוך", bar: 4 },
+  PEX: { n: "PEX", d: "צינור פוליאתילן מצולב (PEX)", bar: 0 },
+};
+const MAT_OK = { SWG: ["HDPE", "PVC", "PPA"], RAIN: ["HDPE", "PVC", "PPA"], DRN: ["HDPE", "PVC", "PPA"], CW: ["GALV", "PPR", "PEX"], HW: ["PPR", "PEX", "GALV"], FIRE: ["GALV", "BLK40"], SPR: ["BLK40", "BLK10", "GALV"], GAS: ["GALV"] };
+const MAT_DEF = { SWG: "HDPE", RAIN: "HDPE", DRN: "HDPE", CW: "GALV", HW: "PPR", FIRE: "GALV", SPR: "BLK40", GAS: "GALV" };
+// why the default material: from the sheet notes where they say it, else the office default
+const MAT_WHY = {
+  CW: ["לפי הערה 2 בגיליון", "צנרת מים ראשית עד המונים: פלדה מגולבנת סקדיול 40"],
+  FIRE: ["לפי הערה 2 בגיליון", "צנרת ראשית לכיבוי אש: פלדה מגולבנת סקדיול 40"],
+  SPR: ["ברירת מחדל של המשרד", "החומר לא צוין בגיליון הזה"],
+  SWG: ["ברירת מחדל של המשרד", "החומר לא צוין; הערה 4 בגיליון דורשת בידוד אקוסטי לצנרת ביוב וניקוז"],
+  RAIN: ["ברירת מחדל של המשרד", "החומר לא צוין בגיליון הזה"],
+  DRN: ["ברירת מחדל של המשרד", "החומר לא צוין; הערה 4 בגיליון דורשת בידוד אקוסטי לצנרת ביוב וניקוז"],
+};
+const PURPOSE = { SWG: "לביוב", RAIN: "למי גשם", DRN: "לניקוז", CW: "למים קרים", HW: "למים חמים", FIRE: "לברזי כיבוי", SPR: "לספרינקלרים", GAS: "לגז" };
+// colours as they look in the CAD file on a dark screen; how each source was recognised
+const SRC = {
+  SWG: { raw: "#c8352b", auto: null, sug: "SWG", why: "השם 1-PLUM12 לא לפי המוסכמה. זוהה לפי הצבע, התוויות Ø110-2% / Ø160-1.5% ותגיות הקולטנים ק-4״", dia: "תוויות על הקו ותגיות הקולטנים" },
+  ZMG: { raw: "#2f8cff", auto: "RAIN", why: "שם השכבה zmg (צ.מ.ג, צינור מי גשם), קו כפול", dia: "רוחב הקו הכפול, תואם לתוויות" },
+  ROOF: { raw: "#8aa2ec", auto: "RAIN", why: "שם השכבה ZMG-ROOF: צ.מ.ג שיורדים מהגג", dia: "רוחב הקו הכפול" },
+  NIK: { raw: "#2aa7d6", auto: "DRN", why: "שם השכבה nikuz: ניקוז יורד 3״, ניקוז ארונות מוני גז, מחסומי רצפה בנישות", dia: "תוויות Ø90 / Ø75; הרוחב המשורטט בשכבה הזו לא בקנ״מ" },
+  WTR: { raw: "#5a6bff", auto: "CW", why: "שם השכבה WATER, קו נקודה־קו (צנור מים קרים במקרא)", dia: "תוויות באינץ׳" },
+  FIRE: { raw: "#ff5a1f", auto: "FIRE", why: "שם השכבה fire, קו עם האות F (צנור ברזי כיבוי במקרא)", dia: "תוויות באינץ׳" },
+  SPR: { raw: "#ff4dff", auto: "SPR", why: "שם השכבה spr, קו עם האות S", dia: "תוויות באינץ׳ על הקווים הראשיים" },
+};
+const MM = ["Ø50", "Ø63", "Ø75", "Ø90", "Ø110", "Ø125", "Ø160", "Ø200", "Ø250", "Ø315"];
+const IN = ['1/2"', '3/4"', '1"', '1.25"', '1.5"', '2"', '2.5"', '3"', '4"', '6"'];
+const INCH = { '1/2"': .5, '3/4"': .75, '1"': 1, '1.25"': 1.25, '1.5"': 1.5, '2"': 2, '2.5"': 2.5, '3"': 3, '4"': 4, '6"': 6 };
+// fittings: the same geometry has a different name on a gravity line (HDPE) and on a pressure line (steel)
+const FT = {
+  b45: { g: "קשת 45°", p: "זווית 45°", grp: "bend" },
+  b90: { g: "קשת 90°", p: "זווית 90°", grp: "bend" },
+  base: { g: "קשת בבסיס קולטן / ירידה", p: "זווית 90° לעלייה / ירידה", grp: "bend" },
+  y: { g: "הסתעפות 45°", p: "מסעף T", grp: "tee" },
+  tee: { g: "הסתעפות 88.5°", p: "מסעף T", grp: "tee" },
+  red: { g: "מעבר קוטר אקסצנטרי", p: "מעבר (רדוקציה)", grp: "red" },
+  end: { g: "פקק ביקורת", p: "פקק", grp: "end" },
+};
+const FGRP = { bend: { name: "קשתות וזוויות", color: "#e8eef2" }, tee: { name: "הסתעפויות", color: "#3ecf8e" }, red: { name: "מעברי קוטר", color: "#ffb547" }, end: { name: "פקקים", color: "#a1a7b0" } };
+// symbols on the sheet. c: v = vertical pipe (stack, drop, riser), f = end point (fixture, drain, hydrant), e = valve / meter / equipment
+const PK = {
+  st4: { n: "קולטן ביוב מהקומות", tag: "תגית ק-4״ · Ø110", c: "v", boq: "חיבור קולטן ביוב {d} לקו בתקרה, כולל פתח ביקורת בבסיס" },
+  st6: { n: "קולטן ביוב מהקומות", c: "v", boq: "חיבור קולטן ביוב {d} לקו בתקרה, כולל פתח ביקורת בבסיס" },
+  spass: { n: "קולטן ביוב עובר, בלי חיבור בקומה", c: "v", boq: "קולטן ביוב {d} עובר בקומה (אורך אנכי לפי חתך)" },
+  sdrop: { n: "ירידת ביוב לקומה שמתחת", c: "v", boq: "ירידת ביוב {d} לקומה התחתונה, כולל שרוול בתקרה" },
+  wc: { n: "נקודת ביוב לאסלה", c: "f", boq: "נקודת ביוב לאסלה {d}" },
+  wcd: { n: "ירידה מאסלות הקומה", c: "v", boq: "ירידה {d} מאסלות לקומה התחתונה" },
+  trap8: { n: "מחסום רצפה, חדר אשפה / דחסנית", c: "f", boq: "מחסום רצפה {d} עם רשת, בחדר אשפה / דחסנית" },
+  sdown4: { n: "ירידה ממחסום רצפה", c: "v", boq: "ירידה {d} ממחסום רצפה לקומה התחתונה" },
+  rd: { n: "צ.מ.ג יורד מהגג / מהמרפסות", c: "v", boq: "חיבור צ.מ.ג {d} יורד לקו בתקרה, כולל פתח ביקורת" },
+  rpass: { n: "צ.מ.ג עובר, בלי חיבור בקומה", c: "v", boq: "צ.מ.ג {d} עובר בקומה (אורך אנכי לפי חתך)" },
+  rdrop: { n: "ירידת מי גשם לקומה שמתחת", c: "v", boq: "ירידת מי גשם {d} לקומה התחתונה, כולל שרוול בתקרה" },
+  nin75: { n: "ניקוז Ø75 יורד, מתחבר לקו מי גשם", c: "v", boq: "חיבור צנור ניקוז {d} יורד לקו מי גשם" },
+  ndrop: { n: "ניקוז יורד בנישת גלגלון", c: "v", boq: "ניקוז יורד {d} לקומה התחתונה" },
+  nin: { n: "ניקוז מקומת הכניסה (מלמעלה)", c: "v", boq: "חיבור ניקוז {d} מקומת הכניסה" },
+  gas: { n: "ניקוז ארון מוני גז", c: "v", boq: "חיבור ניקוז {d} מארון מוני גז" },
+  trap2: { n: "מחסום רצפה", c: "f", boq: "מחסום רצפה {d}" },
+  ndrop4: { n: "ירידת ניקוז", c: "v", boq: "ירידת ניקוז {d} לקומה התחתונה" },
+  out: { n: "יציאה חופשית מעל קרקע", c: "f", boq: "יציאת ניקוז {d} חופשית מעל קרקע" },
+  wr: { n: "עלייה / כניסת מים", c: "v", boq: "עלייה / כניסת מים קרים {d}" },
+  meter: { n: "סוללת מוני מים למסחר", c: "e", boq: "סוללת מוני מים למסחר, בארון" },
+  bfp: { n: "מז״ח (מונע זרימה חוזרת)", c: "e", boq: "מז״ח {d} כולל שני מגופים" },
+  prv: { n: "מקטין לחץ", c: "e", boq: "מקטין לחץ {d} עם מגוף" },
+  tap: { n: "ברז גן / שטיפה", c: "f", boq: "ברז גן {d} לשטיפה" },
+  boiler: { n: "בוילר חשמלי, 2.5 קוו״ט", c: "e", boq: "בוילר חשמלי {d} (2.5 קוו״ט) בתקרה אקוסטית, כולל חיבורים" },
+  hyd2: { n: "ברז כיבוי אש בחדר המדרגות", c: "f", boq: "ברז כיבוי אש {d}" },
+  cab: { n: "עמדת כיבוי אש (ארון)", c: "f", boq: "עמדת כיבוי אש בארון, לפי פרט" },
+  reel: { n: "גלגלון (תוף כיבוי) בנישה", c: "f", boq: "גלגלון כיבוי אש {d} בנישה" },
+  fr: { n: "עלייה / ירידה, צנרת כיבוי", c: "v", boq: "עלייה / ירידה צנרת כיבוי {d}" },
+  bfp3: { n: "מז״ח לקו הכיבוי של הבניין", c: "e", boq: "מז״ח {d} לקו כיבוי אש, כולל מגופים" },
+  hydx: { n: "ברז כיבוי חיצוני", c: "f", boq: "ברז כיבוי חיצוני {d}" },
+  fdc: { n: "ברז הסנקה לעמדות כיבוי", c: "f", boq: "ברז הסנקה {d} לעמדות כיבוי" },
+  sfeed: { n: "הזנת ספרינקלרים מלמטה", c: "v", boq: "עלייה {d} להזנת ספרינקלרים" },
+  zone: { n: "ברז אזור עם מיקרוסוויץ׳", c: "e", boq: "ברז סגירה עם מיקרוסוויץ׳ (ברז אזור), קוטר לפי גיליון הספרינקלרים" },
+  sup: { n: "עלייה לספרינקלרים בקומה מעל", c: "v", boq: "עלייה {d} לספרינקלרים בקומה מעל" },
+  sfdc: { n: "ברז הסנקה לספרינקלרים", c: "f", boq: "ברז הסנקה לספרינקלרים {d}" },
+};
+const PCAT = { v: "קולטנים, ירידות ועליות", f: "נקודות קצה: כלים, מחסומים, ברזים", e: "מגופים, מונים וציוד" };
+const DS = { label: "תווית בשרטוט", width: "רוחב הקו הכפול", net: "המשך של קו עם תווית", tag: "תגיות הקולטנים (ק-4״ · Ø110)", trap: "יציאת מחסום 4״x2״ (2״)", fix: "יציאת הכלי או המחסום (4״)", default: "ברירת מחדל לשכבה" };
+
+const DATA = await fetch("/catalog/plumbing/data.json").then((r) => r.json());
+const W = DATA.w, H = DATA.h;
+const srcBy = Object.fromEntries(DATA.sources.map((s) => [s.k, s]));
+const PIPE_SRC = DATA.sources.filter((s) => s.kind === "single" || s.kind === "double").map((s) => s.k);
+const runs = DATA.runs.map((r, i) => {
+  const pts = [];
+  for (let k = 0; k < r.p.length; k += 2) pts.push([r.p[k], r.p[k + 1]]);
+  let L = 0;
+  for (let k = 1; k < pts.length; k++) L += Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]);
+  return { i, s: r.s, d0: r.d, ds: r.ds, sl: r.sl, w: r.w, pts, m: L / 100 };
+});
+
+/* ---------- state ---------- */
+const S = {
+  map: Object.fromEntries(PIPE_SRC.map((k) => [k, SRC[k].auto])),
+  mat: Object.fromEntries(PIPE_SRC.map((k) => [k, SRC[k].auto ? MAT_DEF[SRC[k].auto] : null])),
+  defD: Object.fromEntries(PIPE_SRC.map((k) => [k, srcBy[k].def])),
+  runSys: {}, // per-run override (a QA fix)
+  visSrc: new Set(PIPE_SRC), visSys: new Set(SYS_ORDER), hiRow: null, pinned: null, hoverSrc: null, qa: null,
+  sel: null, fOn: { bend: true, tee: true, red: true, end: true, pt: true }, labels: false, tab: "boq", waste: 0,
+};
+const sysOf = (r) => S.runSys[r.i] || S.map[r.s];
+const matOf = (r) => {
+  const s = sysOf(r);
+  if (S.runSys[r.i]) { const k = PIPE_SRC.find((x) => S.map[x] === s); return (k && S.mat[k]) || MAT_DEF[s]; }
+  return S.mat[r.s] || MAT_DEF[s];
+};
+const diaOf = (r) => (r.ds === "default" ? S.defD[r.s] : r.d0);
+const isMM = (d) => d && d[0] === "Ø";
+const dKey = (d) => (isMM(d) ? +d.slice(1) : (INCH[d] || 0) * 25.4);
+const counted = (r) => { const s = sysOf(r); return s && s !== "NONE"; };
+const isGrav = (s) => !!SYS[s]?.grav;
+const DN = { '1/2"': 15, '3/4"': 20, '1"': 25, '1.25"': 32, '1.5"': 40, '2"': 50, '2.5"': 65, '3"': 80, '4"': 100, '6"': 150 };
+const pluginLayer = (sys, d) => SYS[sys]?.code ? `PLUMB-${SYS[sys].code}-PIPE-${isMM(d) ? "D" + d.slice(1) : "DN" + DN[d]}` : "—";
+const nSeg = (n) => (n === 1 ? "קטע 1" : `${n} קטעים`);
+const pct = (v) => (v == null ? "" : fmt(v, v % 1 ? 1 : 0) + "%");
+const ltr = (s) => `<span class="mono ltr">${esc(s)}</span>`;
+const fsize = (f) => {
+  const a = diaOf(runs[f.r]);
+  if (f.b == null) return a;
+  const b = diaOf(runs[f.b]);
+  return isMM(a) ? `${a}/${b.replace("Ø", "")}` : `${a}x${b}`;
+};
+const fname = (f) => { const s = sysOf(runs[f.r]); return FT[f.t][isGrav(s) ? "g" : "p"]; };
+
+/* ---------- shell ---------- */
+const D = Demo({
+  slug: "plumbing",
+  plugin: "PLUMBER",
+  tag: "AutoCAD plug-in · אינסטלציה",
+  title: "אינסטלציה: סיווג קווים, אורכים ואביזרים",
+  sub: "שרטוט דוגמה: תוכנית אינסטלציה של קומת מסחר בבניין מגורים, 1:50, צנרת תלויה בתקרה האקוסטית. כל קו מסווג למערכת, חומר וקוטר, האורכים והשיפועים נבדקים מול הרומים, וקולטנים, נקודות ואביזרים נספרים לפי חדר עד כתב כמויות.",
+  file: "PLUMB_DEMO_COMMERCIAL-FL.dwg",
+  viewBox: [-60, -60, W + 120, H + 120],
+  flipY: H,
+  kpis: [{ id: "len", label: "מ״א צנרת" }, { id: "fit", label: "אביזרים" }, { id: "pts", label: "נקודות" }, { id: "qa", label: "ממצאים" }],
+  steps: [
+    { t: "קריאת השרטוט", d: "שכבות, צבעים וקנ״מ", cmd: "PLUMBINVENTORY" },
+    { t: "מיפוי מערכות", d: "שכבה ← מערכת, חומר, קוטר", cmd: "PLUMBER MAP" },
+    { t: "אורכים ושיפועים", d: "מ״א לפי קוטר, בדיקת רומים", cmd: "PLUMBER TAKEOFF" },
+    { t: "נקודות ואביזרים", d: "לפי חדר או אזור", cmd: "PLUMBER FITTINGS" },
+    { t: "כתב כמויות", d: "סעיפים, יחידות, אקסל", cmd: "PLUMBEREXPORT" },
+  ],
+  onStep,
+});
+const svg = D.svg, el = D.el, fmt = D.fmt, esc = D.esc;
+// phones: a square canvas that opens on the middle of the floor; pan / pinch for the rest
+const NARROW = matchMedia("(max-width: 600px)").matches;
+if (NARROW) D.setView([W * 0.55 - (H + 120) / 2, -60, H + 120, H + 120], true);
+
+/* ---------- drawing ---------- */
+el("rect", { x: -60, y: -60, width: W + 120, height: H + 120, fill: "#111519" });
+const gBg = el("g", {});
+el("path", { class: "bg-axis", d: DATA.bg.axis || "" }, gBg);
+el("path", { class: "bg-fill", d: DATA.bg.wallfill || "" }, gBg);
+el("path", { class: "bg-arch", d: DATA.bg.arch || "" }, gBg);
+el("path", { class: "bg-wall", d: DATA.bg.wall || "" }, gBg);
+const gRooms = el("g", {});
+const roomEls = DATA.rooms.map((r, i) => {
+  const g = el("g", { class: "room", "data-room": i }, gRooms);
+  r.r.forEach(([x, y, w, h]) => el("rect", { x, y, width: w, height: h }, g));
+  const t = el("text", { x: r.lx, y: r.ly }, g);
+  t.textContent = r.n;
+  if (r.a) { const a = el("tspan", { class: "a", x: r.lx, dy: 34 }, t); a.textContent = fmt(r.a, r.a % 1 ? 2 : 0) + " מ״ר"; }
+  return g;
+});
+
+const P = (pts) => "M" + pts.map((p) => p[0] + " " + p[1]).join("L");
+function offsetPts(pts, d) {
+  // parallel polyline at distance d (mitred joins)
+  const n = pts.length, out = [];
+  const nrm = (a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1; return [-dy / L, dx / L]; };
+  for (let k = 0; k < n; k++) {
+    const n1 = k > 0 ? nrm(pts[k - 1], pts[k]) : null, n2 = k < n - 1 ? nrm(pts[k], pts[k + 1]) : null;
+    let v = n1 && n2 ? [n1[0] + n2[0], n1[1] + n2[1]] : n1 || n2;
+    const L = Math.hypot(v[0], v[1]) || 1;
+    v = [v[0] / L, v[1] / L];
+    const cos = n1 && n2 ? Math.max(0.35, v[0] * n2[0] + v[1] * n2[1]) : 1;
+    out.push([pts[k][0] + v[0] * d / cos, pts[k][1] + v[1] * d / cos]);
+  }
+  return out;
+}
+const gRuns = el("g", {});
+const runEls = runs.map((r) => {
+  const g = el("g", { class: "run", "data-r": r.i }, gRuns);
+  const d = P(r.pts);
+  let dbl = null;
+  if (srcBy[r.s].kind === "double") {
+    const w = (r.w || 10) / 2; // drawn width as measured on the sheet
+    dbl = el("path", { class: "dbl", d: P(offsetPts(r.pts, w)) + P(offsetPts(r.pts, -w)), stroke: SRC[r.s].raw, "stroke-width": 1.1 }, g);
+  }
+  const v = el("path", { class: "v", d }, g);
+  el("path", { class: "hit", d }, g);
+  return { g, v, dbl };
+});
+const gLab = el("g", {});
+const gQa = el("g", {});
+const gFit = el("g", {});
+const ICON = {
+  bend: (x, y, c) => `<path d="M${x} ${y - 15}L${x + 15} ${y}L${x} ${y + 15}L${x - 15} ${y}Z" fill="${c}" stroke="#111519" stroke-width="4"/>`,
+  tee: (x, y, c) => `<path d="M${x} ${y - 16}L${x + 15} ${y + 11}L${x - 15} ${y + 11}Z" fill="${c}" stroke="#111519" stroke-width="4"/>`,
+  red: (x, y, c) => `<rect x="${x - 12}" y="${y - 12}" width="24" height="24" fill="${c}" stroke="#111519" stroke-width="4"/>`,
+  end: (x, y, c) => `<circle cx="${x}" cy="${y}" r="12" fill="#111519" stroke="${c}" stroke-width="6"/>`,
+};
+const fits = DATA.fit.map((f) => ({ ...f, grp: FT[f.t].grp }));
+gFit.innerHTML = fits.map((f, i) => `<g class="fit" data-f="${i}">${ICON[f.grp](f.x, f.y, FGRP[f.grp].color)}</g>`).join("");
+const fitEls = [...gFit.children];
+// points: ring = vertical pipe, ring with dot = end point, square = valve / meter / equipment
+const PSHAPE = {
+  v: (g) => el("circle", { class: "pc", r: 17, fill: "#111519", "stroke-width": 7 }, g),
+  f: (g) => { el("circle", { class: "pc", r: 17, fill: "#111519", "stroke-width": 7 }, g); return el("circle", { class: "pd", r: 6 }, g); },
+  e: (g) => el("rect", { class: "pc", x: -15, y: -15, width: 30, height: 30, fill: "#111519", "stroke-width": 7 }, g),
+};
+const gPts = el("g", {});
+const ptEls = DATA.pts.map((p, i) => {
+  const g = el("g", { class: "pt", "data-p": i, transform: `translate(${p.x} ${p.y})` }, gPts);
+  el("circle", { r: 30, fill: "transparent" }, g);
+  PSHAPE[PK[p.k].c](g);
+  return g;
+});
+const selRect = el("rect", { id: "sel", x: 0, y: 0, width: 0, height: 0, visibility: "hidden" });
+const tip = document.createElement("div");
+tip.className = "pl-tip";
+tip.hidden = true;
+D.canvas.appendChild(tip);
+
+/* ---------- QA: slope against the level tags, and the plugin's findings ---------- */
+const checks = DATA.checks.map((c, i) => {
+  const act = ((c.a[2] - c.b[2]) / c.L) * 100;
+  // levels are written to the cm: the slope is at most (Δ + 1 cm) / L
+  const ok = c.sl == null || ((c.a[2] - c.b[2] + 0.01) / c.L) * 100 >= c.sl;
+  return { ...c, id: "c" + i, act, ok };
+});
+const finds = DATA.qa.map((q, i) => ({ ...q, id: "q" + i }));
+const openFinds = () => checks.filter((c) => !c.ok).length + finds.filter((q) => !(q.k === "layer" && q.r.every((r) => S.runSys[r]))).length;
+
+/* ---------- aggregation ---------- */
+function totals(filter = () => true) {
+  const by = {};
+  runs.forEach((r) => {
+    if (!counted(r) || !filter(r)) return;
+    const s = sysOf(r), d = diaOf(r), k = s + "|" + d;
+    (by[k] = by[k] || { s, d, m: 0, n: 0, runs: [], sl: new Set(), mat: new Set() });
+    by[k].m += r.m; by[k].n++; by[k].runs.push(r.i);
+    if (r.sl != null && isGrav(s)) by[k].sl.add(r.sl);
+    by[k].mat.add(matOf(r));
+  });
+  return by;
+}
+// a boiler sits on the water layer but belongs to hot water
+const ptSys = (p) => (p.k === "boiler" && S.map[p.s] === "CW" ? "HW" : S.map[p.s]);
+const ptLayer = (p) => (p.s === "SWG" && (p.k === "st4" || p.k === "st6") ? "1-KULTAN" : p.s === "SPR" && p.k !== "zone" ? "1-SP-Floor" : srcBy[p.s].layer);
+const ptCounted = (p) => { const s = ptSys(p); return s && s !== "NONE"; };
+const sortSys = (a, b) => SYS_ORDER.indexOf(a) - SYS_ORDER.indexOf(b);
+const totalM = () => runs.reduce((a, r) => a + (counted(r) ? r.m : 0), 0);
+function rows() {
+  const out = Object.values(totals());
+  out.sort((a, b) => sortSys(a.s, b.s) || dKey(a.d) - dKey(b.d));
+  return out;
+}
+function updateKpi() {
+  const classified = D.step >= 2;
+  D.kpi("len", classified ? fmt(totalM(), 1) : "—");
+  D.kpi("fit", D.step >= 4 ? fits.filter((f) => counted(runs[f.r])).length : "—");
+  D.kpi("pts", D.step >= 4 ? DATA.pts.filter(ptCounted).length : "—");
+  D.kpi("qa", D.step >= 3 ? openFinds() : "—");
+}
+
+/* ---------- canvas paint ---------- */
+const dw = (d) => { const k = dKey(d); return k >= 250 ? 4.6 : k >= 150 ? 3.6 : k >= 100 ? 2.8 : k >= 70 ? 2.3 : k >= 40 ? 2 : 1.6; };
+function qaRuns() {
+  if (!S.qa) return null;
+  const c = checks.find((x) => x.id === S.qa) || finds.find((x) => x.id === S.qa);
+  return c ? new Set(c.r) : null;
+}
+function paint() {
+  const st = D.step;
+  svg.setAttribute("class", "st" + st);
+  const qr = st === 3 ? qaRuns() : null;
+  runs.forEach((r) => {
+    const { g, v, dbl } = runEls[r.i];
+    const s = sysOf(r), raw = st === 1;
+    let color = raw ? SRC[r.s].raw : s ? SYS[s].color : "#8c979c", w = raw ? 1.4 : st === 2 ? 2 : dw(diaOf(r));
+    if (raw && dbl) { v.setAttribute("stroke", "none"); dbl.style.display = ""; }
+    else { v.setAttribute("stroke", color); if (dbl) dbl.style.display = "none"; }
+    v.setAttribute("stroke-width", w);
+    let cls = "run";
+    if (st === 1 && !S.visSrc.has(r.s)) cls += " hide";
+    if (st === 2 && !s) cls += " unk";
+    if (st === 2 && S.hoverSrc && S.hoverSrc !== r.s) cls += " dim";
+    if (st >= 3 && (!s || s === "NONE" || !S.visSys.has(s))) cls += " hide";
+    if (st === 3 && qr) cls += qr.has(r.i) ? " hl" : " dim";
+    else if (st === 3 && S.hiRow && (S.hiRow.s !== s || S.hiRow.d !== diaOf(r))) cls += " dim";
+    if (st === 3 && S.pinned === r.i) cls += " hl";
+    g.setAttribute("class", cls);
+  });
+  // diameter (and slope) labels, step 3 option
+  gLab.innerHTML = "";
+  if (st === 3 && S.labels) {
+    runs.forEach((r) => {
+      const s = sysOf(r);
+      if (!s || s === "NONE" || !S.visSys.has(s) || r.m < 1.2) return;
+      let best = 0, at = null;
+      for (let k = 1; k < r.pts.length; k++) {
+        const [a, b] = [r.pts[k - 1], r.pts[k]], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        if (L > best) { best = L; at = [a, b]; }
+      }
+      let ang = Math.atan2(at[1][1] - at[0][1], at[1][0] - at[0][0]) * 180 / Math.PI;
+      if (ang > 90) ang -= 180; if (ang < -90) ang += 180;
+      const x = (at[0][0] + at[1][0]) / 2, y = (at[0][1] + at[1][1]) / 2;
+      const t = el("text", { class: "dlab", x, y: y - 12, "text-anchor": "middle", transform: `rotate(${ang.toFixed(1)} ${x} ${y})` }, gLab);
+      t.textContent = diaOf(r) + (isGrav(s) && r.sl != null ? "-" + r.sl + "%" : "");
+    });
+  }
+  // QA marks (step 3): the two level tags of a slope check, or a ring around a finding
+  gQa.innerHTML = "";
+  if (st === 3 && S.qa) {
+    const c = checks.find((x) => x.id === S.qa);
+    if (c) [c.a, c.b].forEach(([x, y, v]) => {
+      const g = el("g", { class: "lvl" + (c.ok ? " ok" : "") }, gQa);
+      el("circle", { cx: x, cy: y, r: 13 }, g);
+      el("text", { x, y: y - 26, "text-anchor": "middle" }, g).textContent = "‎" + v.toFixed(2);
+    });
+    const q = finds.find((x) => x.id === S.qa);
+    if (q) el("circle", { class: "mark", cx: q.x, cy: q.y, r: 70 }, gQa);
+  }
+  // fittings and points (step 4)
+  const inSel = selTest(S.sel);
+  fits.forEach((f, i) => {
+    const e = fitEls[i], r = runs[f.r];
+    e.setAttribute("class", "fit" + (!counted(r) || !S.fOn[f.grp] ? " off" : "") + (inSel(f.x, f.y) ? "" : " out"));
+  });
+  DATA.pts.forEach((p, i) => {
+    const e = ptEls[i], s = ptSys(p), c = s ? SYS[s].color : "#8c979c";
+    e.setAttribute("class", "pt" + (!ptCounted(p) || !S.fOn.pt ? " off" : "") + (inSel(p.x, p.y) ? "" : " out"));
+    e.querySelector(".pc").setAttribute("stroke", c);
+    const dot = e.querySelector(".pd");
+    if (dot) dot.setAttribute("fill", c);
+  });
+  roomEls.forEach((g, i) => g.classList.toggle("on", !!(S.sel && S.sel.room === i)));
+  if (!drag) {
+    const show = st === 4 && S.sel && S.sel.room == null;
+    selRect.setAttribute("visibility", show ? "visible" : "hidden");
+    if (show) { const [x, y, w, h] = S.sel.r[0]; selRect.setAttribute("x", x); selRect.setAttribute("y", y); selRect.setAttribute("width", w); selRect.setAttribute("height", h); }
+  }
+  // legend
+  if (st === 1) D.legend(PIPE_SRC.filter((k) => S.visSrc.has(k)).map((k) => ({ color: SRC[k].raw, label: "⁦" + srcBy[k].layer + "⁩", mono: true })));
+  else if (st === 4) D.legend([
+    ...Object.entries(FGRP).map(([k, g]) => ({ color: g.color, label: g.name })),
+    { color: "#111519;border:2px solid #c9d1d4;border-radius:50%", label: "קולטן / עלייה / ירידה" },
+    { color: "#c9d1d4;border:3px solid #111519;outline:2px solid #c9d1d4;border-radius:50%", label: "נקודת קצה" },
+    { color: "#111519;border:2px solid #c9d1d4", label: "מגוף, מונה, ציוד" },
+  ]);
+  else if (st === 2 || st === 3) {
+    const used = [...new Set(runs.filter((r) => sysOf(r) && sysOf(r) !== "NONE").map(sysOf))].sort(sortSys);
+    D.legend([...used.map((s) => ({ color: SYS[s].color, label: sname(s) })), ...(st === 2 && PIPE_SRC.some((k) => !S.map[k]) ? [{ color: "#8c979c", label: "טרם שויך" }] : [])]);
+  } else D.legend([]);
+}
+
+/* ---------- side palette ---------- */
+const sw = (c) => `<i class="sw" style="background:${c}"></i>`;
+const nRuns = (k) => runs.filter((r) => r.s === k).length;
+const mSrc = (k) => runs.filter((r) => r.s === k).reduce((a, r) => a + r.m, 0);
+function renderSide() {
+  const st = D.step;
+  let h = "";
+  if (st === 1) {
+    const inv = DATA.sources;
+    const ent = inv.reduce((a, s) => a + s.n, 0), raw = inv.reduce((a, s) => a + s.raw, 0);
+    const cal = DATA.calib;
+    h = `<div class="hd"><h2>קריאת השרטוט</h2><p>התוסף סורק את ה־Model Space ומפיק מלאי שכבות: כמה ישויות יש בכל שכבה ומה אורך הקווים הגולמי שלה.</p></div>
+    <div class="bd">
+      <div class="stats c3"><div><b>${inv.length}</b><span>שכבות אינסטלציה</span></div><div><b>${fmt(ent)}</b><span>ישויות</span></div><div><b>${fmt(raw)}</b><span>מ׳ קווים גולמיים</span></div></div>
+      <div class="lbl">שכבות צנרת בשרטוט · סמנו כדי להציג</div>
+      <div class="inv">${PIPE_SRC.map((k) => { const s = srcBy[k]; return `<label><input type="checkbox" data-vis="${k}" ${S.visSrc.has(k) ? "checked" : ""}>${sw(SRC[k].raw)}<code>${esc(s.layer)}</code><span class="meta">${fmt(s.n)} · ${fmt(s.raw)} מ׳</span>${s.kind === "double" ? '<span class="sub">קו כפול, משורטט ברוחב הצינור</span>' : ""}</label>`; }).join("")}
+      ${inv.filter((s) => s.kind === "symbols").map((s) => `<label style="cursor:default"><span></span>${sw("#c9d1d4")}<code>${esc(s.layer)}</code><span class="meta">${fmt(s.n)}</span><span class="sub">סמלים ותגיות, לא צנרת</span></label>`).join("")}</div>
+      <div class="lbl">קנ״מ 1:50 · בדיקה מול השרטוט</div>
+      <div class="cal">
+        ${cal.dim ? `<span>מידת פתח כתובה ${cal.dim.txt} ס״מ, נמדדת</span><b>${fmt(cal.dim.cm, 1)} ס״מ</b><span class="ok">✓</span>` : ""}
+        ${cal.pipes.map((p) => `<span>${p.d}: רוחב הקו הכפול, ${p.n === 1 ? "תווית אחת" : p.n + " תוויות"}</span><b>${fmt(p.cm, 1)} ס״מ</b><span class="${p.ok ? "ok" : ""}">${p.ok ? "✓" : "?"}</span>`).join("")}
+      </div>
+      <div class="note">השרטט מצייר צנרת בקו כפול ברוחב הקוטר בעיגול (Ø110 ברוחב 10 ס״מ), ולכן הרוחב מספיק כדי לזהות קוטר בשכבות מי הגשם. מידת הפתח מאשרת את הקנ״מ עצמו.</div>
+      <div class="note">האורך הגולמי כולל טקסטים, תגיות, האותיות F ו־S בתוך הקו וקווים כפולים, ולכן אי אפשר פשוט לסכום קווים. השמות בשרטוט הזה לא לפי מוסכמה אחידה, ולכן השלב הבא הוא מיפוי.</div>
+    </div>${D.nav(null, 2, "למיפוי מערכות")}`;
+  } else if (st === 2) {
+    const unk = PIPE_SRC.filter((k) => !S.map[k]);
+    h = `<div class="hd"><h2>מיפוי מערכות</h2><p>כל שכבה וצבע ממופים למערכת ולחומר. הקוטר נקרא מהתוויות על הקו, מתגיות הקולטנים או מרוחב הקו הכפול. אפשר לשנות כל שורה ולראות את השרטוט מתעדכן.</p></div>
+    <div class="bd">
+      ${unk.length ? `<div class="note" style="color:var(--warn)">שכבה אחת לא זוהתה לפי השם. אשרו את ההצעה או בחרו מערכת.</div>` : `<div class="note"><b>כל השכבות ממופות.</b> המיפוי נשמר כמוסכמת השכבות של המשרד ויחול אוטומטית בפרויקט הבא.</div>`}
+      <div class="map">${PIPE_SRC.map((k) => mapRow(k)).join("")}</div>
+      <div class="note">שינוי מערכת צובע מחדש את הקווים ומעביר את האורך שלהם. שינוי ברירת המחדל משפיע רק על קטעים בלי תווית קוטר.</div>
+    </div>${D.nav(1, 3, "לאורכים ושיפועים")}`;
+  } else if (st === 3) {
+    const R = rows(), tot = totalM();
+    const bySys = {};
+    R.forEach((x) => (bySys[x.s] = bySys[x.s] || []).push(x));
+    const nSys = Object.keys(bySys).length;
+    const pin = S.pinned != null ? runs[S.pinned] : null;
+    h = `<div class="hd"><h2>אורכים לפי מערכת וקוטר</h2><p>האורך של כל קטע נמדד לאורך הקו, כולל שבירות. רחפו או הקישו על קו בשרטוט, או בחרו שורה כדי לסמן את הקטעים שלה.</p></div>
+    <div class="bd">
+      <div class="stats c3"><div><b>${fmt(tot, 1)}</b><span>מ״א צנרת</span></div><div><b>${nSys}</b><span>מערכות</span></div><div><b>${runs.filter(counted).length}</b><span>קטעים</span></div></div>
+      <div class="chips">${Object.keys(bySys).sort(sortSys).map((s) => `<button type="button" class="chip ${S.visSys.has(s) ? "" : "off"}" data-sys="${s}"><i style="background:${SYS[s].color}"></i>${sname(s)}</button>`).join("")}</div>
+      ${pin ? pickCard(pin) : ""}
+      <div class="dlist">${Object.keys(bySys).sort(sortSys).map((s) => `<div class="grp"><div class="gh">${sw(SYS[s].color)}<span>${sname(s)} <small>${[...new Set(bySys[s].flatMap((x) => [...x.mat]))].map((m) => MAT[m].n).join(" · ")}</small></span><span class="mono">${fmt(bySys[s].reduce((a, x) => a + x.m, 0), 1)} מ׳</span></div>
+        ${bySys[s].map((x) => `<div class="dr ${S.hiRow && S.hiRow.s === s && S.hiRow.d === x.d ? "on" : ""}" data-row="${s}|${esc(x.d)}"><span class="mono ltr">${esc(x.d)}${x.sl.size ? ` · ${[...x.sl].sort((a, b) => b - a).map(pct).join("/")}` : ""}</span><span class="n">${nSeg(x.n)}</span><b class="mono">${fmt(x.m, 1)} מ׳</b></div>`).join("")}</div>`).join("")}</div>
+      <label class="toggle"><span>הצג קוטר ושיפוע על הקווים</span><input type="checkbox" id="labTog" ${S.labels ? "checked" : ""}></label>
+      ${qaBox()}
+      <div class="note">צנרת בקו כפול נמדדת פעם אחת, בקו האמצע. קווים שנקטעו בהצלבות או באותיות F ו־S של סוג הקו מחוברים לקטע אחד. קטעים אנכיים (קולטנים, עליות וירידות) לא מופיעים בתוכנית ונוספים לפי גובה הקומה מגיליון החתכים.</div>
+    </div>${D.nav(2, 4, "לנקודות ואביזרים")}`;
+  } else if (st === 4) {
+    h = side4();
+  } else if (st === 5) {
+    const tot = totalM();
+    const nf = fits.filter((f) => counted(runs[f.r])).length, np = DATA.pts.filter(ptCounted).length;
+    h = `<div class="hd"><h2>כתב כמויות</h2><p>ארבע לשוניות כמו בקובץ האקסל שהתוסף מפיק: כתב כמויות לפי מערכת, צנרת לפי שכבה, אביזרים ונקודות, ובדיקות.</p></div>
+    <div class="bd">
+      <div class="stats c3"><div><b>${fmt(tot, 1)}</b><span>מ״א צנרת (נטו)</span></div><div><b>${nf}</b><span>אביזרים</span></div><div><b>${np}</b><span>נקודות</span></div></div>
+      <div class="waste"><span>פחת להזמנת חומר</span><span><input type="number" id="waste" min="0" max="30" step="1" value="${S.waste}" aria-label="אחוז פחת"> %</span></div>
+      <div class="note">כמויות כתב הכמויות נטו, כפי שנמדדו. הפחת מתווסף רק לעמודת ההזמנה, יחד עם מספר המוטות לפי אורך המוט של כל חומר.</div>
+      <button class="btn pri" type="button" id="copyXls">העתק את הלשונית לאקסל</button>
+      <div class="note">בתוסף המלא <span class="mono">PLUMBEREXPORT</span> שומר קובץ <span class="mono">.xlsx</span> ליד השרטוט, בלי חלונות, גם בהרצה על תיקייה שלמה של שרטוטים.</div>
+      ${D.cta()}
+    </div>${D.nav(4, null)}`;
+  }
+  D.side(h);
+  bindSide();
+}
+function mapRow(k) {
+  const s = srcBy[k], sys = S.map[k], sug = SRC[k].sug, dflt = S.defD[k];
+  const opts = (isMM(dflt) ? MM : IN).map((d) => `<option ${d === dflt ? "selected" : ""}>${esc(d)}</option>`).join("");
+  const nDef = runs.filter((r) => r.s === k && r.ds === "default").length;
+  const ds = [...new Set(runs.filter((r) => r.s === k).map(diaOf))].sort((a, b) => dKey(a) - dKey(b));
+  const sls = [...new Set(runs.filter((r) => r.s === k && r.sl != null).map((r) => r.sl))].sort((a, b) => b - a);
+  const mats = sys && MAT_OK[sys] ? MAT_OK[sys] : [];
+  return `<div class="mrow ${sys ? "" : "unk"}" data-src="${k}">
+    <div class="top">${sw(SRC[k].raw)}<code>${esc(s.layer)}</code>
+      <select class="sel" data-map="${k}" aria-label="מערכת עבור ${esc(s.layer)}">${sys ? "" : '<option value="" selected>בחרו מערכת…</option>'}${[...SYS_ORDER, "NONE"].map((x) => `<option value="${x}" ${x === sys ? "selected" : ""}>${SYS[x].name}</option>`).join("")}</select></div>
+    ${!sys && sug ? `<div class="sug"><span>הצעה: <b>${SYS[sug].name}</b></span><button class="btn sm" type="button" data-accept="${k}">אשר</button></div>` : ""}
+    <div class="why">${esc(SRC[k].why)}</div>
+    ${mats.length ? `<div class="mat"><span title="${esc(MAT_WHY[sys] ? MAT_WHY[sys][1] : "")}">חומר${MAT_WHY[sys] ? ` · <span style="color:var(--faint)">${esc(MAT_WHY[sys][0])}</span>` : ""}</span><select class="sel" data-mat="${k}" aria-label="חומר עבור ${esc(s.layer)}">${mats.map((m) => `<option value="${m}" ${m === S.mat[k] ? "selected" : ""}>${MAT[m].n}</option>`).join("")}</select></div>` : ""}
+    <div class="info"><span>${nSeg(nRuns(k))} · ${fmt(mSrc(k), 1)} מ׳ · קוטר: ${esc(SRC[k].dia)}${sls.length ? ` · שיפוע ${sls.map(pct).join(" / ")}` : ""}</span>
+      ${nDef ? `<span>ללא תווית (${nDef}): <select class="sel sm" data-def="${k}" aria-label="קוטר ברירת מחדל">${opts}</select></span>` : ""}</div>
+    <div class="tgt">${sys && sys !== "NONE" ? ds.map((d) => pluginLayer(sys, d)).join(" · ") : sys === "NONE" ? "לא נספר" : "?"}</div>
+  </div>`;
+}
+function pickCard(r) {
+  const s = sysOf(r);
+  return `<div class="pick"><div class="row"><b>קטע נבחר</b><button class="btn sm" type="button" id="unpin">נקה</button></div>
+    <div>${sw(SYS[s].color)} ${sname(s)} · ${ltr(diaOf(r))}${isGrav(s) && r.sl != null ? " · שיפוע " + pct(r.sl) : ""} · <b class="mono">${fmt(r.m, 2)} מ׳</b></div>
+    <div style="color:var(--muted);font-size:12px">${MAT[matOf(r)].n} · שכבה <code class="mono ltr">${esc(srcBy[r.s].layer)}</code> · קוטר לפי ${DS[r.ds]}</div></div>`;
+}
+function qaBox() {
+  const nBad = checks.filter((c) => !c.ok).length;
+  const ch = checks.filter((c) => S.map[c.s] && S.map[c.s] !== "NONE");
+  const item = (id, ok, title, sub, act = "") => `<div class="qi ${S.qa === id ? "on" : ""}" data-qa="${id}"><span class="t">${title}</span><span class="pill ${ok ? "ok" : "warn"}">${ok ? "תקין" : "לבדיקה"}</span><span class="s">${sub}</span>${act}</div>`;
+  const lines = [
+    ...ch.filter((c) => !c.ok).map((c) => item(c.id, false, `${esc(c.what)}: שיפוע לפי הרומים ${pct(+c.act.toFixed(1))}, בתווית ${pct(c.sl)}`,
+      `רומים ${ltr(c.a[2].toFixed(2))} ← ${ltr(c.b[2].toFixed(2))} לאורך ${fmt(c.L, 1)} מ׳. ב־${pct(c.sl)} הרום בסוף הקטע היה ${ltr((c.a[2] - c.L * c.sl / 100).toFixed(2))}: לתקן את התווית או את הרום.`)),
+    ...finds.map((q) => {
+      if (q.k === "layer") {
+        const r = runs[q.r[0]], moved = q.r.every((i) => S.runSys[i]);
+        return item(q.id, moved, `קו ${ltr(diaOf(r))} לברז שטיפה בחדר אשפה, בשכבת הכיבוי`,
+          `${fmt(q.r.reduce((a, i) => a + runs[i].m, 0), 1)} מ׳ בשכבה <code class="mono ltr">1-fire</code>, יוצא מקו הכיבוי 3״ ליד חדר המדרגות; הברז ומקטין הלחץ בשכבת המים. צריכה מקו כיבוי אינה מותרת, לברר מול המתכנן. ${moved ? "הקו נספר עכשיו במים קרים." : ""}`,
+          `<span class="act"><button class="btn sm" type="button" data-fix="${q.id}">${moved ? "החזר לכיבוי אש" : "ספור כמים קרים"}</button></span>`);
+      }
+      return item(q.id, false, `קצה פתוח ליד ${esc(PK[q.pk].n)} ${ltr(q.pd)}`,
+        `קו ${ltr(diaOf(runs[q.r[0]]))} נגמר ${fmt(q.cm)} ס״מ מהסמל ולא מחובר אליו בשרטוט.`);
+    }),
+  ];
+  return `<div class="qa"><div class="qh"><span>בדיקות תכנון</span><span style="color:var(--muted);font-weight:400">${ch.length} שיפועים מול רומים · ${nBad + finds.length} ממצאים</span></div>
+    ${lines.join("")}
+    ${item("ok", true, `${ch.filter((c) => c.ok).length} קטעים נוספים עם רומים: השיפוע תואם לתווית`, ch.filter((c) => c.ok).map((c) => `${esc(c.what)} ${pct(+c.act.toFixed(1))}${c.act < c.sl ? "≈" + pct(c.sl) : ""}`).join(" · ") + ". רומים כתובים לס״מ, ולכן הבדיקה מקבלת סטייה של ס״מ אחד.")}
+  </div>`;
+}
+function selTest(sel) {
+  if (!sel) return () => true;
+  return (x, y) => sel.r.some(([rx, ry, rw, rh]) => x >= rx && x <= rx + rw && y >= ry && y <= ry + rh);
+}
+function selection() {
+  const inS = selTest(S.sel);
+  return { inS, F: fits.filter((f) => counted(runs[f.r]) && inS(f.x, f.y)), Pt: DATA.pts.filter((p) => ptCounted(p) && inS(p.x, p.y)) };
+}
+function side4() {
+  const { F, Pt } = selection();
+  const name = S.sel ? (S.sel.room != null ? DATA.rooms[S.sel.room].n : "אזור שנבחר") : "כל הקומה";
+  // points by system, kind and size
+  const pk = {};
+  Pt.forEach((p) => { const k = ptSys(p) + "|" + p.k + "|" + p.d; pk[k] = (pk[k] || 0) + 1; });
+  const fk = {};
+  F.forEach((f) => { const k = fname(f); (fk[k] = fk[k] || { grp: f.grp, by: {} }); const s = sysOf(runs[f.r]); fk[k].by[s] = (fk[k].by[s] || 0) + 1; });
+  const bySysLine = (o) => Object.entries(o).sort((a, b) => sortSys(a[0], b[0])).map(([s, n]) => `<span style="color:${SYS[s].color}">${sname(s)} ${n}</span>`).join(" · ");
+  const ficon = (grp) => `<svg class="ico" viewBox="-20 -20 40 40">${ICON[grp](0, 0, FGRP[grp].color)}</svg>`;
+  const pico = (s, c) => `<svg class="ico" viewBox="-20 -20 40 40">${c === "e" ? `<rect x="-13" y="-13" width="26" height="26" fill="#111519" stroke="${SYS[s].color}" stroke-width="6"/>` : `<circle r="13" fill="#111519" stroke="${SYS[s].color}" stroke-width="6"/>${c === "f" ? `<circle r="5" fill="${SYS[s].color}"/>` : ""}`}</svg>`;
+  const ordF = Object.keys(FGRP);
+  const ptRows = Object.entries(pk).sort((a, b) => { const [s1, k1] = a[0].split("|"), [s2, k2] = b[0].split("|"); return sortSys(s1, s2) || Object.keys(PK).indexOf(k1) - Object.keys(PK).indexOf(k2); });
+  return `<div class="hd"><h2>נקודות ואביזרים</h2><p>בחרו חדר בשרטוט או ברשימה, או גררו מלבן על אזור. הספירה מתעדכנת לבחירה.</p></div>
+    <div class="bd">
+      <div class="chips">${`<button type="button" class="chip ${!S.sel ? "on" : ""}" data-room="-1">כל הקומה</button>`}${DATA.rooms.map((r, i) => `<button type="button" class="chip ${S.sel && S.sel.room === i ? "on" : ""}" data-room="${i}">${esc(r.n)}</button>`).join("")}</div>
+      <div class="stats c3"><div><b>${Pt.length}</b><span>נקודות</span></div><div><b>${F.length}</b><span>אביזרים</span></div><div><b>${fmt(lenIn(S.sel), 1)}</b><span>מ׳ צנרת באזור</span></div></div>
+      <div class="lbl">${esc(name)}${S.sel && S.sel.room != null && DATA.rooms[S.sel.room].a ? ` · ${fmt(DATA.rooms[S.sel.room].a, 2)} מ״ר` : ""}</div>
+      <div class="cnt"><div class="h"><span></span><span>נקודות לפי סמלי השרטוט</span><span>יח׳</span></div>
+        ${ptRows.length ? ptRows.map(([k, n]) => { const [s, kind, d] = k.split("|"); return `<div>${pico(s, PK[kind].c)}<span>${esc(PK[kind].n)} ${d ? `<span class="sz">${esc(d)}</span>` : ""} <span style="color:var(--muted)">· ${sname(s)}</span></span><b>${n}</b></div>`; }).join("") : '<div><span></span><span style="color:var(--muted)">אין נקודות בבחירה</span><b></b></div>'}</div>
+      <div class="cnt"><div class="h"><span></span><span>אביזרים, לפי הגאומטריה</span><span>יח׳</span></div>
+        ${Object.keys(fk).length ? Object.entries(fk).sort((a, b) => ordF.indexOf(a[1].grp) - ordF.indexOf(b[1].grp)).map(([n, x]) => `<div>${ficon(x.grp)}<span>${esc(n)}<span class="bys">${bySysLine(x.by)}</span></span><b>${Object.values(x.by).reduce((a, n) => a + n, 0)}</b></div>`).join("") : '<div><span></span><span style="color:var(--muted)">אין אביזרים בבחירה</span><b></b></div>'}</div>
+      <div class="ftog">${Object.entries(FGRP).map(([k, g]) => `<label><input type="checkbox" data-fon="${k}" ${S.fOn[k] ? "checked" : ""}>${g.name}</label>`).join("")}<label><input type="checkbox" data-fon="pt" ${S.fOn.pt ? "checked" : ""}>נקודות</label></div>
+      <div class="note">צנרת גרביטציונית (HDPE): ענף נכנס בהסתעפות 45°, בבסיס כל קולטן קשת מאנכי לאופקי, ובראש כל קו פקק ביקורת. צנרת לחץ (פלדה): מסעפי T וזוויות. ענף מוצג כקוטר ראשי/ענף, למשל <span class="mono">Ø160/110</span> או <span class="mono">3"x3/4"</span>.</div>
+    </div>${D.nav(3, 5, "לכתב כמויות")}`;
+}
+function lenIn(sel) {
+  // pipe length clipped to the selection (one or more rectangles)
+  let L = 0;
+  runs.forEach((r) => {
+    if (!counted(r)) return;
+    for (let k = 1; k < r.pts.length; k++) {
+      if (!sel) L += Math.hypot(r.pts[k][0] - r.pts[k - 1][0], r.pts[k][1] - r.pts[k - 1][1]);
+      else sel.r.forEach((b) => (L += clipLen(r.pts[k - 1], r.pts[k], b)));
+    }
+  });
+  return L / 100;
+}
+function clipLen(a, c, [bx, by, bw, bh]) {
+  let t0 = 0, t1 = 1;
+  const dx = c[0] - a[0], dy = c[1] - a[1];
+  for (const [p, q] of [[-dx, a[0] - bx], [dx, bx + bw - a[0]], [-dy, a[1] - by], [dy, by + bh - a[1]]]) {
+    if (p === 0) { if (q < 0) return 0; continue; }
+    const t = q / p;
+    if (p < 0) t0 = Math.max(t0, t); else t1 = Math.min(t1, t);
+  }
+  return t1 > t0 ? (t1 - t0) * Math.hypot(dx, dy) : 0;
+}
+
+/* ---------- bill of quantities (step 5) ---------- */
+const wasteK = () => 1 + S.waste / 100;
+function boq() {
+  // chapters by system: pipes by material and diameter (מ״א), fittings by type and size, points (יח׳)
+  const ch = {};
+  const C = (s) => (ch[s] = ch[s] || { s, pipes: {}, fit: {}, pts: {} });
+  runs.forEach((r) => {
+    if (!counted(r)) return;
+    const s = sysOf(r), m = matOf(r), d = diaOf(r), k = m + "|" + d;
+    const x = (C(s).pipes[k] = C(s).pipes[k] || { m, d, q: 0, sl: new Set() });
+    x.q += r.m;
+    if (isGrav(s) && r.sl != null) x.sl.add(r.sl);
+  });
+  fits.forEach((f) => {
+    const r = runs[f.r];
+    if (!counted(r)) return;
+    const s = sysOf(r), n = fname(f), z = fsize(f), m = matOf(r), k = n + "|" + z;
+    const x = (C(s).fit[k] = C(s).fit[k] || { n, z, m, t: f.t, q: 0 });
+    x.q++;
+  });
+  DATA.pts.forEach((p) => {
+    if (!ptCounted(p)) return;
+    const s = ptSys(p), k = p.k + "|" + p.d;
+    const x = (C(s).pts[k] = C(s).pts[k] || { k: p.k, d: p.d, q: 0 });
+    x.q++;
+  });
+  const ordT = Object.keys(FT), ordP = Object.keys(PK);
+  return Object.values(ch).sort((a, b) => sortSys(a.s, b.s)).map((c, ci) => {
+    const items = [];
+    Object.values(c.pipes).sort((a, b) => a.m.localeCompare(b.m) || dKey(a.d) - dKey(b.d)).forEach((x) => {
+      const sl = [...x.sl].sort((a, b) => a - b);
+      items.push({ kind: "pipe", desc: `${MAT[x.m].d} ${PURPOSE[c.s] || ""}, קוטר ${x.d}, תלוי בתקרה${sl.length ? `, בשיפוע ${sl.length > 1 ? pct(sl[0]) + "–" + pct(sl[sl.length - 1]) : pct(sl[0])}` : ""}`, d: x.d, u: "מ״א", q: x.q, bar: MAT[x.m].bar });
+    });
+    Object.values(c.fit).sort((a, b) => ordT.indexOf(a.t) - ordT.indexOf(b.t) || a.n.localeCompare(b.n) || dKey(a.z.split(/[\/x]/)[0]) - dKey(b.z.split(/[\/x]/)[0])).forEach((x) => {
+      items.push({ kind: "fit", desc: `${x.n}, ${MAT[x.m].n}, ${x.z}`, d: x.z, u: "יח׳", q: x.q });
+    });
+    Object.values(c.pts).sort((a, b) => ordP.indexOf(a.k) - ordP.indexOf(b.k) || dKey(a.d) - dKey(b.d)).forEach((x) => {
+      items.push({ kind: "pt", desc: PK[x.k].boq.replace("{d}", x.d).replace(/\s+,/, ","), u: "יח׳", q: x.q });
+    });
+    items.forEach((it, i) => (it.no = `${ci + 1}.${String(i + 1).padStart(2, "0")}`));
+    return { s: c.s, no: ci + 1, items, m: Object.values(c.pipes).reduce((a, x) => a + x.q, 0) };
+  });
+}
+function tableHtml() {
+  const tab = S.tab, k = wasteK();
+  const tabs = `<div class="tabs" role="tablist">${[["boq", "כתב כמויות"], ["layer", "צנרת לפי שכבה"], ["acc", "אביזרים ונקודות"], ["qa", "בדיקות"]].map(([id, n]) => `<button type="button" role="tab" data-tab="${id}" aria-selected="${tab === id}">${n}</button>`).join("")}<span class="sp"></span><span class="fn">PLUMB_DEMO_COMMERCIAL-FL.xlsx</span></div>`;
+  let h = "";
+  if (tab === "boq") {
+    const B = boq();
+    h = `<table><thead><tr><th class="num">סעיף</th><th>תיאור</th><th>יח׳</th><th class="num">כמות</th>${S.waste ? '<th class="num">להזמנה</th><th class="num">מוטות</th>' : ""}</tr></thead><tbody>`;
+    B.forEach((c) => {
+      h += `<tr class="grp"><td class="num">${c.no}</td><td>${sw(SYS[c.s].color)}${SYS[c.s].name}</td><td></td><td class="num">${fmt(c.m, 1)} מ״א</td>${S.waste ? "<td></td><td></td>" : ""}</tr>`;
+      c.items.forEach((it) => {
+        const pipe = it.kind === "pipe";
+        h += `<tr><td class="num mut">${it.no}</td><td class="desc">${esc(it.desc)}</td><td>${it.u}</td><td class="num">${pipe ? fmt(it.q, 1) : it.q}</td>${S.waste ? `<td class="num">${pipe ? fmt(it.q * k, 1) : ""}</td><td class="num">${pipe ? (it.bar ? Math.ceil((it.q * k) / it.bar) + ` × ${it.bar} מ׳` : "גליל") : ""}</td>` : ""}</tr>`;
+      });
+    });
+    h += `<tr class="tot"><td></td><td>סה״כ צנרת</td><td>מ״א</td><td class="num">${fmt(totalM(), 1)}</td>${S.waste ? `<td class="num">${fmt(totalM() * k, 1)}</td><td></td>` : ""}</tr></tbody></table>`;
+  } else if (tab === "layer") {
+    const L = layerRows();
+    h = `<table><thead><tr><th>שכבת מקור</th><th>מערכת</th><th>חומר</th><th class="num">קוטר</th><th class="num">שיפוע</th><th>מקור הקוטר</th><th class="num">קטעים</th><th class="num">מטר</th><th>שכבה לפי המוסכמה</th></tr></thead><tbody>`;
+    L.forEach((x) => { h += `<tr><td><code>${esc(x.layer)}</code></td><td>${sw(SYS[x.s].color)}${sname(x.s)}</td><td class="mut">${MAT[x.m].n}</td><td class="num">${esc(x.d)}</td><td class="num">${x.sl != null && isGrav(x.s) ? pct(x.sl) : ""}</td><td class="mut">${x.src}</td><td class="num">${x.n}</td><td class="num">${fmt(x.q, 2)}</td><td><code>${esc(pluginLayer(x.s, x.d))}</code></td></tr>`; });
+    h += `<tr class="tot"><td colspan="6">סה״כ</td><td class="num">${L.reduce((a, x) => a + x.n, 0)}</td><td class="num">${fmt(L.reduce((a, x) => a + x.q, 0), 2)}</td><td></td></tr></tbody></table>`;
+  } else if (tab === "acc") {
+    const A = accRows();
+    h = `<table><thead><tr><th>מערכת</th><th>סוג</th><th>פריט</th><th class="num">קוטר</th><th class="num">יח׳</th></tr></thead><tbody>`;
+    let cur = null;
+    A.forEach((x) => {
+      if (x.s !== cur) { cur = x.s; h += `<tr class="grp"><td colspan="4">${sw(SYS[x.s].color)}${SYS[x.s].name}</td><td class="num">${A.filter((y) => y.s === x.s).reduce((a, y) => a + y.q, 0)}</td></tr>`; }
+      h += `<tr><td></td><td class="mut">${x.cat}</td><td>${esc(x.n)}</td><td class="num">${esc(x.d || "")}</td><td class="num">${x.q}</td></tr>`;
+    });
+    h += `<tr class="tot"><td colspan="4">סה״כ</td><td class="num">${A.reduce((a, y) => a + y.q, 0)}</td></tr></tbody></table>`;
+  } else {
+    h = `<table><thead><tr><th>בדיקה</th><th>קטע</th><th class="num">רום עליון</th><th class="num">רום תחתון</th><th class="num">אורך (מ׳)</th><th class="num">שיפוע בפועל</th><th class="num">בתווית</th><th>תוצאה</th></tr></thead><tbody>`;
+    checks.forEach((c) => { h += `<tr><td>שיפוע מול רומים · ${sname(S.map[c.s] || "NONE")}</td><td>${esc(c.what)}</td><td class="num">${c.a[2].toFixed(2)}</td><td class="num">${c.b[2].toFixed(2)}</td><td class="num">${fmt(c.L, 2)}</td><td class="num">${pct(+c.act.toFixed(2))}</td><td class="num">${pct(c.sl)}</td><td>${c.ok ? '<span class="ok">תקין</span>' : '<span class="bad">לבדיקה: השיפוע נמוך מהתווית</span>'}</td></tr>`; });
+    finds.forEach((q) => {
+      const r = runs[q.r[0]];
+      h += q.k === "layer"
+        ? `<tr><td>שכבה מול תפקוד</td><td>קו ${esc(diaOf(r))} לברז שטיפה, ${fmt(r.m, 1)} מ׳</td><td colspan="5" class="mut">בשכבת הכיבוי, יוצא מקו הכיבוי; הברז ומקטין הלחץ בשכבת המים</td><td><span class="bad">${q.r.every((i) => S.runSys[i]) ? "נספר כמים קרים" : "לבירור מול המתכנן"}</span></td></tr>`
+        : `<tr><td>קצה פתוח ליד סמל</td><td>קו ${esc(diaOf(r))} · ${esc(PK[q.pk].n)} ${esc(q.pd)}</td><td colspan="5" class="mut">הקו נגמר ${fmt(q.cm)} ס״מ מהסמל</td><td><span class="bad">לבדיקה</span></td></tr>`;
+    });
+    h += `</tbody></table>`;
+  }
+  return tabs + h;
+}
+function layerRows() {
+  const by = {};
+  runs.forEach((r) => {
+    if (!counted(r)) return;
+    const d = diaOf(r), src = DS[r.ds], s = sysOf(r), sl = isGrav(s) ? r.sl : null;
+    const key = r.s + "|" + s + "|" + d + "|" + sl + "|" + src;
+    (by[key] = by[key] || { k: r.s, layer: srcBy[r.s].layer, s, m: matOf(r), d, sl, src, n: 0, q: 0 });
+    by[key].n++; by[key].q += r.m;
+  });
+  return Object.values(by).sort((a, b) => PIPE_SRC.indexOf(a.k) - PIPE_SRC.indexOf(b.k) || sortSys(a.s, b.s) || dKey(a.d) - dKey(b.d) || (b.sl || 0) - (a.sl || 0) || a.src.localeCompare(b.src));
+}
+function accRows() {
+  const by = {};
+  fits.forEach((f) => {
+    const r = runs[f.r];
+    if (!counted(r)) return;
+    const s = sysOf(r), n = fname(f), z = fsize(f), key = s + "|f|" + n + "|" + z;
+    (by[key] = by[key] || { s, cat: "אביזר", n, d: z, o: Object.keys(FT).indexOf(f.t), q: 0 }).q++;
+  });
+  DATA.pts.forEach((p) => {
+    if (!ptCounted(p)) return;
+    const s = ptSys(p), key = s + "|p|" + p.k + "|" + p.d;
+    (by[key] = by[key] || { s, cat: PCAT[PK[p.k].c].split(":")[0].split(",")[0], n: PK[p.k].n, d: p.d, o: 100 + Object.keys(PK).indexOf(p.k), q: 0 }).q++;
+  });
+  return Object.values(by).sort((a, b) => sortSys(a.s, b.s) || a.o - b.o || dKey(a.d) - dKey(b.d));
+}
+function tsv() {
+  const k = wasteK(), q = (s) => String(s).replace(/״/g, '"').replace(/׳/g, "'");
+  if (S.tab === "boq") {
+    const out = [["סעיף", "תיאור", "יח׳", "כמות", ...(S.waste ? ["להזמנה", "מוטות"] : [])].join("\t")];
+    boq().forEach((c) => {
+      out.push([c.no, SYS[c.s].name, "", ""].join("\t"));
+      c.items.forEach((it) => out.push([it.no, it.desc, it.u, it.kind === "pipe" ? it.q.toFixed(2) : it.q, ...(S.waste ? (it.kind === "pipe" ? [(it.q * k).toFixed(2), it.bar ? Math.ceil((it.q * k) / it.bar) : ""] : ["", ""]) : [])].join("\t")));
+    });
+    return out.map(q).join("\n");
+  }
+  if (S.tab === "layer") return [["שכבת מקור", "מערכת", "חומר", "קוטר", "שיפוע", "מקור הקוטר", "קטעים", "מטר", "שכבה לפי המוסכמה"].join("\t"), ...layerRows().map((x) => [x.layer, SYS[x.s].name, MAT[x.m].n, x.d, x.sl != null && isGrav(x.s) ? x.sl + "%" : "", x.src, x.n, x.q.toFixed(2), pluginLayer(x.s, x.d)].join("\t"))].map(q).join("\n");
+  if (S.tab === "acc") return [["מערכת", "סוג", "פריט", "קוטר", "יח׳"].join("\t"), ...accRows().map((x) => [SYS[x.s].name, x.cat, x.n, x.d, x.q].join("\t"))].map(q).join("\n");
+  return [["בדיקה", "קטע", "רום עליון", "רום תחתון", "אורך", "שיפוע בפועל", "בתווית", "תוצאה"].join("\t"), ...checks.map((c) => ["שיפוע מול רומים", c.what, c.a[2], c.b[2], c.L, c.act.toFixed(2) + "%", c.sl + "%", c.ok ? "תקין" : "לבדיקה"].join("\t")),
+    ...finds.map((f) => [f.k === "layer" ? "שכבה מול תפקוד" : "קצה פתוח ליד סמל", f.k === "layer" ? "קו לברז שטיפה בשכבת הכיבוי" : PK[f.pk].n + " " + f.pd, "", "", "", "", "", "לבדיקה"].join("\t"))].map(q).join("\n");
+}
+function bindTable() {
+  D.tableEl.querySelectorAll("[data-tab]").forEach((b) => (b.onclick = () => {
+    S.tab = b.dataset.tab;
+    D.table(tableHtml()); bindTable();
+    D.cmd(`PLUMBEREXPORT SHEET=${({ boq: "BOQ", layer: "PIPES-BY-LAYER", acc: "FITTINGS-POINTS", qa: "CHECKS" })[S.tab]}`);
+  }));
+}
+
+/* ---------- interactions ---------- */
+function bindSide() {
+  const side = D.sideEl, st = D.step;
+  if (st === 1) side.querySelectorAll("[data-vis]").forEach((c) => (c.onchange = () => {
+    c.checked ? S.visSrc.add(c.dataset.vis) : S.visSrc.delete(c.dataset.vis);
+    D.cmd(`LAYER ${c.checked ? "ON" : "OFF"} ${srcBy[c.dataset.vis].layer}`);
+    paint();
+  }));
+  if (st === 2) {
+    side.querySelectorAll(".mrow").forEach((row) => {
+      row.onmouseenter = () => { S.hoverSrc = row.dataset.src; paint(); };
+      row.onmouseleave = () => { S.hoverSrc = null; paint(); };
+    });
+    side.querySelectorAll("[data-map]").forEach((s) => (s.onchange = () => setMap(s.dataset.map, s.value)));
+    side.querySelectorAll("[data-accept]").forEach((b) => (b.onclick = () => setMap(b.dataset.accept, SRC[b.dataset.accept].sug)));
+    side.querySelectorAll("[data-mat]").forEach((s) => (s.onchange = () => {
+      const k = s.dataset.mat;
+      S.mat[k] = s.value;
+      D.cmd(`PLUMBER MAP ${srcBy[k].layer} MATERIAL=${s.value}`);
+      D.toast(`${srcBy[k].layer}: ${fmt(mSrc(k), 1)} מ׳ ייכתבו בכתב הכמויות כ־${MAT[s.value].n}`);
+      D.track("demo_action", { action: "material" });
+      renderSide();
+    }));
+    side.querySelectorAll("[data-def]").forEach((s) => (s.onchange = () => {
+      const k = s.dataset.def, before = mSrcDefault(k);
+      S.defD[k] = s.value;
+      D.cmd(`PLUMBER MAP ${srcBy[k].layer} DEFAULT=${s.value}`);
+      D.toast(`${before.n === 1 ? "קטע אחד" : before.n + " קטעים"} בלי תווית בשכבה ${srcBy[k].layer} (${fmt(before.m, 1)} מ׳) ${before.n === 1 ? "עבר" : "עברו"} לקוטר ${s.value}`);
+      D.track("demo_action", { action: "default_diameter" });
+      renderSide(); paint(); updateKpi();
+    }));
+  }
+  if (st === 3) {
+    side.querySelectorAll("[data-sys]").forEach((b) => (b.onclick = () => {
+      const s = b.dataset.sys;
+      S.visSys.has(s) ? S.visSys.delete(s) : S.visSys.add(s);
+      paint(); renderSide();
+    }));
+    side.querySelectorAll("[data-row]").forEach((d) => {
+      d.onclick = () => {
+        const [s, dd] = d.dataset.row.split("|");
+        S.qa = null;
+        S.hiRow = S.hiRow && S.hiRow.s === s && S.hiRow.d === dd ? null : { s, d: dd };
+        if (S.hiRow) { D.cmd(`PLUMBER SELECT SYSTEM=${SYS[s].code} D=${dd.replace("Ø", "")}`); zoomRuns(runs.filter((r) => sysOf(r) === s && diaOf(r) === dd)); }
+        else D.fit();
+        paint(); renderSide();
+      };
+    });
+    side.querySelectorAll("[data-qa]").forEach((d) => (d.onclick = (e) => {
+      if (e.target.closest("[data-fix]")) return;
+      const id = d.dataset.qa;
+      if (id === "ok") return;
+      S.qa = S.qa === id ? null : id;
+      S.hiRow = null;
+      if (S.qa) {
+        const c = checks.find((x) => x.id === id) || finds.find((x) => x.id === id);
+        D.cmd(`PLUMBER CHECK ${c.k === "layer" ? "LAYERS" : c.k === "gap" ? "OPEN-ENDS" : "SLOPES"}`);
+        if (c.k === "gap") D.zoomTo(c.x - 350, c.y - 250, 700, 500, 0.2);
+        else zoomRuns(c.r.map((i) => runs[i]), true);
+        D.track("demo_action", { action: "qa" });
+      } else D.fit();
+      paint(); renderSide();
+    }));
+    side.querySelectorAll("[data-fix]").forEach((b) => (b.onclick = () => {
+      const q = finds.find((x) => x.id === b.dataset.fix);
+      const on = !q.r.every((i) => S.runSys[i]);
+      q.r.forEach((i) => (on ? (S.runSys[i] = "CW") : delete S.runSys[i]));
+      const m = q.r.reduce((a, i) => a + runs[i].m, 0);
+      D.cmd(`PLUMBER MAP RUN ${q.r.join(",")} -> ${on ? "WTR-CW" : "FIRE-HR"}`);
+      D.toast(on ? `${fmt(m, 1)} מ׳ ${diaOf(runs[q.r[0]])} עברו ממערכת הכיבוי למים קרים` : "הקו חזר למערכת הכיבוי");
+      D.track("demo_action", { action: "qa_fix" });
+      S.qa = q.id;
+      paint(); renderSide(); updateKpi();
+    }));
+    const lt = document.getElementById("labTog");
+    if (lt) lt.onchange = () => { S.labels = lt.checked; paint(); };
+    const up = document.getElementById("unpin");
+    if (up) up.onclick = () => { S.pinned = null; paint(); renderSide(); };
+  }
+  if (st === 4) {
+    side.querySelectorAll("button[data-room]").forEach((b) => (b.onclick = () => pickRoom(+b.dataset.room)));
+    side.querySelectorAll("[data-fon]").forEach((c) => (c.onchange = () => { S.fOn[c.dataset.fon] = c.checked; paint(); }));
+  }
+  if (st === 5) {
+    document.getElementById("copyXls").onclick = () => { D.copy(tsv(), "הלשונית הועתקה. הדביקו בגיליון אקסל"); D.track("demo_export"); };
+    const w = document.getElementById("waste");
+    w.onchange = () => {
+      S.waste = Math.max(0, Math.min(30, Math.round(+w.value || 0)));
+      if (S.tab !== "boq") S.tab = "boq";
+      D.table(tableHtml()); bindTable(); renderSide();
+      D.cmd(`PLUMBEREXPORT WASTE=${S.waste}%`);
+    };
+  }
+}
+const mSrcDefault = (k) => { const rs = runs.filter((r) => r.s === k && r.ds === "default"); return { n: rs.length, m: rs.reduce((a, r) => a + r.m, 0) }; };
+function setMap(k, v) {
+  if (!v) return;
+  const old = S.map[k];
+  S.map[k] = v;
+  if (v !== "NONE" && !(MAT_OK[v] || []).includes(S.mat[k])) S.mat[k] = MAT_DEF[v];
+  const m = mSrc(k);
+  D.cmd(`PLUMBER MAP ${srcBy[k].layer} -> ${SYS[v].code || "SKIP"}`);
+  D.toast(v === "NONE" ? `${srcBy[k].layer} לא תיספר (${fmt(m, 1)} מ׳ ירדו מהסיכום)` : `${srcBy[k].layer} → ${SYS[v].name}: ${fmt(m, 1)} מ׳ ${old ? "עברו" : "נוספו"} למערכת, חומר ${MAT[S.mat[k]].n}`);
+  D.track("demo_action", { action: "map_layer" });
+  renderSide(); paint(); updateKpi();
+}
+function zoomRuns(rs, always) {
+  if (!rs.length) return;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  rs.forEach((r) => r.pts.forEach(([x, y]) => { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }));
+  if (!always && (x1 - x0 > W * 0.6 || y1 - y0 > H * 0.6)) return D.fit();
+  const mw = always ? 1100 : 400, mh = always ? 700 : 300;
+  D.zoomTo(x0 - Math.max(0, mw - (x1 - x0)) / 2, y0 - Math.max(0, mh - (y1 - y0)) / 2, Math.max(x1 - x0, mw), Math.max(y1 - y0, mh), 0.12);
+}
+function pickRoom(i) {
+  if (i < 0) { S.sel = null; D.fit(); D.cmd("PLUMBER FITTINGS ALL"); }
+  else {
+    const r = DATA.rooms[i];
+    S.sel = { r: r.r, room: i };
+    D.cmd(`PLUMBER FITTINGS ROOM="${r.n}"`);
+    if (NARROW) {
+      const x0 = Math.min(...r.r.map((b) => b[0])), y0 = Math.min(...r.r.map((b) => b[1]));
+      const x1 = Math.max(...r.r.map((b) => b[0] + b[2])), y1 = Math.max(...r.r.map((b) => b[1] + b[3]));
+      D.zoomTo(x0, y0, x1 - x0, y1 - y0, 0.1);
+    }
+  }
+  D.track("demo_action", { action: "room" });
+  paint(); renderSide();
+}
+
+/* hover / tap on the canvas */
+function runAt(e) {
+  const hit = document.elementFromPoint(e.clientX, e.clientY);
+  const g = hit && hit.closest && hit.closest(".run");
+  return g ? runs[+g.dataset.r] : null;
+}
+function showTip(e, html) {
+  const rc = D.canvas.getBoundingClientRect();
+  tip.innerHTML = html;
+  tip.hidden = false;
+  let x = e.clientX - rc.left + 14, y = e.clientY - rc.top + 14;
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  if (x + tw > rc.width - 6) x = e.clientX - rc.left - tw - 14;
+  if (y + th > rc.height - 6) y = e.clientY - rc.top - th - 14;
+  tip.style.left = Math.max(4, x) + "px";
+  tip.style.top = Math.max(4, y) + "px";
+}
+const runTip = (r) => {
+  const s = sysOf(r);
+  return `<b>${s ? sname(s) : "טרם שויך"}</b> · <span class="mono">${esc(diaOf(r))}</span>${s && isGrav(s) && r.sl != null ? ` · <span class="mono">${r.sl}%</span>` : ""}<br><b class="mono">${fmt(r.m, 2)} מ׳</b>${s && s !== "NONE" ? ` · ${MAT[matOf(r)].n}` : ""}<br><span class="m">שכבה <span class="mono">${esc(srcBy[r.s].layer)}</span><br>קוטר לפי ${DS[r.ds]}</span>`;
+};
+svg.addEventListener("pointermove", (e) => {
+  if (drag || e.buttons) { tip.hidden = true; return; }
+  const st = D.step;
+  if (st === 4) {
+    const p = e.target.closest && e.target.closest(".pt");
+    if (p) {
+      const pt = DATA.pts[+p.dataset.p], s = ptSys(pt);
+      showTip(e, `<b>${esc(PK[pt.k].n)}</b>${pt.d ? ` <span class="mono">${esc(pt.d)}</span>` : ""}<br><span class="m">${s ? sname(s) : ""} · ${PCAT[PK[pt.k].c].split(":")[0]}${PK[pt.k].tag ? "<br>" + PK[pt.k].tag : ""}<br>שכבה <span class="mono">${esc(ptLayer(pt))}</span></span>`);
+    } else tip.hidden = true;
+    return;
+  }
+  if (st > 3) { tip.hidden = true; return; }
+  const g = e.target.closest && e.target.closest(".run");
+  if (!g) { tip.hidden = true; D.barMid(""); return; }
+  const r = runs[+g.dataset.r];
+  D.barMid(`Layer: <b>${esc(srcBy[r.s].layer)}</b>`);
+  if (st === 1) showTip(e, `<b class="mono">${esc(srcBy[r.s].layer)}</b><br><span class="m">${srcBy[r.s].kind === "double" ? `קו כפול, רוחב ${fmt(r.w || 0, 1)} ס״מ` : "קו"} · ${r.pts.length - 1} מקטעים</span>`);
+  else showTip(e, runTip(r));
+});
+svg.addEventListener("pointerleave", () => { tip.hidden = true; });
+svg.addEventListener("click", (e) => {
+  const st = D.step;
+  if (st === 3) {
+    const r = runAt(e);
+    if (!r) return;
+    S.pinned = S.pinned === r.i ? null : r.i;
+    if (S.pinned != null) { D.cmd(`PLUMBER LIST ${srcBy[r.s].layer} L=${r.m.toFixed(2)}m`); D.track("demo_action", { action: "pick_run" }); showTip(e, runTip(r)); }
+    paint(); renderSide();
+  } else if (st === 2) {
+    const r = runAt(e);
+    if (!r) return;
+    const row = D.sideEl.querySelector(`.mrow[data-src="${r.s}"]`);
+    if (row) { row.scrollIntoView({ block: "nearest" }); row.style.borderColor = "var(--redline)"; setTimeout(() => (row.style.borderColor = ""), 1200); }
+    S.hoverSrc = r.s; paint();
+    setTimeout(() => { S.hoverSrc = null; paint(); }, 1200);
+  }
+});
+
+/* drag a window to count in an area (step 4) */
+let drag = null;
+svg.addEventListener("pointerdown", (e) => {
+  if (D.step !== 4 || e.button !== 0) return;
+  drag = { s: D.pt(e), cur: D.pt(e) };
+  try { svg.setPointerCapture(e.pointerId); } catch { /* pointer already gone */ }
+});
+svg.addEventListener("pointermove", (e) => {
+  if (!drag) return;
+  const p = D.pt(e);
+  drag.cur = p;
+  selRect.setAttribute("x", Math.min(drag.s.x, p.x)); selRect.setAttribute("y", Math.min(drag.s.y, p.y));
+  selRect.setAttribute("width", Math.abs(p.x - drag.s.x)); selRect.setAttribute("height", Math.abs(p.y - drag.s.y));
+  if (Math.abs(p.x - drag.s.x) > 40 || Math.abs(p.y - drag.s.y) > 40) selRect.setAttribute("visibility", "visible");
+});
+svg.addEventListener("pointerup", (e) => {
+  if (D.step !== 4 || !drag) return;
+  const p = drag.cur, moved = Math.abs(p.x - drag.s.x) > 40 || Math.abs(p.y - drag.s.y) > 40;
+  selRect.setAttribute("visibility", "hidden");
+  if (moved) {
+    const x = Math.min(drag.s.x, p.x), y = Math.min(drag.s.y, p.y), w = Math.abs(p.x - drag.s.x), h = Math.abs(p.y - drag.s.y);
+    S.sel = { r: [[x, y, w, h]], room: null };
+    D.cmd(`PLUMBER FITTINGS WINDOW (${Math.round(x)},${Math.round(H - y - h)}) (${Math.round(x + w)},${Math.round(H - y)})`);
+    D.track("demo_action", { action: "window" });
+    drag = null;
+    paint(); renderSide();
+    return;
+  }
+  drag = null;
+  const hit = document.elementFromPoint(e.clientX, e.clientY);
+  const rg = hit && hit.closest && hit.closest(".room");
+  if (rg) pickRoom(S.sel && S.sel.room === +rg.dataset.room ? -1 : +rg.dataset.room);
+});
+
+function onStep(n, _D, prev) {
+  if (n >= 3 && PIPE_SRC.some((k) => !S.map[k])) {
+    PIPE_SRC.filter((k) => !S.map[k]).forEach((k) => { S.map[k] = SRC[k].sug || "NONE"; S.mat[k] = MAT_DEF[S.map[k]] || null; });
+    D.toast("השכבה שלא שויכה קיבלה את המערכת המוצעת (ביוב)");
+  }
+  if (n !== 3) { S.hiRow = null; S.pinned = null; S.qa = null; }
+  if (n !== 2) S.hoverSrc = null;
+  tip.hidden = true;
+  D.barMid("");
+  D.canvas.classList.toggle("selecting", n === 4);
+  D.panLeft(n !== 4);
+  if (prev === 3 || prev === 4) D.fit();
+  D.table(n === 5 ? tableHtml() : null);
+  if (n === 5) bindTable();
+  paint(); renderSide(); updateKpi();
+  if (n === 1 && !prev) D.hint("גלגלת או צביטה להגדלה, גרירה להזזה");
+  if (n === 2 && PIPE_SRC.some((k) => !S.map[k])) D.hint("שכבה אחת לא זוהתה לפי השם. מצאו אותה ברשימה");
+  if (n === 3) D.hint(openFinds() ? `התוסף מצא ${openFinds()} ממצאים לבדיקה. ראו "בדיקות תכנון"` : "רחפו או הקישו על קו כדי לראות את האורך שלו");
+  if (n === 4) D.hint("לחצו על חדר או גררו מלבן על אזור");
+}
+
+D.ready();
+})();
+</script>
+</body>
+</html>

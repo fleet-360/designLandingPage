@@ -1,0 +1,1075 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>חיפויי חזית: מקטלוג להורדה לייצור | דמו אינטראקטיבי · Pro Algorithm</title>
+<meta name="description" content="דמו אינטראקטיבי של תוסף AutoCAD לחיפויי חזית: זיהוי וקטלוג קסטות לוקובונד, לוחות HPL ופחי אלומיניום, בדיקות לפני ייצור, פקודות עבודה לפי אזור בלי כפילויות, כרטיסי פריט עם פריסה וקינון, וטבלת ריכוז ורכש לאקסל.">
+<link rel="canonical" href="https://www.buildalgo.co.il/catalog/facades/">
+<meta property="og:title" content="חיפויי חזית: מקטלוג להורדה לייצור | Pro Algorithm">
+<meta property="og:image" content="https://www.buildalgo.co.il/assets/img/brand/og.jpg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/brand/icon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/catalog/shell/shell.css">
+<!--tracking-->
+<style>
+/* "1180×3180" inside RTL text would render as "3180×1180": every mono value takes its own direction */
+.d-side .mono, .d-side code, .d-legend .mono { unicode-bidi: plaintext; }
+.pnl rect.f { stroke-width: 8; transition: fill .35s ease, fill-opacity .35s ease, stroke .3s; }
+.pnl rect.hit { fill: transparent; stroke: none; }
+.pnl text { font-family: var(--mono); font-size: 190px; fill: #f2f5f6; text-anchor: middle; dominant-baseline: central; pointer-events: none; opacity: 0; transition: opacity .3s; }
+.pnl text.show { opacity: 1; }
+.pickable .pnl { cursor: pointer; }
+.pnl.hl rect.f { stroke: #fff; stroke-width: 40; }
+.pnl.sel rect.f { stroke: #fff; stroke-width: 44; stroke-dasharray: 120 70; }
+.pnl.conf rect.f { stroke: var(--bad); stroke-width: 44; stroke-dasharray: 120 70; }
+.pnl.lin.sel rect.f, .pnl.lin.conf rect.f, .pnl.lin.hl rect.f { stroke-width: 26; stroke-dasharray: none; }
+.pnl.dim { opacity: .25; }
+.selecting #d-svg { cursor: crosshair; }
+#scan { opacity: 0; }
+#scan.run { animation: scan 1.3s ease-in-out forwards; }
+@keyframes scan { 0% { opacity: .9; transform: translateX(0); } 90% { opacity: .9; } 100% { opacity: 0; transform: translateX(17200px); } }
+.card svg { display: block; width: 100%; height: auto; background: var(--cad-bg); }
+.cnc { display: flex; flex-direction: column; gap: 3px; padding: 8px 12px; border-top: 1px solid var(--line); font-size: 12px; }
+.cnc div { display: flex; gap: 8px; align-items: center; }
+.cnc i { width: 18px; height: 0; border-top: 2px solid; display: inline-block; flex: none; }
+.cnc i.d { border-top-style: dashed; }
+.cnc .mono { min-width: 74px; }
+.layers { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; }
+.layers div { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px dashed var(--line); }
+.layers div:last-child { border-bottom: 0; }
+.layers code { font-family: var(--mono); font-size: 12px; direction: ltr; }
+.layers .mono, .layers .v { text-align: left; color: var(--muted); font-size: 11.5px; }
+.layers .v { font-size: 12px; unicode-bidi: plaintext; }
+.li.code { grid-template-columns: 12px 72px minmax(0, 1fr) auto; }
+.lh { padding: 5px 10px; font-size: 11px; font-weight: 600; color: var(--muted); background: var(--ink-3); border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; }
+.li input { width: 100%; font-family: var(--mono); font-size: 12px; border: 1px solid transparent; background: transparent; color: var(--text); padding: 2px 4px; border-radius: 4px; direction: ltr; text-align: left; }
+.li input:hover { border-color: var(--line-strong); }
+.li input:focus { border-color: var(--redline); background: var(--ink); outline: none; }
+.finds { display: flex; flex-direction: column; gap: 6px; }
+.fd { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 8px; align-items: start; font-size: 12.5px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; }
+.fd .pill { margin-top: 2px; }
+.fd .act { grid-column: 2; }
+.fd b { font-weight: 600; }
+.orders { display: flex; flex-direction: column; gap: 6px; }
+.ord { display: grid; grid-template-columns: 12px 1fr auto; gap: 8px; align-items: center; font-size: 13px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; }
+.ord .mono { font-size: 12px; color: var(--muted); }
+.ord small { display: block; color: var(--muted); font-size: 11.5px; }
+.selbox { border: 1px dashed var(--line-strong); border-radius: 6px; padding: 8px 10px; font-size: 13px; display: flex; flex-direction: column; gap: 6px; }
+.selbox .conf { color: var(--warn); font-size: 12.5px; }
+.selbox .miss { color: var(--info); font-size: 12.5px; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.nest-h { display: flex; justify-content: space-between; gap: 8px; padding: 8px 12px; font-size: 12.5px; background: var(--ink-3); border-bottom: 1px solid var(--line); }
+.nest-h b { font-weight: 600; direction: ltr; }
+.nest-c { padding: 4px 12px 8px; font-size: 11.5px; color: var(--muted); }
+.seg { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12.5px; flex-wrap: wrap; }
+.typebtns { display: flex; flex-direction: column; gap: 6px; }
+.typebtns .row { gap: 5px; }
+.d-table h3 { margin: 0; padding: 12px 12px 8px; font-size: 13px; font-weight: 600; color: var(--text); background: var(--ink-2); }
+.d-table h3 span { color: var(--muted); font-weight: 400; font-size: 12px; }
+.d-table td.sub { color: var(--muted); }
+</style>
+</head>
+<body>
+<script src="/catalog/shell/shell.js"></script>
+<script>
+(() => {
+/* MODEL-START (also read by tools/demos/facades/thumb.js; keep it free of DOM and shell calls)
+   Synthetic shop drawing of a north elevation: residential building, ground + 3 floors + roof parapet.
+   Units: mm. x to the right, z up from ±0.00. Panels are drawn at their net (production) size;
+   the gap between two rectangles is the joint. */
+const MATS = {
+  LB: { name: "לוקובונד", full: "לוקובונד 4 מ״מ, ליבה FR", layer: "A-CLAD-LB", raw: "#4DD0E1", hue: 192, sat: 48,
+        joint: 20, flange: 40, bd: 1.0, kg: 7.6, line: "CNC + כיפוף",
+        widths: [1000, 1250, 1500, 1575, 2000], lengths: [2500, 3200, 4000, 5000], maxL: 5000, minL: 2000, margin: 10, gap: 10 },
+  HPL: { name: "HPL", full: "HPL קומפקט 8 מ״מ", layer: "A-CLAD-HPL", raw: "#FFD54F", hue: 34, sat: 62,
+        joint: 10, flange: 0, bd: 0, kg: 11.2, line: "CNC",
+        sheets: [[1300, 3050], [1530, 3050], [1850, 4270]], margin: 10, gap: 6 },
+  AL: { name: "פח", full: "פח אלומיניום 2 מ״מ, צבוע בתנור", layer: "A-CLAD-MTL", raw: "#E57BD8", hue: 292, sat: 40,
+        t: 2, R: 2, K: 0.4, kg: 5.4, line: "גיליוטינה + מכופפת",
+        sheets: [[1250, 2500], [1500, 3000]], margin: 5, gap: 0, strips: true },
+};
+const CNC_BED = [2100, 5100];
+const E_LB = MATS.LB.flange - MATS.LB.bd;          // flat flange width on the blank, per edge
+const NEAR_TOL = 4;                                 // mm: "almost the same panel"
+const HPL_EDGE = 40, HPL_PITCH = 600;               // rivet edge distance and max pitch for 8 mm HPL
+const HANG_PITCH = 600, STIFF_PITCH = 800;          // cassette hanging slots and back stiffeners
+const OVERLAP = 50;                                 // overlap when a flashing is split
+const COPC_PART = 980;                              // coping corner: one mitred half (600 leg + mitre allowance)
+const AL_MAX = Math.max(...MATS.AL.sheets.map((s) => s[1])) - 2 * MATS.AL.margin;
+
+/* folded aluminium sections, outside mould line, mm. legs and bend angles are derived from the points */
+const PROF = {
+  sill:   { pts: [[0, 25], [0, 0], [190, -16.6], [190, -66.6], [200.6, -77.2]] },
+  head:   { pts: [[0, 20], [0, 0], [150, 0], [150, -40], [158.5, -48.5]] },
+  jamb:   { pts: [[0, 20], [0, 0], [150, 0], [150, 40]] },
+  coping: { pts: [[-10.6, -70.6], [0, -60], [0, 0], [360, 31.5], [360, -48.5], [370.6, -59.1]] },
+};
+const bdAL = (deg) => { const M = MATS.AL, a = (deg * Math.PI) / 180; return 2 * (M.R + M.t) * Math.tan(a / 2) - a * (M.R + M.K * M.t); };
+Object.values(PROF).forEach((p) => {
+  const P = p.pts;
+  p.legs = P.slice(1).map((q, i) => Math.hypot(q[0] - P[i][0], q[1] - P[i][1]));
+  p.ang = P.slice(1, -1).map((q, i) => {
+    const a = [q[0] - P[i][0], q[1] - P[i][1]], b = [P[i + 2][0] - q[0], P[i + 2][1] - q[1]];
+    const c = (a[0] * b[0] + a[1] * b[1]) / (Math.hypot(...a) * Math.hypot(...b));
+    return Math.round((Math.acos(Math.max(-1, Math.min(1, c))) * 180) / Math.PI);
+  });
+  p.bd = p.ang.map(bdAL);
+  p.dev = Math.round((p.legs.reduce((s, v) => s + v, 0) - p.bd.reduce((s, v) => s + v, 0)) * 10) / 10;
+});
+
+const BAYS = [600, ...Array(13).fill(1200), 600];
+const bayX = []; { let x = 0; for (const b of BAYS) { bayX.push(x); x += b; } }
+const W = 16800, PLINTH = 150, TOP = 15000, H = 15060, LAST = BAYS.length - 1;
+const floors = [{ name: "קרקע", z: 0, h: 4200 }, { name: "קומה 1", z: 4200, h: 3200 }, { name: "קומה 2", z: 7400, h: 3200 }, { name: "קומה 3", z: 10600, h: 3200 }, { name: "מעקה וקופינג", z: 13800, h: 1200 }];
+const LEVELS = [0, 4200, 7400, 10600, 13800, 15000];
+const AXES = [["1", 0], ["2", 5400], ["3", 11400], ["4", 16800]];
+const GROUND_ROWS = [[PLINTH, 1500], [1500, 2850], [2850, 4200]];
+const CORNER_SIDE = 290;                            // corner cassette leg on the side elevation (from the floor plan)
+const SURVEY = { "2:9": [-3, 0], "3:4": [0, -4] };  // panels drawn a few mm off after the site survey
+
+const openings = [];
+const addO = (id, i0, n, z, h, floor, mat, door) => openings.push({ id, i0, n, x: bayX[i0], w: BAYS.slice(i0, i0 + n).reduce((a, b) => a + b, 0), z, h, floor, mat, door: !!door });
+addO("G-1", 2, 2, 1500, 1350, 0, "HPL");
+addO("G-2", 11, 2, 1500, 1350, 0, "HPL");
+addO("G-E", 6, 3, 0, 2850, 0, "HPL", true);
+for (let f = 1; f <= 3; f++) {
+  const z = floors[f].z + 900;
+  addO(f + "-A", 2, 2, z, 1600, f, "LB"); addO(f + "-B", 7, 1, z, 1600, f, "LB"); addO(f + "-C", 11, 2, z, 1600, f, "LB");
+}
+openings.forEach((o) => {
+  const j = MATS[o.mat].joint / 2;
+  Object.assign(o, { cx: o.x + j, cw: o.w - 2 * j, cz: o.door ? o.z : o.z + j, ch: o.door ? o.h - j : o.h - 2 * j });
+});
+const openingAt = (i, z0, z1, floor) => openings.find((o) => o.floor === floor && i >= o.i0 && i < o.i0 + o.n && o.z < z1 && o.z + o.h > z0);
+
+const items = [], splitEnts = [], splitLog = [];
+let uid = 0;
+const nid = () => "i" + ++uid;
+function addPanel(mat, kind, role, i, z0, z1, floor, extra = {}) {
+  const j = MATS[mat].joint / 2, x = bayX[i], bw = BAYS[i];
+  const x0 = i === 0 ? 0 : x + j, x1 = i === LAST ? W : x + bw - j;
+  const p = { id: nid(), mat, kind, role, floor, bay: i, x: x0, z: z0 + j, w: x1 - x0, h: z1 - z0 - 2 * j, mx: x, mz: z0, mw: bw, mh: z1 - z0, ...extra };
+  const dv = SURVEY[floor + ":" + i];
+  if (dv && kind === "flat") { p.w += dv[0]; p.h += dv[1]; }
+  items.push(p);
+  return p;
+}
+// ground floor: compact HPL in three rows above a 150 mm plinth, flat panels with a corner profile at the corners
+BAYS.forEach((_, i) => GROUND_ROWS.forEach(([z0, z1]) => {
+  if (!openingAt(i, z0, z1, 0)) addPanel("HPL", i === 0 || i === LAST ? "edge" : "flat", "field", i, z0, z1, 0);
+}));
+// floors 1-3: full-height cassettes, split at sill and head where there is a window, L cassettes at the corners
+for (let f = 1; f <= 3; f++) {
+  const { z, h } = floors[f];
+  BAYS.forEach((_, i) => {
+    if (i === 0 || i === LAST) return addPanel("LB", "corner", "field", i, z, z + h, f, { side: CORNER_SIDE, hand: i === 0 ? "L" : "R" });
+    const o = openingAt(i, z, z + h, f);
+    if (!o) return addPanel("LB", "flat", "field", i, z, z + h, f);
+    addPanel("LB", "flat", "below", i, z, o.z, f);
+    addPanel("LB", "flat", "above", i, o.z + o.h, z + h, f);
+  });
+}
+// parapet: 1200 above the roof slab (about 1050 above the roof finish), same cassette system
+BAYS.forEach((_, i) => {
+  if (i === 0 || i === LAST) addPanel("LB", "corner", "parapet", i, 13800, TOP, 4, { side: CORNER_SIDE, hand: i === 0 ? "L" : "R" });
+  else addPanel("LB", "flat", "parapet", i, 13800, TOP, 4);
+});
+// aluminium flashings around every opening: sill, head, two jambs (no sill at the entrance)
+const dev = (k) => PROF[k].dev;
+function addAL(kind, len, rect, floor, extra = {}) {
+  const it = { id: nid(), mat: "AL", kind, len, dev: dev(kind === "copc" ? "coping" : kind), floor, ...rect, ...extra };
+  items.push(it);
+  return it;
+}
+function addLinear(kind, len, rect, floor, extra, label) {
+  if (len <= AL_MAX) return [addAL(kind, len, rect, floor, extra)];
+  const n = Math.ceil((len + OVERLAP) / AL_MAX), part = Math.ceil((len + (n - 1) * OVERLAP) / n);
+  const ent = { id: "e" + (splitEnts.length + 1), mat: "AL", kind, len, ...rect, parts: [] };
+  splitEnts.push(ent);
+  const segW = rect.w / n;
+  for (let k = 0; k < n; k++) ent.parts.push(addAL(kind, part, { ...rect, x: rect.x + k * segW + (k ? 15 : 0), w: segW - 15 }, floor, { ...extra, src: ent.id, split: true }).id);
+  splitLog.push({ kind: "split", text: `${label} ${len} מ״מ ארוך מפלטת הפח (${AL_MAX + 2 * MATS.AL.margin}): פוצל ל־${n} חלקים של ${part} עם חפיפה ${OVERLAP} מ״מ וסיליקון.` });
+  return ent.parts;
+}
+openings.forEach((o) => {
+  const ex = { open: o.id };
+  if (!o.door) addAL("sill", o.cw + 50, { x: o.cx - 25, z: o.cz - 45, w: o.cw + 50, h: 50 }, o.floor, ex);
+  addAL("jamb", o.ch, { x: o.cx, z: o.cz, w: 40, h: o.ch }, o.floor, ex);
+  addAL("jamb", o.ch, { x: o.cx + o.cw - 40, z: o.cz, w: 40, h: o.ch }, o.floor, ex);
+  addLinear("head", o.cw, { x: o.cx, z: o.cz + o.ch - 40, w: o.cw, h: 40 }, o.floor, ex, o.door ? "ראש פתח הכניסה" : "ראש פתח");
+});
+// coping: drawn as one line over the whole elevation; produced as 2 mitred corners + equal straight segments with 5 mm joints
+{
+  const cz = TOP - 40, chh = H - cz, legN = 600, gapC = 5;
+  const ent = { id: "e" + (splitEnts.length + 1), mat: "AL", kind: "coping", len: W, x: 0, z: cz, w: W, h: chh, parts: [] };
+  splitEnts.push(ent);
+  const run = W - 2 * legN, n = Math.ceil(run / AL_MAX), seg = Math.floor((run - (n + 1) * gapC) / n);
+  ent.parts.push(addAL("copc", 2 * legN, { x: 0, z: cz, w: legN, h: chh }, 4, { hand: "L", src: ent.id, parts: 2 }).id);
+  for (let k = 0; k < n; k++) ent.parts.push(addAL("coping", seg, { x: legN + gapC + k * (seg + gapC), z: cz, w: seg, h: chh }, 4, { src: ent.id }).id);
+  ent.parts.push(addAL("copc", 2 * legN, { x: W - legN, z: cz, w: legN, h: chh }, 4, { hand: "R", src: ent.id, parts: 2 }).id);
+  splitLog.push({ kind: "split", text: `קופינג רציף ${W / 1000} מ׳ בשרטוט: חולק ל־2 פינות במיטר ול־${n} קטעים של ${seg} מ״מ, מישק ${gapC} מ״מ עם פס חיבור מתחת (${n + 1} יח׳).` });
+}
+const byId = Object.fromEntries(items.map((p) => [p.id, p]));
+const ents = [...items.filter((p) => !p.src), ...splitEnts];
+
+/* completeness groups: flashings that are installed before (or with) the panels around them */
+const touches = (p, o) => {
+  const ox = p.mx < o.x + o.w && p.mx + p.mw > o.x, oz = p.mz < o.z + o.h && p.mz + p.mh > o.z;
+  return (ox && (p.mz + p.mh === o.z || p.mz === o.z + o.h)) || (oz && (p.mx + p.mw === o.x || p.mx === o.x + o.w));
+};
+const groups = openings.map((o) => ({ label: o.door ? "door" : "win", need: items.filter((p) => p.open === o.id).map((p) => p.id), adj: items.filter((p) => p.mat !== "AL" && p.floor === o.floor && touches(p, o)).map((p) => p.id) }));
+groups.push({ label: "coping", need: items.filter((p) => p.kind === "coping" || p.kind === "copc").map((p) => p.id), adj: items.filter((p) => p.role === "parapet").map((p) => p.id) });
+
+/* production geometry */
+function pieces(t) {
+  if (t.mat === "LB") return [{ a: t.kind === "corner" ? t.w + t.side + 2 * E_LB - MATS.LB.bd : t.w + 2 * E_LB, b: t.h + 2 * E_LB }];
+  if (t.mat === "HPL") return [{ a: t.w, b: t.h }];
+  if (t.kind === "copc") return [{ a: t.dev, b: COPC_PART }, { a: t.dev, b: COPC_PART }];
+  return [{ a: t.dev, b: t.len }];
+}
+const stiffeners = (t) => (t.mat === "LB" && t.w > STIFF_PITCH ? Math.max(0, Math.ceil(t.h / STIFF_PITCH) - 1) : 0);
+const hangPerSide = (t) => Math.max(2, Math.ceil((t.h - 200) / HANG_PITCH) + 1);
+const spread = (a, b, n) => (n < 2 ? [(a + b) / 2] : Array.from({ length: n }, (_, k) => a + (k * (b - a)) / (n - 1)));
+function hplHoles(t) {
+  const xs = spread(HPL_EDGE, t.w - HPL_EDGE, Math.ceil((t.w - 2 * HPL_EDGE) / HPL_PITCH) + 1);
+  const ys = spread(HPL_EDGE, t.h - HPL_EDGE, Math.ceil((t.h - 2 * HPL_EDGE) / HPL_PITCH) + 1);
+  let fx = 0, fy = 0, best = Infinity;
+  xs.forEach((x, i) => ys.forEach((y, j) => { const d = Math.hypot(x - t.w / 2, y - t.h / 2); if (d < best - 1e-6) { best = d; fx = i; fy = j; } }));
+  return { xs, ys, fx, fy, n: xs.length * ys.length };
+}
+function faceArea(t) { return t.mat === "AL" ? 0 : ((t.kind === "corner" ? t.w + t.side : t.w) * t.h) / 1e6; }
+function devArea(t) { return pieces(t).reduce((s, p) => s + p.a * p.b, 0) / 1e6; }
+function unitKg(t) {
+  const M = MATS[t.mat];
+  if (t.mat === "LB") {
+    const notch = (t.kind === "corner" ? 6 : 4) * E_LB * E_LB / 1e6;
+    return (devArea(t) - notch) * M.kg + stiffeners(t) * (t.w / 1000) * 0.4;
+  }
+  return devArea(t) * M.kg;
+}
+
+/* nesting: pieces {a: across the sheet width, b: along the sheet length}. No rotation: the coil-coated ACP and the
+   HPL decor have a direction, and flashings are sheared along the sheet. Shelf (FFDH) packing per width class. */
+const ceil50 = (v) => Math.ceil(v / 50) * 50;
+function sheetOpts(k, custom) {
+  const M = MATS[k];
+  if (k === "LB") return custom ? M.widths.map((w) => ({ w, l: M.maxL, custom: true })) : M.widths.flatMap((w) => M.lengths.map((l) => ({ w, l })));
+  return M.sheets.map(([w, l]) => ({ w, l }));
+}
+function homYield(p, o, M) {
+  const na = Math.floor((o.w - 2 * M.margin + M.gap) / (p.a + M.gap)), nb = Math.floor((o.l - 2 * M.margin + M.gap) / (p.b + M.gap));
+  if (na < 1 || nb < 1) return 0;
+  const L = o.custom ? Math.max(M.minL, ceil50(2 * M.margin + nb * p.b + (nb - 1) * M.gap)) : o.l;
+  return (na * nb * p.a * p.b) / (o.w * L);
+}
+function ffdh(ps, W, L, m, g, strips) {
+  if (strips) { // flashings: shear strips of the developed width along the sheet, then crosscut the pieces end to end
+    const r = ffdh(ps.map((p) => ({ a: p.b, b: p.a, t: p.t })), L, W, m, g, false);
+    return r && r.map((s) => ({ w: W, l: L, used: s.used, parts: s.parts.map((q) => ({ x: q.y, y: q.x, a: q.b, b: q.a, t: q.t })) }));
+  }
+  const uw = W - 2 * m, ul = L - 2 * m, sheets = [];
+  for (const p of [...ps].sort((q, r) => r.b - q.b || r.a - q.a)) {
+    if (p.a > uw + 1e-6 || p.b > ul + 1e-6) return null;
+    let done = false;
+    for (const s of sheets) {
+      for (const sh of s.shelves) if (p.b <= sh.h + 1e-6 && sh.x + g + p.a <= uw + 1e-6) { s.parts.push({ x: m + sh.x + g, y: m + sh.y, a: p.a, b: p.b, t: p.t }); sh.x += g + p.a; done = true; break; }
+      if (done) break;
+    }
+    if (done) continue;
+    let s = sheets.find((q) => q.used + g + p.b <= ul + 1e-6);
+    if (!s) { s = { used: -g, shelves: [], parts: [] }; sheets.push(s); }
+    const y = s.used + g;
+    s.shelves.push({ y, h: p.b, x: p.a });
+    s.parts.push({ x: m, y: m + y, a: p.a, b: p.b, t: p.t });
+    s.used = y + p.b;
+  }
+  return sheets.map((s) => ({ w: W, l: L, used: s.used, parts: s.parts }));
+}
+function nest(ps, k, custom) {
+  // every sheet size twice, so a group can also be nested on the same size apart from the others
+  const M = MATS[k], base = sheetOpts(k, custom), opts = [...base, ...base.map((o) => ({ ...o, slot: 1 }))], over = [];
+  // one group per blank size; each group starts on the sheet size where it nests best alone
+  const kinds = new Map();
+  ps.forEach((p) => { const key = p.a + "x" + p.b; if (!kinds.has(key)) kinds.set(key, { key, a: p.a, b: p.b, list: [] }); kinds.get(key).list.push(p); });
+  const K = [...kinds.values()];
+  K.forEach((g) => {
+    let best = -1, by = 0;
+    g.fits = [];
+    opts.forEach((o, i) => { const y = homYield(g, o, M); if (y > 0) g.fits.push(i); if (y > by + 1e-9) { by = y; best = i; } });
+    g.o = best < 0 ? null : best;
+    if (best < 0) over.push(...g.list);
+  });
+  const memo = new Map();
+  const packO = (i) => {
+    const gs = K.filter((g) => g.o === i);
+    if (!gs.length) return { area: 0, r: [] };
+    const sig = i + "|" + gs.map((g) => g.key).join(",");
+    if (memo.has(sig)) return memo.get(sig);
+    const o = opts[i], r = ffdh(gs.flatMap((g) => g.list), o.w, o.l, M.margin, M.gap, M.strips);
+    if (r && o.custom) r.forEach((s) => (s.l = Math.max(M.minL, ceil50(s.used + 2 * M.margin))));
+    const res = r ? { area: r.reduce((a, s) => a + s.w * s.l, 0), r } : { area: Infinity, r: [] };
+    memo.set(sig, res);
+    return res;
+  };
+  // local search: move one group, or a whole sheet size, while the total sheet area goes down
+  const total = () => opts.reduce((s, _, i) => s + packO(i).area, 0);
+  const improve = () => {
+    let cur = total();
+    for (let pass = 0, better = true; better && pass < 6; pass++) {
+      better = false;
+      for (const g of K) {
+        if (g.o == null) continue;
+        const from = g.o;
+        for (const i of g.fits) { if (i === from) continue; g.o = i; const t = total(); if (t < cur - 1) { cur = t; better = true; break; } g.o = from; }
+      }
+      for (const j of new Set(K.map((g) => g.o).filter((o) => o != null))) {
+        const gs = K.filter((g) => g.o === j);
+        for (let i = 0; i < opts.length && gs.length; i++) {
+          if (i === j || !gs.every((g) => g.fits.includes(i))) continue;
+          gs.forEach((g) => (g.o = i));
+          const t = total();
+          if (t < cur - 1) { cur = t; better = true; break; }
+          gs.forEach((g) => (g.o = j));
+        }
+      }
+    }
+    return cur;
+  };
+  // two starts: every group on its own best size, or one length per width class; keep the better result
+  const startA = K.map((g) => g.o);
+  const startB = K.map((g) => (g.o == null ? null : opts[g.o].w));
+  const ws = [...new Set(startB.filter((w) => w != null))];
+  ws.forEach((w) => {
+    let bi = null, ba = Infinity;
+    opts.forEach((o, i) => {
+      if (o.w !== w || !K.every((g, n) => startB[n] !== w || g.fits.includes(i))) return;
+      K.forEach((g, n) => (g.o = startB[n] === w ? i : null));
+      const a = packO(i).area;
+      if (a < ba - 1) { ba = a; bi = i; }
+    });
+    K.forEach((g, n) => { if (startB[n] === w) startB[n] = bi ?? startA[n]; });
+  });
+  K.forEach((g, n) => (g.o = startA[n]));
+  const aA = improve(), endA = K.map((g) => g.o);
+  K.forEach((g, n) => (g.o = startB[n]));
+  const aB = improve();
+  if (aA <= aB) K.forEach((g, n) => (g.o = endA[n]));
+  const sheets = opts.flatMap((_, i) => packO(i).r);
+  const area = sheets.reduce((a, s) => a + s.w * s.l, 0) / 1e6;
+  const used = sheets.reduce((a, s) => a + s.parts.reduce((b, q) => b + q.a * q.b, 0), 0) / 1e6;
+  return { sheets, over, area, used, y: area ? used / area : 0 };
+}
+
+/* catalogue: identical items form one type */
+const KORD = { flat: 0, edge: 1, corner: 1, sill: 0, head: 1, jamb: 2, coping: 3, copc: 4 };
+const keyOf = (it) => (it.mat === "AL" ? `AL|${it.kind}|${it.len}|${it.hand || ""}` : `${it.mat}|${it.kind}|${it.w}x${it.h}|${it.hand || ""}`);
+function groupBase(list) {
+  const g = new Map();
+  list.forEach((it) => {
+    const k = keyOf(it);
+    if (!g.has(k)) g.set(k, { key: k, mat: it.mat, kind: it.kind, role: it.role, hand: it.hand, w: it.w, h: it.h, side: it.side, len: it.len, dev: it.dev, split: it.split, ids: [] });
+    g.get(k).ids.push(it.id);
+  });
+  return g;
+}
+function finalize(base, merge = {}, codes = {}) {
+  const map = new Map();
+  base.forEach((g, k) => { if (!merge[k] || !base.has(merge[k])) map.set(k, { ...g, ids: [...g.ids], merged: [] }); });
+  base.forEach((g, k) => { const d = merge[k] && map.get(merge[k]); if (d) { d.ids.push(...g.ids); d.merged.push(g); } });
+  const MO = { LB: 0, HPL: 1, AL: 2 }, size = (t) => (t.mat === "AL" ? t.len : t.w * t.h);
+  const arr = [...map.values()].sort((a, b) => MO[a.mat] - MO[b.mat] || KORD[a.kind] - KORD[b.kind] || b.ids.length - a.ids.length || size(b) - size(a) || (a.hand || "").localeCompare(b.hand || ""));
+  const cnt = {};
+  arr.forEach((t) => {
+    const n = (cnt[t.mat] = (cnt[t.mat] || 0) + 1), M = MATS[t.mat];
+    t.code = codes[t.key] || `${t.mat}-${String(n).padStart(2, "0")}`;
+    t.color = `hsl(${M.hue + ((n % 3) - 1) * 9} ${M.sat}% ${[58, 44, 68, 36, 75, 50, 63, 40, 71][(n - 1) % 9]}%)`;
+  });
+  return arr;
+}
+function nearPairs(base) {
+  const arr = [...base.values()].filter((t) => t.mat !== "AL"), out = [], used = new Set();
+  arr.forEach((a) => arr.forEach((b) => {
+    if (a === b || a.mat !== b.mat || a.kind !== b.kind || (a.hand || "") !== (b.hand || "") || used.has(a.key)) return;
+    const dw = Math.abs(a.w - b.w), dh = Math.abs(a.h - b.h);
+    if (!(dw || dh) || dw > NEAR_TOL || dh > NEAR_TOL || a.ids.length >= b.ids.length) return;
+    used.add(a.key);
+    out.push({ src: a.key, dst: b.key, d: Math.max(dw, dh), w: a.w, h: a.h, n: a.ids.length });
+  }));
+  return out;
+}
+const MODEL = { MATS, PROF, BAYS, bayX, W, H, TOP, PLINTH, floors, LEVELS, AXES, openings, items, splitEnts, ents, byId, groups, pieces, nest, groupBase, finalize, E_LB };
+/* MODEL-END */
+
+const S = { recognized: false, base: null, near: [], merge: {}, codes: {}, types: [], typeOf: {}, orders: [], assigned: {}, sel: new Set(), selKey: null, hoverType: null, pinType: null, custom: false };
+
+function rebuildTypes() {
+  S.types = finalize(S.base, S.merge, S.codes);
+  S.typeOf = {};
+  S.types.forEach((t) => t.ids.forEach((id) => (S.typeOf[id] = t)));
+  S.hoverType = S.pinType = null;
+}
+function recognize() {
+  S.base = groupBase(items);
+  S.near = nearPairs(S.base).sort((a, b) => b.w * b.h - a.w * a.h);
+  rebuildTypes();
+  S.recognized = true;
+}
+const typeByKey = (k) => S.types.find((t) => t.key === k);
+const HAND = { L: "שמאל", R: "ימין" };
+function desc(t) {
+  if (t.mat === "LB") {
+    if (t.kind === "corner") return `קסטת פינה L ${HAND[t.hand]}${t.role === "parapet" ? ", מעקה" : ""}`;
+    return { field: "קסטה קומה מלאה", below: "קסטה מתחת לחלון", above: "קסטה מעל חלון", parapet: "קסטת מעקה" }[t.role];
+  }
+  if (t.mat === "HPL") return t.kind === "edge" ? "לוח פינה + פרופיל" : "לוח HPL";
+  if (t.kind === "copc") return `פינת קופינג ${HAND[t.hand]}`;
+  return { sill: "אדן חלון", head: "ראש פתח", jamb: "ספלט", coping: "קופינג" }[t.kind] + (t.split ? " (מפוצל)" : "");
+}
+const netTxt = (t) => (t.mat === "AL" ? `L ${t.len}` : t.kind === "corner" ? `${t.w}+${t.side}×${t.h}` : `${t.w}×${t.h}`);
+const devTxt = (t) => { const p = pieces(t)[0], r = (v) => +v.toFixed(1); return t.mat === "AL" ? `${r(p.a)}×${p.b}${t.kind === "copc" ? " ×2" : ""}` : `${r(p.a)}×${r(p.b)}`; };
+const pct = (y) => D.fmt(y * 100, 0) + "%";
+const sizesTxt = (sheets) => {
+  const m = new Map();
+  sheets.forEach((s) => { const k = `${s.w}×${s.l}`; m.set(k, (m.get(k) || 0) + 1); });
+  const a = [...m].sort((x, y) => y[1] - x[1]);
+  return a.slice(0, 2).map(([k, n]) => `${n} × ${k}`).join(", ") + (a.length > 2 ? ` +${a.length - 2}` : "");
+};
+function typeNest(t, custom = S.custom) {
+  const ps = [];
+  t.ids.forEach(() => pieces(t).forEach((p) => ps.push({ ...p, t })));
+  return nest(ps, t.mat, custom);
+}
+
+/* ---------- shell ---------- */
+const ORDER_COLORS = ["#45B07A", "#E3A53A", "#5B8DEF", "#DB6A7E", "#A07FE3", "#3CC2D0"];
+const D = Demo({
+  slug: "facades",
+  plugin: "PA_FACADE",
+  tag: "AutoCAD plug-in · חיפויי חזית",
+  title: "חיפויי חזית: מקטלוג פאנלים להורדה לייצור",
+  sub: "תוכנית עבודה לדוגמה: חזית צפונית של בניין מגורים, קרקע, 3 קומות ומעקה גג. קסטות לוקובונד, לוחות HPL ופחי אלומיניום סביב הפתחים. כל פריט מזוהה, נבדק, מקוטלג ומשויך לפקודת עבודה אחת בלבד.",
+  file: "FACADE_DEMO_N-ELEV.dwg",
+  viewBox: [-1600, -1300, 19400, 17400],
+  flipY: H,
+  kpis: [{ id: "total", label: "פריטים" }, { id: "types", label: "סוגים" }, { id: "assigned", label: "שויכו לפק״ע" }, { id: "yield", label: "ניצולת פלטות" }],
+  steps: [
+    { t: "קריאת השרטוט", d: "שכבות, מישקים, חומרים", cmd: "OPEN FACADE_DEMO_N-ELEV.dwg" },
+    { t: "זיהוי ובדיקות", d: "קטלוג, כמעט־זהים, חריגות", cmd: "PA_CATALOG ALL CHECK=ON" },
+    { t: "פקודות ייצור", d: "לפי אזור, בלי כפל", cmd: "PA_ORDER" },
+    { t: "כרטיסי פריט", d: "פריסה, קידוחים, קינון", cmd: "PA_ITEMCARD" },
+    { t: "ריכוז ורכש", d: "מ״ר, מ״א, פלטות, אקסל", cmd: "PA_SUMMARY EXPORT" },
+  ],
+  onStep,
+});
+const svg = D.svg, el = D.el, fmt = D.fmt;
+const Y = (z, h) => H - (z + h);
+const MONO = "IBM Plex Mono, monospace";
+
+/* ---------- drawing ---------- */
+el("rect", { x: -1600, y: -1300, width: 19400, height: 17400, fill: "#111519" });
+const gA = el("g", {});
+[...bayX, W].forEach((x) => el("line", { x1: x, y1: -250, x2: x, y2: H + 150, stroke: "#1e252c", "stroke-width": 8, "stroke-dasharray": "140 90" }, gA));
+AXES.forEach(([n, x]) => {
+  el("line", { x1: x, y1: -700, x2: x, y2: H + 470, stroke: "#46525b", "stroke-width": 10, "stroke-dasharray": "420 90 60 90" }, gA);
+  el("circle", { cx: x, cy: H + 700, r: 230, fill: "#111519", stroke: "#8C979C", "stroke-width": 14 }, gA);
+  el("text", { x, y: H + 710, fill: "#C9D1D4", "font-size": 210, "font-family": MONO, "text-anchor": "middle", "dominant-baseline": "central" }, gA).textContent = n;
+});
+LEVELS.forEach((z) => {
+  el("line", { x1: -1450, y1: H - z, x2: -80, y2: H - z, stroke: "#8C979C", "stroke-width": 10 }, gA);
+  el("path", { d: `M-420 ${H - z} l-110 -150 h220 z`, fill: "#8C979C" }, gA);
+  el("text", { x: -1450, y: H - z - 170, fill: "#C9D1D4", "font-size": 180, "font-family": MONO }, gA).textContent = z ? "+" + (z / 1000).toFixed(2) : "±0.00";
+});
+// dimension chains: structural spans and overall
+const dimLine = (xs, y, big) => {
+  el("line", { x1: xs[0], y1: y, x2: xs[xs.length - 1], y2: y, stroke: "#8C979C", "stroke-width": 10 }, gA);
+  xs.forEach((x) => el("line", { x1: x - 80, y1: y + 80, x2: x + 80, y2: y - 80, stroke: "#8C979C", "stroke-width": 16 }, gA));
+  xs.slice(1).forEach((x, i) => (el("text", { x: (x + xs[i]) / 2, y: y - 90, fill: "#C9D1D4", "font-size": big ? 200 : 170, "font-family": MONO, "text-anchor": "middle" }, gA).textContent = x - xs[i]));
+};
+dimLine(AXES.map((a) => a[1]), -380, false);
+dimLine([0, W], -900, true);
+// ground and plinth (stone plinth, not in the cladding scope)
+el("rect", { x: 0, y: H - PLINTH, width: W, height: PLINTH, fill: "#20272d", stroke: "#56636b", "stroke-width": 8 }, gA);
+for (let x = 0; x < W; x += 260) el("line", { x1: x, y1: H, x2: x + 150, y2: H - PLINTH, stroke: "#3a454d", "stroke-width": 6 }, gA);
+el("line", { x1: -700, y1: H, x2: W + 700, y2: H, stroke: "#C9D1D4", "stroke-width": 30 }, gA);
+// openings (A-GLAZ): clear opening in the cladding, frame and sashes
+openings.forEach((o) => {
+  const g = el("g", {}), y0 = Y(o.cz, o.ch), fr = 70, ln = { stroke: "#7E8C95", "stroke-width": 10 };
+  el("rect", { x: o.cx, y: y0, width: o.cw, height: o.ch, fill: "#1a2229", stroke: "#56636b", "stroke-width": 8 }, g);
+  el("rect", { x: o.cx + fr, y: y0 + fr, width: o.cw - 2 * fr, height: o.ch - 2 * fr, fill: "#1f2830", ...ln }, g);
+  if (o.door) {
+    const t = Y(2400, 0);
+    el("line", { x1: o.cx + fr, y1: t, x2: o.cx + o.cw - fr, y2: t, ...ln }, g);
+    [1, 2].forEach((k) => el("line", { x1: o.cx + (o.cw * k) / 3, y1: y0 + fr, x2: o.cx + (o.cw * k) / 3, y2: H, ...ln }, g));
+    el("line", { x1: o.cx + o.cw / 2, y1: t, x2: o.cx + o.cw / 2, y2: H, ...ln, "stroke-dasharray": "60 50" }, g);
+  } else if (o.cw > 2000) el("line", { x1: o.cx + o.cw / 2, y1: y0 + fr, x2: o.cx + o.cw / 2, y2: y0 + o.ch - fr, ...ln }, g);
+  else el("path", { d: `M${o.cx + fr} ${y0 + fr} L${o.cx + o.cw - fr} ${y0 + o.ch / 2} L${o.cx + fr} ${y0 + o.ch - fr}`, fill: "none", ...ln, "stroke-dasharray": "50 40" }, g);
+});
+const pEls = {}, eEls = {};
+const addEl = (p, g) => {
+  const lin = p.mat === "AL";
+  if (lin) el("rect", { class: "hit", x: p.x - 60, y: Y(p.z, p.h) - 60, width: p.w + 120, height: p.h + 120 }, g);
+  const r = el("rect", { class: "f", x: p.x, y: Y(p.z, p.h), width: p.w, height: p.h }, g);
+  return r;
+};
+items.filter((p) => p.mat !== "AL").concat(items.filter((p) => p.mat === "AL")).forEach((p) => {
+  const g = el("g", { class: "pnl" + (p.mat === "AL" ? " lin" : ""), "data-id": p.id, "data-hit": "" });
+  const r = addEl(p, g);
+  const t = el("text", { x: p.x + p.w / 2, y: Y(p.z, p.h) + p.h / 2 }, g);
+  if (p.w < 1000) t.setAttribute("transform", `rotate(-90 ${p.x + p.w / 2} ${Y(p.z, p.h) + p.h / 2})`);
+  pEls[p.id] = { g, r, t };
+});
+splitEnts.forEach((e) => {
+  const g = el("g", { class: "pnl lin" });
+  eEls[e.id] = { g, r: addEl(e, g) };
+});
+const scan = el("rect", { id: "scan", x: -200, y: -300, width: 200, height: H + 500, fill: "#ff5b2e", "fill-opacity": 0.3 });
+const selRect = el("rect", { x: 0, y: 0, width: 0, height: 0, fill: "#ff5b2e", "fill-opacity": 0.1, stroke: "#ff5b2e", "stroke-width": 20, "stroke-dasharray": "100 60", visibility: "hidden" });
+
+function paint() {
+  const st = D.step, rec = S.recognized && st >= 2;
+  svg.classList.toggle("pickable", st >= 2 && st <= 4);
+  splitEnts.forEach((e) => {
+    eEls[e.id].g.style.display = rec ? "none" : "";
+    eEls[e.id].r.setAttribute("fill", MATS.AL.raw);
+  });
+  const focus = st === 2 ? S.hoverType || S.pinType : st === 4 ? typeByKey(S.selKey) : null;
+  items.forEach((p) => {
+    const { g, r, t } = pEls[p.id], ty = S.typeOf[p.id], lin = p.mat === "AL";
+    if (p.src) g.style.display = rec ? "" : "none";
+    let fill, fo = 1, stroke = "#0c0f12", label = "", cls = "";
+    if (!rec) { fill = MATS[p.mat].raw; fo = lin ? 1 : 0.06; stroke = MATS[p.mat].raw; }
+    else if (st === 2 || st === 4) {
+      fill = ty.color; fo = 0.9; label = ty.code;
+      if (focus && focus !== ty) cls = "dim";
+      if (st === 2 && focus === ty) cls = "hl";
+    } else {
+      const o = S.assigned[p.id];
+      if (o != null) { fill = S.orders[o].color; fo = 0.85; label = "#" + S.orders[o].n; }
+      else { fill = "#59646B"; fo = 0.55; label = ty.code; }
+      if (st === 3 && S.sel.has(p.id)) cls = o != null ? "conf" : "sel";
+    }
+    if (lin) { label = ""; fo = 1; if (!cls) stroke = "none"; }
+    r.setAttribute("fill", fill); r.setAttribute("fill-opacity", fo); r.setAttribute("stroke", stroke);
+    t.textContent = label; t.classList.toggle("show", !!label);
+    g.setAttribute("class", "pnl" + (lin ? " lin " : " ") + cls);
+  });
+  if (!rec) D.legend(Object.values(MATS).map((m) => ({ color: m.raw, label: m.layer, mono: true })));
+  else if (st === 3 || st === 5) D.legend([...S.orders.map((o) => ({ color: o.color, label: o.code })), { color: "#59646B", label: "טרם שויך" }]);
+  else D.legend(Object.values(MATS).map((m) => ({ color: `hsl(${m.hue} ${m.sat}% 55%)`, label: m.name })));
+}
+
+/* ---------- side palette ---------- */
+const cntMat = (list, m) => list.filter((p) => p.mat === m).length;
+const dimS = (w, h) => `<span class="mono">${w}×${h}</span>`;
+const val = (v) => `<span class="${/[֐-׿]/.test(v) ? "v" : "mono"}">${v}</span>`;
+const sw = (c) => `<i class="sw" style="background:${c};vertical-align:-1px"></i>`;
+function findings() {
+  const f = [];
+  S.near.forEach((p, i) => {
+    const dst = typeByKey(p.dst);
+    if (!dst) return;
+    const merged = S.merge[p.src] === p.dst, src = typeByKey(p.src);
+    f.push(merged
+      ? { pill: "ok", tag: "אוחד", html: `${p.n} יח׳ ${dimS(p.w, p.h)} אוחדו ל־<b class="mono">${dst.code}</b> ${dimS(dst.w, dst.h)}. המישק במקום: ${MATS[dst.mat].joint - p.d} מ״מ.`, btn: `<button class="btn sm" type="button" data-unmerge="${i}">בטל איחוד</button>` }
+      : { pill: "warn", tag: "כמעט זהה", html: `<b class="mono">${src.code}</b> ${dimS(src.w, src.h)} שונה מ־<b class="mono">${dst.code}</b> ${dimS(dst.w, dst.h)} ב־${p.d} מ״מ בלבד (${p.n} יח׳). כנראה סטייה במדידה. איחוד חוסך פריט ייחודי, והמישק יהיה ${MATS[dst.mat].joint - p.d} במקום ${MATS[dst.mat].joint} מ״מ.`, btn: `<button class="btn sm" type="button" data-merge="${i}">אחד ל־${dst.code}</button>` });
+  });
+  const lb = S.types.find((t) => t.mat === "LB" && t.role === "field" && t.kind === "flat");
+  if (lb) {
+    const a = pieces(lb)[0].a, M = MATS.LB, room = 1250 - 2 * M.margin;
+    if (a > room) f.push({ pill: "warn", tag: "רוחב פלטה", html: `פריסת <b class="mono">${lb.code}</b> ברוחב ${f1(a)} לא נכנסת בפלטה 1250 (${room} אחרי שוליים), ולכן עוברת ל־1500 עם פחת ברוחב. כנף של ${Math.floor((room - lb.w + 2 * M.bd) / 2)} מ״מ הייתה נכנסת ב־1250: לבדוק מול מערכת התליה.` });
+  }
+  splitLog.forEach((s) => f.push({ pill: "info", tag: "פוצל", html: s.text }));
+  const cor = S.types.filter((t) => t.kind === "corner" && t.role === "field");
+  if (cor.length === 2) f.push({ pill: "info", tag: "ימין/שמאל", html: `קסטות פינה L: שמאל (<b class="mono">${cor.find((t) => t.hand === "L").code}</b>) וימין (<b class="mono">${cor.find((t) => t.hand === "R").code}</b>) הן תמונת ראי, ולכן שני סוגים נפרדים. רגל הצד (${CORNER_SIDE}) נלקחה מתוכנית הקומה.` });
+  const jb = S.types.filter((t) => t.kind === "jamb");
+  if (jb.length) f.push({ pill: "ok", tag: "סטנדרט", html: `ספלט ימין ושמאל זהים (פרופיל סימטרי, חיתוך ישר): ${jb.length} סוגים במקום ${jb.length * 2}.` });
+  const ed = S.types.find((t) => t.kind === "edge");
+  if (ed) f.push({ pill: "info", tag: "HPL", html: `HPL לא מתכופף: בפינות הקרקע לוח שטוח <b class="mono">${ed.code}</b> ופרופיל פינה מאלומיניום (${ed.ids.length} יח׳ × ${ed.h}).` });
+  return f;
+}
+function typeRows() {
+  let h = "", cur = null;
+  S.types.forEach((t, i) => {
+    if (t.mat !== cur) { cur = t.mat; const n = S.types.filter((x) => x.mat === cur).reduce((a, x) => a + x.ids.length, 0); h += `<div class="lh"><span>${MATS[cur].full}</span><span class="mono">${n} יח׳</span></div>`; }
+    h += `<div class="li code" data-t="${i}"><span class="sw" style="background:${t.color}"></span>
+      <input value="${D.esc(t.code)}" aria-label="קוד זיהוי" data-ti="${i}">
+      <span class="meta">${desc(t)} · <span class="mono">${netTxt(t)}</span></span>
+      <span class="pill ${t.ids.length > 1 ? "" : "warn"}">${t.ids.length > 1 ? "×" + t.ids.length : "ייחודי"}</span></div>`;
+  });
+  return h;
+}
+function missingFor(sel) {
+  const miss = new Set();
+  let wins = 0, cop = 0;
+  groups.forEach((G) => {
+    if (!G.adj.some((id) => sel.has(id))) return;
+    const m = G.need.filter((id) => !sel.has(id) && S.assigned[id] == null);
+    if (!m.length) return;
+    m.forEach((id) => miss.add(id));
+    if (G.label === "coping") cop = m.length; else wins++;
+  });
+  return { ids: [...miss], wins, cop };
+}
+const orderMix = (ids) => ["LB", "HPL", "AL"].map((m) => [m, ids.filter((id) => byId[id].mat === m).length]).filter(([, n]) => n).map(([m, n]) => `${MATS[m].name} ${n}`).join(" · ");
+const netM2 = (ids) => ids.reduce((a, id) => a + faceArea(S.typeOf[id]), 0);
+
+function renderSide() {
+  const st = D.step;
+  let h = "";
+  if (st === 1) {
+    const c = (m) => cntMat(ents, m);
+    h = `<div class="hd"><h2>קריאת השרטוט</h2><p>התוסף קורא את תוכנית העבודה של החזית לפי מוסכמת השכבות והגדרות הייצור שנקבעו בשלב התשתית.</p></div>
+    <div class="bd">
+      <div class="lbl">שכבות שזוהו</div>
+      <div class="layers">
+        <div><span>${sw(MATS.LB.raw)} <code>A-CLAD-LB</code></span>${val(`${c("LB")} קסטות`)}</div>
+        <div><span>${sw(MATS.HPL.raw)} <code>A-CLAD-HPL</code></span>${val(`${c("HPL")} לוחות`)}</div>
+        <div><span>${sw(MATS.AL.raw)} <code>A-CLAD-MTL</code></span>${val(`${c("AL")} פחים (אדן, ספלט, ראש פתח, קופינג)`)}</div>
+        <div><span><code>A-GLAZ</code></span>${val(`${openings.length} פתחים`)}</div>
+        <div><span><code>A-CLAD-GRID</code></span>${val(`מודול 1200, חצי מודול בפינות`)}</div>
+        <div><span><code>S-GRID</code></span>${val(`${AXES.length} צירים`)}</div>
+      </div>
+      <div class="lbl">הגדרות ייצור (משלב התשתית)</div>
+      <div class="layers">
+        <div><span>${MATS.LB.full}</span>${val(`מישק ${MATS.LB.joint} · כנף ${MATS.LB.flange} · V 90° הורדה ${fmt(MATS.LB.bd, 1)}`)}</div>
+        <div><span>${MATS.HPL.full}</span>${val(`מישק ${MATS.HPL.joint} · ניטים, פסיעה עד ${HPL_PITCH}`)}</div>
+        <div><span>${MATS.AL.full}</span>${val(`R${MATS.AL.R} · K ${MATS.AL.K} · BD 90° = ${fmt(bdAL(90), 1)}`)}</div>
+        <div><span>פלטות לוקובונד</span>${val(`${MATS.LB.widths.join("/")} × ${MATS.LB.lengths.join("/")}`)}</div>
+        <div><span>פלטות HPL</span>${val(`${MATS.HPL.sheets.map((s) => s.join("×")).join(" · ")}`)}</div>
+        <div><span>פלטות פח</span>${val(`${MATS.AL.sheets.map((s) => s.join("×")).join(" · ")}`)}</div>
+        <div><span>שולחן CNC</span>${val(`${CNC_BED.join("×")}`)}</div>
+      </div>
+      <div class="note">זו תוכנית העבודה של קבלן החיפוי אחרי מדידה בשטח, לא חזית אדריכלית: כל פאנל מצויר במידת הייצור, והרווח בין פאנלים הוא המישק. במערכת המלאה התוסף קורא גם חתכים ותוכנית קומה (עומק ספלט, רגל פינה, כיוון כנפיים). בדמו הנתונים מוכנים מראש.</div>
+    </div>${D.nav(null, 2, "הפעל זיהוי ובדיקות")}`;
+  } else if (st === 2) {
+    const rep = S.types.filter((t) => t.ids.length > 1).length, uni = S.types.length - rep, F = findings();
+    h = `<div class="hd"><h2>זיהוי, קטלוג ובדיקות</h2><p>כל פריט קיבל קוד, פריטים זהים קובצו לסוג אחד, והתוסף סימן מה דורש החלטה לפני ייצור. לחצו על קוד כדי לשנות אותו.</p></div>
+    <div class="bd">
+      <div class="stats"><div><b>${items.length}</b><span>פריטים</span></div><div><b>${S.types.length}</b><span>סוגים</span></div><div><b>${rep}</b><span>חוזרים</span></div><div><b>${uni}</b><span>ייחודיים</span></div></div>
+      <div class="lbl">בדיקות לפני ייצור</div>
+      <div class="finds">${F.map((x) => `<div class="fd"><span class="pill ${x.pill}">${x.tag}</span><span>${x.html}</span>${x.btn ? `<span class="act">${x.btn}</span>` : ""}</div>`).join("")}</div>
+      <div class="lbl">קטלוג סוגים</div>
+      <div class="list" id="typeList">${typeRows()}</div>
+      <div class="note">ריחוף או לחיצה על שורה מסמנים את הפריטים בשרטוט. לחיצה על פריט בשרטוט מסמנת את הסוג שלו ברשימה.</div>
+    </div>${D.nav(1, 3, "לפקודות ייצור")}`;
+  } else if (st === 3) {
+    const sel = [...S.sel], conf = sel.filter((id) => S.assigned[id] != null), free = sel.filter((id) => S.assigned[id] == null);
+    const nextCode = "פק״ע-" + String(S.orders.length + 1).padStart(2, "0");
+    const confBy = {};
+    conf.forEach((id) => { const c = S.orders[S.assigned[id]].code; confBy[c] = (confBy[c] || 0) + 1; });
+    const miss = missingFor(S.sel);
+    const done = (f) => items.filter((p) => p.floor === f).every((p) => S.assigned[p.id] != null);
+    h = `<div class="hd"><h2>פקודות ייצור לפי אזור</h2><p>גררו מלבן על השרטוט כדי לבחור אזור, או לחצו על פריטים בודדים. כל פריט נכנס לפקודת עבודה אחת בלבד.</p></div>
+    <div class="bd">
+      <div><div class="lbl" style="margin-bottom:6px">בחירה מהירה לפי סדר התקנה</div>
+      <div class="row">${floors.map((f, i) => `<button class="btn sm" type="button" data-floor="${i}">${f.name}${done(i) ? " ✓" : ""}</button>`).join("")}</div></div>
+      <div class="selbox">
+        <div class="row" style="justify-content:space-between"><span>${sel.length === 1 ? "נבחר <b class=\"mono\">1</b> פריט" : `נבחרו <b class="mono">${sel.length}</b> פריטים`} · <b class="mono">${fmt(netM2(free), 1)}</b> מ״ר חיפוי</span>${sel.length ? '<button class="btn sm" type="button" id="clearSel">נקה</button>' : ""}</div>
+        ${free.length ? `<div style="font-size:12px;color:var(--muted)">${orderMix(free)}</div>` : ""}
+        ${conf.length ? `<div class="conf">⚠ ${Object.entries(confBy).map(([c, n]) => `${n} כבר ב־${c}`).join(", ")}. לא ייכללו שוב (מניעת ייצור כפול)</div>` : ""}
+        ${miss.ids.length ? `<div class="miss"><span>ⓘ ${miss.wins ? `חסרים ${miss.ids.length - miss.cop} פחים (אדן, ספלט, ראש פתח) של ${miss.wins === 1 ? "פתח אחד" : miss.wins + " פתחים"} בבחירה. הם מותקנים לפני הפאנלים שסביבם.` : ""}${miss.cop ? ` הקופינג מעל פאנלי המעקה לא נבחר (${miss.cop} קטעים).` : ""}</span><button class="btn sm" type="button" id="addMiss">הוסף ${miss.ids.length} פחים לבחירה</button></div>` : ""}
+        <button class="btn pri" type="button" id="mkOrder" ${free.length ? "" : "disabled"}>צור ${nextCode} עם ${free.length} פריטים</button>
+      </div>
+      <div class="lbl">פקודות קיימות</div>
+      <div class="orders">${S.orders.length ? S.orders.map((o, i) => `<div class="ord"><span class="sw" style="background:${o.color}"></span><span><b>${o.code}</b> · <span class="mono" style="white-space:nowrap">${o.layer}</span><small>${orderMix(o.ids)}</small></span><span class="mono">${o.ids.length} פר׳ · ${fmt(netM2(o.ids), 1)} מ״ר${i === S.orders.length - 1 ? ` <button class="btn sm" type="button" id="undoOrd" style="margin-inline-start:6px">בטל</button>` : ""}</span></div>`).join("") : '<div class="note">התחילו מהקרקע: בחרו אותה וצרו פקודה. אחר כך גררו מלבן שחופף לה: הכפילות נחסמת. בחירה ידנית של פאנלים סביב חלון בלי הפחים שלו תקפיץ התראה.</div>'}</div>
+      <div class="note">כל פקודה נשמרת בשכבה נפרדת בשרטוט (<span class="mono ltr">PA-ORD-xx</span>) ומפוצלת בייצור לפי קו: CNC לוקובונד, CNC HPL, גיליוטינה ומכופפת לפחים.</div>
+    </div>${D.nav(2, 4, "לכרטיסי פריט")}`;
+  } else if (st === 4) {
+    if (!typeByKey(S.selKey)) S.selKey = S.types[0].key;
+    const t = typeByKey(S.selKey);
+    h = `<div class="hd"><h2>כרטיס פריט</h2><p>מידות נטו ופריסה, קידוחים, כיפופים וקינון בפלטה, מחושבים מהגדרות החומר. בחרו סוג או לחצו על פריט בשרטוט.</p></div>
+    <div class="bd">
+      <div class="typebtns">${["LB", "HPL", "AL"].map((m) => `<div class="row">${S.types.map((x, i) => (x.mat === m ? `<button class="btn sm ${x === t ? "on" : ""}" type="button" data-pick="${i}"><span class="mono">${x.code}</span></button>` : "")).join("")}</div>`).join("")}</div>
+      ${itemCard(t)}
+    </div>${D.nav(3, 5, "לריכוז ורכש")}`;
+  } else if (st === 5) {
+    const G = summary(), tot = totals(G);
+    const asg = items.filter((p) => S.assigned[p.id] != null).length;
+    h = `<div class="hd"><h2>ריכוז ורכש</h2><p>ריכוז פריטים ופלטות לכל פקודת עבודה: מ״ר נטו, מ״א פחים, מ״ר פריסה, משקל וניצולת. מוכן להדבקה באקסל.</p></div>
+    <div class="bd">
+      <div class="stats c3"><div><b>${S.orders.length}</b><span>פקודות</span></div><div><b>${asg}/${items.length}</b><span>שויכו</span></div><div><b>${fmt(tot.m2, 1)}</b><span>מ״ר חיפוי נטו</span></div></div>
+      <div class="stats c3"><div><b>${fmt(tot.ml, 1)}</b><span>מ״א פחים</span></div><div><b>${tot.sheets}</b><span>פלטות</span></div><div><b>${pct(tot.y)}</b><span>ניצולת</span></div></div>
+      ${customSeg()}
+      <button class="btn pri" type="button" id="copyXls">העתק טבלאות לאקסל</button>
+      <div class="note">הקינון כאן מקבץ פריטים מאותה פקודה ואותו חומר על אותן פלטות (שורות לפי אורך). בתוסף המלא נשמרים גם קובץ <span class="mono">.xlsx</span> עם לשונית לכל פק״ע וקובצי DXF לכל סוג לפי שכבות CNC.</div>
+      ${asg < items.length ? `<div class="note"><b>${items.length - asg}</b> פריטים עוד לא שויכו לפקודה ומופיעים בקבוצה נפרדת.</div>` : ""}
+      ${D.cta()}
+    </div>${D.nav(4, null)}`;
+  }
+  D.side(h);
+  bindSide();
+}
+const customSeg = () => `<div class="seg"><span>פלטות לוקובונד</span><span class="row" style="gap:4px"><button class="btn sm ${S.custom ? "" : "on"}" type="button" data-custom="0">מלאי</button><button class="btn sm ${S.custom ? "on" : ""}" type="button" data-custom="1">אורך לפי הזמנה</button></span></div>`;
+
+/* ---------- item card ---------- */
+const C = { cut: "#6FD3C9", groove: "#E57BD8", drill: "#FFD54F", slot: "#FF9F43", stiff: "#8C979C", mark: "#8C979C" };
+const f1 = (v) => +v.toFixed(1);
+function itemCard(t) {
+  const M = MATS[t.mat], r = typeNest(t), n = t.ids.length, sheet = r.sheets[0];
+  // capacity of the chosen sheet for this blank alone (strips across x pieces along for flashings)
+  const pc = pieces(t), p0 = pc[0], fit = (room, v) => Math.floor((room - 2 * M.margin + M.gap) / (v + M.gap));
+  const per = sheet ? Math.floor((fit(sheet.w, p0.a) * fit(sheet.l, p0.b)) / pc.length) : 0;
+  let kv = "", cnc = "", svgH = "";
+  if (t.mat === "LB") {
+    const p = pieces(t)[0], hs = hangPerSide(t);
+    svgH = cardLB(t);
+    kv = `<div><span>נטו (ר×ג)</span><b class="mono">${netTxt(t)}</b></div><div><span>פריסה</span><b class="mono">${f1(p.a)}×${f1(p.b)}</b></div>
+      <div><span>כנף / הורדה</span><b class="mono">${M.flange} / ${fmt(M.bd, 1)}</b></div><div><span>שטח נטו ליח׳</span><b class="mono">${fmt(faceArea(t), 3)} מ״ר</b></div>
+      <div><span>נקודות תליה</span><b class="mono">2×${hs}</b></div><div><span>חיזוקים בגב</span><b class="mono">${stiffeners(t)}</b></div>
+      <div><span>משקל ליח׳</span><b class="mono">${fmt(unitKg(t), 1)} ק״ג</b></div><div><span>מישק</span><b class="mono">${M.joint}</b></div>`;
+    cnc = [["CUT", "חיתוך מלא, כולל פינות" + (t.kind === "corner" ? " ומיטר בקו הפינה" : ""), C.cut, ""], ["V90", "כרסום V לכיפוף 90°", C.groove, "d"], ["DRILL_6", "קדח שחרור בפינות", C.drill, ""], ["SLOT_8x20", `חריצי תליה בכנף (${2 * hs})`, C.slot, ""], ["MARK", "קוד וחץ כיוון גוון בגב", C.mark, ""]];
+  } else if (t.mat === "HPL") {
+    const ho = hplHoles(t);
+    svgH = cardHPL(t, ho);
+    kv = `<div><span>נטו (ר×ג)</span><b class="mono">${t.w}×${t.h}</b></div><div><span>מישק</span><b class="mono">${M.joint}</b></div>
+      <div><span>ניטים ליח׳</span><b class="mono">${ho.n} (${ho.xs.length}×${ho.ys.length})</b></div><div><span>קבועה / מחליקות</span><b class="mono">1 / ${ho.n - 1}</b></div>
+      <div><span>שטח נטו ליח׳</span><b class="mono">${fmt(faceArea(t), 3)} מ״ר</b></div><div><span>משקל ליח׳</span><b class="mono">${fmt(unitKg(t), 1)} ק״ג</b></div>`;
+    cnc = [["CUT", "חיתוך היקפי", C.cut, ""], ["DRILL_5.1", "נקודה קבועה", C.drill, ""], ["DRILL_8.5", "נקודות מחליקות", C.slot, ""], ["MARK", "קוד וחץ כיוון בגב", C.mark, ""]];
+  } else {
+    const P = PROF[t.kind === "copc" ? "coping" : t.kind];
+    svgH = cardAL(t, P);
+    kv = `<div><span>אורך</span><b class="mono">${t.len}</b></div><div><span>רוחב פריסה</span><b class="mono">${fmt(t.dev, 1)}</b></div>
+      <div><span>כיפופים</span><b class="mono">${P.ang.length}</b></div><div><span>מ״א ליח׳</span><b class="mono">${fmt(t.len / 1000, 2)}</b></div>
+      <div><span>משקל ליח׳</span><b class="mono">${fmt(unitKg(t), 2)} ק״ג</b></div><div><span>${t.kind === "copc" ? "חלקים" : "קו ייצור"}</span><b class="mono">${t.kind === "copc" ? `2 × ${COPC_PART}` : "כיפוף"}</b></div>`;
+    cnc = P.ang.map((a, i) => [`B${i + 1}  ${a}°`, `BD ${fmt(P.bd[i], 2)} · רגל ${fmt(P.legs[i], 0)}→${fmt(P.legs[i + 1], 0)}`, C.groove, "d"]);
+  }
+  const low = r.y < 0.7;
+  let tip = "";
+  if (t.mat === "LB" && !S.custom && r.y < 0.8) { const c = typeNest(t, true); tip = `באורך לפי הזמנה: <span class="mono">${sizesTxt(c.sheets)}</span>, ניצולת ${pct(c.y)}.`; }
+  else if (low) tip = t.mat === "AL" ? "בקינון לפי פקודה הפסים נחלקים עם פריטים אחרים מאותו חומר, ולכן הניצולת שם גבוהה יותר." : "בקינון לפי פקודה הלוחות האלה משלימים פלטות של סוגים אחרים, ולכן הניצולת שם גבוהה יותר.";
+  const notes = [];
+  if (t.merged.length) notes.push(`כולל ${t.merged.reduce((a, g) => a + g.ids.length, 0)} יח׳ שאוחדו מ־${t.merged.map((g) => dimS(g.w, g.h)).join(", ")}.`);
+  if (t.mat === "LB" && t.kind === "corner") notes.push(`פינת L ${HAND[t.hand]}: לא להחליף עם היד השנייה. רגל ${t.side} בחזית הצד.`);
+  if (t.kind === "edge") notes.push(`פרופיל פינת אלומיניום ${t.h} מ״מ לכל לוח.`);
+  if (t.kind === "copc") notes.push("שני חלקים במיטר 45°, ניטים ופס גב, איטום בסיליקון. אורך במ״א: שתי הרגליים.");
+  if (t.kind === "coping") notes.push("פס חיבור 150 מ״מ מתחת לכל מישק, מישק 5 מ״מ.");
+  return `<div class="card">
+      <div class="ch"><b class="mono">${t.code}</b><span>${desc(t)} · <span class="mono">${n}</span> יח׳</span></div>
+      ${svgH}
+      <div class="kv">${kv}</div>
+      <div class="cnc"><div class="lbl">${t.mat === "AL" ? "תוכנית כיפוף (מכופפת)" : "שכבות CNC"}</div>${cnc.map((c) => `<div><i class="${c[3]}" style="border-color:${c[2]}"></i><span class="mono ltr">${c[0]}</span><span style="color:var(--muted)">${c[1]}</span></div>`).join("")}</div>
+    </div>
+    <div class="card">
+      <div class="nest-h"><span>קינון ${n} יח׳ · ${M.name}</span><b class="mono">${r.over.length ? "חורג" : sizesTxt(r.sheets)}</b></div>
+      ${sheet ? nestSvg(sheet, t) : ""}
+      <div class="kv"><div><span>יח׳ לפלטה</span><b class="mono">${per}</b></div><div><span>ניצולת</span>${r.over.length ? '<span class="pill bad">חורג מכל הפלטות</span>' : `<span class="pill ${low ? "warn" : "ok"}">${pct(r.y)}</span>`}</div>
+      <div><span>מ״ר פלטות</span><b class="mono">${fmt(r.area, 2)}</b></div><div><span>פחת</span><b class="mono">${fmt(r.area - r.used, 2)} מ״ר</b></div></div>
+      <div class="nest-c">${t.mat === "AL" ? "פסים לאורך הפלטה, חיתוך בגיליוטינה." : "כל הפריטים בכיוון אחד (כיוון גוון), בלי סיבוב."}${tip ? " " + tip : ""}</div>
+      ${t.mat === "LB" ? `<div style="padding:0 12px 10px">${customSeg()}</div>` : ""}
+    </div>
+    ${notes.length ? `<div class="note">${notes.join(" ")}</div>` : ""}`;
+}
+const svgOpen = (vw, vh, label) => `<svg viewBox="0 0 ${vw} ${vh}" xmlns="${D.NS}" direction="ltr" role="img" aria-label="${label}">`;
+const T = (x, y, s, o = {}) => `<text x="${f1(x)}" y="${f1(y)}" font-family="${MONO}" font-size="${o.fs || 10}" fill="${o.fill || "#C9D1D4"}" text-anchor="${o.a || "middle"}"${o.rot ? ` transform="rotate(${o.rot} ${f1(x)} ${f1(y)})"` : ""}>${s}</text>`;
+function blankFrame(a, b, box) {
+  const s = Math.min(box.w / a, box.h / b), w = a * s, h = b * s;
+  return { s, w, h, ox: box.x + (box.w - w) / 2, oy: box.y + (box.h - h) / 2 };
+}
+function cardLB(t) {
+  const M = MATS.LB, e = E_LB, p = pieces(t)[0], a = p.a, b = p.b;
+  const VW = 360, VH = 246, F = blankFrame(a, b, { x: 26, y: 30, w: 168, h: 196 }), s = F.s;
+  const X = (x) => f1(F.ox + x * s), Yp = (y) => f1(F.oy + y * s), P = (x, y) => `${X(x)},${Yp(y)}`;
+  const xf = t.kind === "corner" ? e + (t.hand === "L" ? t.side : t.w) - M.bd / 2 : null;
+  const top = [[e, 0], ...(xf ? [[xf - e, 0], [xf, e], [xf + e, 0]] : []), [a - e, 0], [a - e, e], [a, e], [a, b - e], [a - e, b - e], [a - e, b]];
+  const bot = [...(xf ? [[xf + e, b], [xf, b - e], [xf - e, b]] : []), [e, b], [e, b - e], [0, b - e], [0, e], [e, e]];
+  let g = `<polygon points="${[...top, ...bot].map(([x, y]) => P(x, y)).join(" ")}" fill="#22333a" stroke="${C.cut}" stroke-width="1.4"/>`;
+  const vx = [e, a - e, ...(xf ? [xf] : [])];
+  g += `<g stroke="${C.groove}" stroke-width="1" stroke-dasharray="4 3">${vx.map((x) => `<line x1="${X(x)}" y1="${Yp(e)}" x2="${X(x)}" y2="${Yp(b - e)}"/>`).join("")}${[e, b - e].map((y) => `<line x1="${X(e)}" y1="${Yp(y)}" x2="${X(a - e)}" y2="${Yp(y)}"/>`).join("")}</g>`;
+  const ns = stiffeners(t);
+  if (ns) g += `<g stroke="${C.stiff}" stroke-width="1" stroke-dasharray="1.5 2.5">${spread(e, b - e, ns + 2).slice(1, -1).map((y) => `<line x1="${X(e + 12)}" y1="${Yp(y)}" x2="${X(a - e - 12)}" y2="${Yp(y)}"/>`).join("")}</g>`;
+  const rel = [[e, e], [a - e, e], [e, b - e], [a - e, b - e], ...(xf ? [[xf, e], [xf, b - e]] : [])];
+  g += rel.map(([x, y]) => `<circle cx="${X(x)}" cy="${Yp(y)}" r="1.3" fill="none" stroke="${C.drill}" stroke-width="0.9"/>`).join("");
+  const hs = hangPerSide(t), sy = spread(e + 100, b - e - 100, hs);
+  g += `<g fill="none" stroke="${C.slot}" stroke-width="0.9">${[e / 2, a - e / 2].map((x) => sy.map((y) => `<rect x="${f1(F.ox + x * s - 1.4)}" y="${f1(F.oy + y * s - Math.max(10 * s, 1.8))}" width="2.8" height="${f1(Math.max(20 * s, 3.6))}" rx="1.4"/>`).join("")).join("")}</g>`;
+  g += T(F.ox + F.w / 2, F.oy - 9, f1(a)) + `<line x1="${F.ox}" y1="${F.oy - 5}" x2="${F.ox + F.w}" y2="${F.oy - 5}" stroke="#8C979C" stroke-width="0.8"/>`;
+  g += T(F.ox + F.w + 13, F.oy + F.h / 2, f1(b), { rot: 90 }) + `<line x1="${F.ox + F.w + 6}" y1="${F.oy}" x2="${F.ox + F.w + 6}" y2="${F.oy + F.h}" stroke="#8C979C" stroke-width="0.8"/>`;
+  g += T(F.ox + F.w / 2, F.oy + F.h / 2 + 4, `${t.code} ↑`, { fs: 10.5, fill: "#F2F5F6" });
+  g += `<circle cx="${F.ox}" cy="${F.oy}" r="8" fill="none" stroke="#C9D1D4" stroke-width="0.8"/>` + T(F.ox - 13, F.oy - 6, "A", { fs: 10 });
+  // detail A: the corner of the blank at ~1:1.4
+  const k = 0.7, R = 165, dx = 232, dy = 64, Q = (x, y) => `${f1(dx + x * k)},${f1(dy + y * k)}`;
+  g += `<rect x="${dx - 18}" y="${dy - 34}" width="${R * k + 28}" height="${R * k + 46}" fill="none" stroke="#3a454d" stroke-dasharray="3 3"/>` + T(dx - 8, dy - 20, "A", { fs: 11, a: "start", fill: "#F2F5F6" });
+  g += `<polyline points="${[[R, 0], [e, 0], [e, e], [0, e], [0, R]].map(([x, y]) => Q(x, y)).join(" ")}" fill="none" stroke="${C.cut}" stroke-width="1.6"/>`;
+  g += `<g stroke="${C.groove}" stroke-width="1.1" stroke-dasharray="4 3"><line x1="${dx + e * k}" y1="${dy + e * k}" x2="${dx + R * k}" y2="${dy + e * k}"/><line x1="${dx + e * k}" y1="${dy + e * k}" x2="${dx + e * k}" y2="${dy + R * k}"/></g>`;
+  g += `<circle cx="${dx + e * k}" cy="${dy + e * k}" r="${3 * k}" fill="none" stroke="${C.drill}" stroke-width="1.1"/>`;
+  g += `<rect x="${f1(dx + (e / 2 - 4) * k)}" y="${f1(dy + (e + 100 - 10) * k)}" width="${f1(8 * k)}" height="${f1(20 * k)}" rx="${f1(4 * k)}" fill="none" stroke="${C.slot}" stroke-width="1.1"/>`;
+  g += `<line x1="${dx}" y1="${dy - 8}" x2="${f1(dx + e * k)}" y2="${dy - 8}" stroke="#8C979C" stroke-width="0.8"/>` + T(dx + (e * k) / 2, dy - 11, f1(e), { fs: 9 });
+  g += T(dx + e * k + 12, dy + e * k + 13, "Ø6", { fs: 9, a: "start" }) + T(dx + (e + 12) * k, dy + (e + 104) * k, "8×20", { fs: 9, a: "start" }) + T(dx + (R - 4) * k, dy + e * k - 5, "V90", { fs: 9, a: "end", fill: C.groove });
+  g += T(dx + (R * k) / 2, dy + R * k + 4, `${M.flange}−${M.bd}=${f1(e)}`, { fs: 9, fill: "#8C979C" });
+  return svgOpen(VW, VH, `פריסת ${t.code}`) + g + "</svg>";
+}
+function cardHPL(t, ho) {
+  const VW = 360, VH = 250, F = blankFrame(t.w, t.h, { x: 26, y: 28, w: 168, h: 190 }), s = F.s;
+  let g = `<rect x="${f1(F.ox)}" y="${f1(F.oy)}" width="${f1(F.w)}" height="${f1(F.h)}" fill="#3A332A" stroke="${C.cut}" stroke-width="1.4"/>`;
+  ho.xs.forEach((x, i) => ho.ys.forEach((y, j) => {
+    const fix = i === ho.fx && j === ho.fy, cx = f1(F.ox + x * s), cy = f1(F.oy + y * s);
+    g += fix ? `<circle cx="${cx}" cy="${cy}" r="2.6" fill="${C.drill}"/>` : `<circle cx="${cx}" cy="${cy}" r="3" fill="none" stroke="${C.slot}" stroke-width="1.1"/>`;
+  }));
+  g += T(F.ox + F.w / 2, F.oy - 9, t.w) + `<line x1="${F.ox}" y1="${F.oy - 5}" x2="${F.ox + F.w}" y2="${F.oy - 5}" stroke="#8C979C" stroke-width="0.8"/>`;
+  g += T(F.ox + F.w + 13, F.oy + F.h / 2, t.h, { rot: 90 }) + `<line x1="${F.ox + F.w + 6}" y1="${F.oy}" x2="${F.ox + F.w + 6}" y2="${F.oy + F.h}" stroke="#8C979C" stroke-width="0.8"/>`;
+  g += T(F.ox + F.w / 2, F.oy + F.h + 16, `${t.code} ↑`, { fs: 10.5, fill: "#F2F5F6" });
+  // details: fixed and sliding point with the rivet head
+  const det = (cx, cy, hole, label, fill) => `<circle cx="${cx}" cy="${cy}" r="${7 * 2.2}" fill="none" stroke="#56636b" stroke-dasharray="2 2"/><circle cx="${cx}" cy="${cy}" r="${(hole / 2) * 2.2}" fill="${fill ? C.drill : "none"}" stroke="${fill ? C.drill : C.slot}" stroke-width="1.2" fill-opacity=".35"/><circle cx="${cx}" cy="${cy}" r="${2.5 * 2.2}" fill="none" stroke="#C9D1D4" stroke-width="0.8"/>` + T(cx, cy + 32, label, { fs: 9.5 });
+  g += det(252, 74, 5.1, "Ø5.1", true) + det(316, 74, 8.5, "Ø8.5", false);
+  // edge distance and pitch on the first holes
+  const hx = F.ox + ho.xs[0] * s, hy = F.oy + ho.ys[0] * s;
+  g += `<g stroke="#8C979C" stroke-width="0.7"><line x1="${f1(F.ox)}" y1="${f1(hy)}" x2="${f1(hx)}" y2="${f1(hy)}"/><line x1="${f1(hx)}" y1="${f1(F.oy + F.h + 4)}" x2="${f1(F.ox + ho.xs[1] * s)}" y2="${f1(F.oy + F.h + 4)}"/></g>`;
+  g += T(F.ox - 4, hy + 3, HPL_EDGE, { fs: 8.5, a: "end", fill: "#8C979C" }) + T(F.ox + ((ho.xs[0] + ho.xs[1]) / 2) * s, F.oy + F.h + 28, f1(ho.xs[1] - ho.xs[0]), { fs: 8.5, fill: "#8C979C" });
+  g += `<line x1="232" y1="140" x2="336" y2="140" stroke="#3a454d"/>` + T(284, 160, `${ho.xs.length} × ${ho.ys.length}`, { fs: 11, fill: "#F2F5F6" });
+  return svgOpen(VW, VH, `לוח ${t.code}`) + g + "</svg>";
+}
+function cardAL(t, P) {
+  const VW = 360, VH = 250, pts = P.pts;
+  const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+  const bw = Math.max(...xs) - Math.min(...xs), bh = Math.max(...ys) - Math.min(...ys);
+  const s = Math.min(240 / bw, 96 / bh), ox = (VW - bw * s) / 2 - Math.min(...xs) * s, oy = 24 + Math.max(...ys) * s;
+  const X = (x) => f1(ox + x * s), Yp = (y) => f1(oy - y * s);
+  let g = `<polyline points="${pts.map(([x, y]) => `${X(x)},${Yp(y)}`).join(" ")}" fill="none" stroke="${C.cut}" stroke-width="2.4" stroke-linejoin="round"/>`;
+  pts.slice(1).forEach((q, i) => {
+    const p = pts[i], mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2, L = P.legs[i];
+    const nx = -(q[1] - p[1]) / L, ny = (q[0] - p[0]) / L, off = L < 30 ? 13 : 11;
+    g += T(ox + mx * s + nx * off, oy - my * s - ny * off + 3, fmt(L, 0), { fs: 9.5 });
+  });
+  pts.slice(1, -1).forEach((q, i) => { g += `<circle cx="${X(q[0])}" cy="${Yp(q[1])}" r="2" fill="${C.groove}"/>` + T(ox + q[0] * s + 4, oy - q[1] * s + 13, P.ang[i] + "°", { fs: 8.5, fill: C.groove, a: "start" }); });
+  // developed strip, to scale
+  const len = t.kind === "copc" ? COPC_PART : t.len, s2 = Math.min(300 / len, 58 / t.dev), sw2 = len * s2, sh2 = t.dev * s2, sx = (VW - sw2) / 2, sy = 156;
+  g += `<rect x="${f1(sx)}" y="${sy}" width="${f1(sw2)}" height="${f1(sh2)}" fill="#2f2a36" stroke="${C.cut}" stroke-width="1.2"/>`;
+  let acc = 0;
+  P.ang.forEach((_, i) => { acc += P.legs[i] - (i ? P.bd[i - 1] / 2 : 0) - P.bd[i] / 2; const y = f1(sy + acc * s2); g += `<line x1="${f1(sx)}" y1="${y}" x2="${f1(sx + sw2)}" y2="${y}" stroke="${C.groove}" stroke-width="1" stroke-dasharray="4 3"/>`; });
+  g += T(sx + sw2 / 2, sy + sh2 + 14, `L ${len}${t.kind === "copc" ? " ×2, 45°" : ""}`, { fs: 10 }) + T(sx, sy - 6, `↕ ${fmt(t.dev, 1)}`, { fs: 10, a: "start" });
+  return svgOpen(VW, VH, `פרופיל ${t.code}`) + g + "</svg>";
+}
+function nestSvg(sh, t) {
+  const VW = 360, pad = 12, s = Math.min((VW - 2 * pad) / sh.l, 92 / sh.w), w = sh.l * s, h = sh.w * s, ox = (VW - w) / 2, oy = 12, M = MATS[t.mat];
+  let g = `<rect x="${f1(ox)}" y="${oy}" width="${f1(w)}" height="${f1(h)}" fill="#161c21" stroke="#8C979C" stroke-width="1"/>`;
+  g += `<rect x="${f1(ox + M.margin * s)}" y="${f1(oy + M.margin * s)}" width="${f1(w - 2 * M.margin * s)}" height="${f1(h - 2 * M.margin * s)}" fill="none" stroke="#3a454d" stroke-dasharray="2 2"/>`;
+  sh.parts.forEach((p) => { g += `<rect x="${f1(ox + p.y * s)}" y="${f1(oy + p.x * s)}" width="${f1(p.b * s)}" height="${f1(p.a * s)}" fill="${p.t.color}" fill-opacity=".75" stroke="#0c0f12" stroke-width=".6"/>`; });
+  g += T(ox + w / 2, oy + h + 14, `${sh.w}×${sh.l}  ⟷`, { fs: 10 });
+  return svgOpen(VW, oy + h + 22, "קינון בפלטה") + g + "</svg>";
+}
+
+/* ---------- summary ---------- */
+function summary() {
+  const G = S.orders.map((o) => ({ name: o.code, ids: o.ids }));
+  const un = items.filter((p) => S.assigned[p.id] == null).map((p) => p.id);
+  if (un.length) G.push({ name: "טרם שויך", ids: un });
+  return G.map((g) => {
+    const byT = new Map();
+    g.ids.forEach((id) => { const t = S.typeOf[id]; byT.set(t, (byT.get(t) || 0) + 1); });
+    const rows = [...byT].sort(([a], [b]) => S.types.indexOf(a) - S.types.indexOf(b)).map(([t, n]) => ({
+      code: t.code, desc: desc(t), mat: MATS[t.mat].name, net: netTxt(t), dev: devTxt(t), n,
+      m2: faceArea(t) * n, ml: t.mat === "AL" ? (t.len / 1000) * n : 0, m2d: devArea(t) * n, kg: unitKg(t) * n,
+    }));
+    const sheets = [];
+    ["LB", "HPL", "AL"].forEach((k) => {
+      const ps = [];
+      g.ids.forEach((id) => { const t = S.typeOf[id]; if (t.mat === k) pieces(t).forEach((p) => ps.push({ ...p, t })); });
+      if (!ps.length) return;
+      const r = nest(ps, k, S.custom), agg = new Map();
+      r.sheets.forEach((s) => {
+        const key = `${s.w}×${s.l}`, a = agg.get(key) || { mat: k, size: key, n: 0, area: 0, used: 0 };
+        a.n++; a.area += (s.w * s.l) / 1e6; a.used += s.parts.reduce((x, q) => x + q.a * q.b, 0) / 1e6;
+        agg.set(key, a);
+      });
+      sheets.push(...[...agg.values()].sort((x, y) => y.n - x.n));
+    });
+    return { name: g.name, rows, sheets };
+  });
+}
+function totals(G) {
+  const T0 = { n: 0, m2: 0, ml: 0, m2d: 0, kg: 0, sheets: 0, area: 0, used: 0 };
+  G.forEach((g) => {
+    g.rows.forEach((r) => { T0.n += r.n; T0.m2 += r.m2; T0.ml += r.ml; T0.m2d += r.m2d; T0.kg += r.kg; });
+    g.sheets.forEach((s) => { T0.sheets += s.n; T0.area += s.area; T0.used += s.used; });
+  });
+  T0.y = T0.area ? T0.used / T0.area : 0;
+  return T0;
+}
+const dash = (v, d) => (v ? fmt(v, d) : "—");
+function tableHtml() {
+  const G = summary(), TT = totals(G);
+  let h = `<h3>ריכוז פריטים לפי פקודת עבודה</h3><table><thead><tr><th>פק״ע</th><th>קוד</th><th>תיאור</th><th>חומר</th><th class="num">נטו</th><th class="num">פריסה</th><th class="num">יח׳</th><th class="num">מ״ר נטו</th><th class="num">מ״א</th><th class="num">מ״ר פריסה</th><th class="num">ק״ג</th></tr></thead><tbody>`;
+  G.forEach((g) => {
+    const s = g.rows.reduce((a, r) => ({ n: a.n + r.n, m2: a.m2 + r.m2, ml: a.ml + r.ml, m2d: a.m2d + r.m2d, kg: a.kg + r.kg }), { n: 0, m2: 0, ml: 0, m2d: 0, kg: 0 });
+    h += `<tr class="grp"><td colspan="6">${g.name}</td><td class="num">${s.n}</td><td class="num">${fmt(s.m2, 2)}</td><td class="num">${dash(s.ml, 2)}</td><td class="num">${fmt(s.m2d, 2)}</td><td class="num">${fmt(s.kg, 0)}</td></tr>`;
+    g.rows.forEach((r) => { h += `<tr><td></td><td class="mono">${r.code}</td><td>${r.desc}</td><td>${r.mat}</td><td class="num">${r.net}</td><td class="num">${r.dev}</td><td class="num">${r.n}</td><td class="num">${dash(r.m2, 2)}</td><td class="num">${dash(r.ml, 2)}</td><td class="num">${fmt(r.m2d, 2)}</td><td class="num">${fmt(r.kg, 0)}</td></tr>`; });
+  });
+  h += `<tr class="tot"><td colspan="6">סה״כ חזית</td><td class="num">${TT.n}</td><td class="num">${fmt(TT.m2, 2)}</td><td class="num">${fmt(TT.ml, 2)}</td><td class="num">${fmt(TT.m2d, 2)}</td><td class="num">${fmt(TT.kg, 0)}</td></tr></tbody></table>`;
+  h += `<h3>ריכוז פלטות לרכש <span>· לוקובונד ${S.custom ? "באורך לפי הזמנה" : "ממלאי"}</span></h3><table><thead><tr><th>פק״ע</th><th>חומר</th><th class="num">פלטה</th><th class="num">כמות</th><th class="num">מ״ר פלטות</th><th class="num">מ״ר פריסה</th><th class="num">ניצולת</th><th class="num">פחת מ״ר</th></tr></thead><tbody>`;
+  const buy = new Map();
+  G.forEach((g) => g.sheets.forEach((s, i) => {
+    h += `<tr><td>${i ? "" : g.name}</td><td>${MATS[s.mat].name}</td><td class="num">${s.size}</td><td class="num">${s.n}</td><td class="num">${fmt(s.area, 2)}</td><td class="num">${fmt(s.used, 2)}</td><td class="num">${pct(s.used / s.area)}</td><td class="num">${fmt(s.area - s.used, 2)}</td></tr>`;
+    const k = s.mat + " " + s.size, b = buy.get(k) || { mat: s.mat, size: s.size, n: 0, area: 0, used: 0 };
+    b.n += s.n; b.area += s.area; b.used += s.used; buy.set(k, b);
+  }));
+  const MO = { LB: 0, HPL: 1, AL: 2 };
+  [...buy.values()].sort((a, b) => MO[a.mat] - MO[b.mat] || b.n - a.n).forEach((b, i) => { h += `<tr class="${i ? "" : "tot"}"><td class="sub">${i ? "" : "סה״כ לרכש"}</td><td>${MATS[b.mat].name}</td><td class="num">${b.size}</td><td class="num">${b.n}</td><td class="num">${fmt(b.area, 2)}</td><td class="num">${fmt(b.used, 2)}</td><td class="num">${pct(b.used / b.area)}</td><td class="num">${fmt(b.area - b.used, 2)}</td></tr>`; });
+  return h + `</tbody></table>`;
+}
+const tsv = () => {
+  const G = summary(), q = (s) => String(s).replace(/״/g, '"').replace(/׳/g, "'");
+  const L = [["פק\"ע", "קוד", "תיאור", "חומר", "נטו", "פריסה", "יחידות", "מ\"ר נטו", "מ\"א", "מ\"ר פריסה", "ק\"ג"].join("\t")];
+  G.forEach((g) => g.rows.forEach((r) => L.push([q(g.name), r.code, q(r.desc), q(r.mat), r.net, r.dev, r.n, r.m2.toFixed(2), r.ml.toFixed(2), r.m2d.toFixed(2), r.kg.toFixed(1)].join("\t"))));
+  L.push("", ["פק\"ע", "חומר", "פלטה", "כמות", "מ\"ר פלטות", "מ\"ר פריסה", "ניצולת %", "פחת מ\"ר"].join("\t"));
+  G.forEach((g) => g.sheets.forEach((s) => L.push([q(g.name), q(MATS[s.mat].name), s.size, s.n, s.area.toFixed(2), s.used.toFixed(2), ((s.used / s.area) * 100).toFixed(1), (s.area - s.used).toFixed(2)].join("\t"))));
+  return L.join("\n");
+};
+
+/* ---------- interactions ---------- */
+function setCustom(on) {
+  if (S.custom === on) return;
+  S.custom = on;
+  D.cmd(`PA_NEST ACP_LENGTH=${on ? "CUT-TO-ORDER" : "STOCK"}`);
+  D.track("demo_action", { action: "nest_" + (on ? "custom" : "stock") });
+  if (D.step === 5) D.table(tableHtml());
+  renderSide(); updateKpi();
+}
+function bindSide() {
+  const side = D.sideEl;
+  side.querySelectorAll("[data-custom]").forEach((b) => (b.onclick = () => setCustom(b.dataset.custom === "1")));
+  if (D.step === 2) {
+    side.querySelectorAll(".li").forEach((li) => {
+      const t = S.types[+li.dataset.t];
+      li.onmouseenter = () => { S.hoverType = t; paint(); };
+      li.onmouseleave = () => { S.hoverType = null; paint(); };
+      li.onclick = (e) => {
+        if (e.target.tagName === "INPUT") return;
+        S.pinType = S.pinType === t ? null : t;
+        side.querySelectorAll(".li.on").forEach((x) => x.classList.remove("on"));
+        if (S.pinType) li.classList.add("on");
+        paint();
+      };
+    });
+    side.querySelectorAll("input[data-ti]").forEach((inp) => {
+      inp.onchange = () => {
+        const t = S.types[+inp.dataset.ti], v = inp.value.trim().toUpperCase();
+        if (!v || v === t.code) { inp.value = t.code; return; }
+        if (S.types.some((x) => x !== t && x.code === v)) { inp.value = t.code; D.toast(`הקוד ${v} כבר קיים בקטלוג`); return; }
+        const old = t.code; t.code = v; S.codes[t.key] = v; inp.value = v; paint();
+        D.cmd(`PA_RENAME ${old} → ${v}`);
+        D.toast(`הקוד ${old} שונה ל־${v} בכל ${t.ids.length} הפריטים`);
+      };
+    });
+    side.querySelectorAll("[data-merge],[data-unmerge]").forEach((b) => (b.onclick = () => {
+      const p = S.near[+(b.dataset.merge ?? b.dataset.unmerge)], on = b.dataset.merge != null, dst = typeByKey(p.dst);
+      if (on) S.merge[p.src] = p.dst; else delete S.merge[p.src];
+      D.cmd(on ? `PA_MERGE ${p.w}x${p.h} → ${dst.code}` : `PA_UNMERGE ${p.w}x${p.h}`);
+      rebuildTypes();
+      D.toast(on ? `${p.n} יח׳ אוחדו ל־${typeByKey(p.dst).code}. הקטלוג מוספר מחדש` : "האיחוד בוטל");
+      D.track("demo_action", { action: on ? "merge" : "unmerge" });
+      paint(); renderSide(); updateKpi();
+    }));
+  }
+  if (D.step === 3) {
+    side.querySelectorAll("[data-floor]").forEach((b) => (b.onclick = () => {
+      const f = +b.dataset.floor;
+      S.sel = new Set(items.filter((p) => p.floor === f).map((p) => p.id));
+      D.cmd(`PA_SELECT LEVEL="${floors[f].name}"`);
+      paint(); renderSide();
+    }));
+    const on = (id, fn) => { const x = document.getElementById(id); if (x) x.onclick = fn; };
+    on("clearSel", () => { S.sel.clear(); paint(); renderSide(); });
+    on("mkOrder", makeOrder);
+    on("addMiss", () => { const m = missingFor(S.sel); m.ids.forEach((id) => S.sel.add(id)); D.cmd(`PA_SELECT ADD FLASHINGS=${m.ids.length}`); paint(); renderSide(); });
+    on("undoOrd", () => {
+      const o = S.orders.pop();
+      o.ids.forEach((id) => delete S.assigned[id]);
+      D.cmd(`PA_ORDER DELETE ORD-${o.n}`);
+      D.toast(`${o.code} בוטלה. הפריטים חזרו לטרם שויך`);
+      paint(); renderSide(); updateKpi();
+    });
+  }
+  if (D.step === 4) side.querySelectorAll("[data-pick]").forEach((b) => (b.onclick = () => pickType(S.types[+b.dataset.pick])));
+  if (D.step === 5) document.getElementById("copyXls").onclick = () => { D.copy(tsv(), "הטבלאות הועתקו. הדביקו בגיליון אקסל"); D.track("demo_export"); };
+}
+function pickType(t) { S.selKey = t.key; D.cmd(`PA_ITEMCARD ${t.code}`); paint(); renderSide(); }
+function makeOrder() {
+  const free = [...S.sel].filter((id) => S.assigned[id] == null), skipped = S.sel.size - free.length;
+  if (!free.length) return;
+  const miss = missingFor(S.sel).ids.length;
+  const i = S.orders.length, n = String(i + 1).padStart(2, "0"), code = "פק״ע-" + n;
+  S.orders.push({ code, n, layer: "PA-ORD-" + n, color: ORDER_COLORS[i % ORDER_COLORS.length], ids: free });
+  free.forEach((id) => (S.assigned[id] = i));
+  S.sel.clear();
+  D.cmd(`PA_ORDER NEW ORD-${n} ITEMS=${free.length}${skipped ? ` SKIPPED=${skipped}` : ""}`);
+  D.toast(skipped ? `${code} נוצרה עם ${free.length} פריטים. ${skipped} פריטים שכבר בייצור דולגו.` : miss ? `${code} נוצרה בלי ${miss} פחים משלימים. הם יחכו לפקודה הבאה.` : `${code} נוצרה עם ${free.length} פריטים בשכבה נפרדת`);
+  D.track("demo_action", { action: "order" });
+  paint(); renderSide(); updateKpi();
+}
+function updateKpi() {
+  D.kpi("total", S.recognized && D.step >= 2 ? items.length : ents.length);
+  D.kpi("types", S.recognized ? S.types.length : "—");
+  D.kpi("assigned", S.recognized ? Object.keys(S.assigned).length + "/" + items.length : "—");
+  D.kpi("yield", S.recognized ? pct(totals(summary()).y) : "—");
+}
+
+let drag = null;
+const hitItem = (target) => { const g = target && target.closest && target.closest(".pnl[data-id]"); return g && byId[g.dataset.id]; };
+svg.addEventListener("pointermove", (e) => {
+  const p = D.pt(e), it = hitItem(e.target);
+  D.barMid(`Layer: <b>${it ? MATS[it.mat].layer : "A-CLAD-*"}</b>`);
+  if (drag) {
+    drag.cur = p;
+    selRect.setAttribute("x", Math.min(drag.s.x, p.x)); selRect.setAttribute("y", Math.min(drag.s.y, p.y));
+    selRect.setAttribute("width", Math.abs(p.x - drag.s.x)); selRect.setAttribute("height", Math.abs(p.y - drag.s.y));
+    if (Math.abs(p.x - drag.s.x) > 150 || Math.abs(p.y - drag.s.y) > 150) selRect.setAttribute("visibility", "visible");
+  }
+});
+svg.addEventListener("pointerdown", (e) => {
+  if (D.step !== 3 || e.button !== 0) return;
+  drag = { s: D.pt(e), cur: D.pt(e) };
+  svg.setPointerCapture(e.pointerId);
+});
+svg.addEventListener("pointerup", (e) => {
+  if (D.step !== 3 || !drag) return;
+  const p = drag.cur, moved = Math.abs(p.x - drag.s.x) > 150 || Math.abs(p.y - drag.s.y) > 150;
+  selRect.setAttribute("visibility", "hidden");
+  if (moved) {
+    const x1 = Math.min(drag.s.x, p.x), x2 = Math.max(drag.s.x, p.x), y1 = Math.min(drag.s.y, p.y), y2 = Math.max(drag.s.y, p.y);
+    items.forEach((q) => { const qy = Y(q.z, q.h); if (q.x < x2 && q.x + q.w > x1 && qy < y2 && qy + q.h > y1) S.sel.add(q.id); });
+    D.cmd(`PA_SELECT WINDOW (${Math.round(x1)},${Math.round(H - y2)}) (${Math.round(x2)},${Math.round(H - y1)})`);
+  } else {
+    const it = hitItem(document.elementFromPoint(e.clientX, e.clientY));
+    if (it) { S.sel.has(it.id) ? S.sel.delete(it.id) : S.sel.add(it.id); D.cmd(`PA_SELECT PICK ${S.typeOf[it.id].code}`); }
+  }
+  drag = null;
+  paint(); renderSide();
+});
+svg.addEventListener("click", (e) => {
+  const it = hitItem(e.target), t = it && S.typeOf[it.id];
+  if (!t || !S.recognized) return;
+  if (D.step === 2) {
+    const i = S.types.indexOf(t), li = D.sideEl.querySelector(`.li[data-t="${i}"]`);
+    D.sideEl.querySelectorAll(".li.on").forEach((x) => x.classList.remove("on"));
+    if (li) { li.classList.add("on"); li.scrollIntoView({ block: "nearest" }); }
+    S.pinType = null; S.hoverType = t; paint();
+    setTimeout(() => { if (S.hoverType === t) { S.hoverType = null; paint(); } }, 1200);
+  }
+  if (D.step === 4) pickType(t);
+});
+
+function runScan() {
+  scan.classList.remove("run"); void scan.getBBox(); scan.classList.add("run");
+  items.forEach((p) => { const d = (p.x / W) * 1.1 + "s"; pEls[p.id].r.style.transitionDelay = d; pEls[p.id].t.style.transitionDelay = d; });
+  setTimeout(() => items.forEach((p) => { pEls[p.id].r.style.transitionDelay = ""; pEls[p.id].t.style.transitionDelay = ""; }), 1800);
+  D.toast(`זוהו ${items.length} פריטים ב־${S.types.length} סוגים, ${findings().filter((f) => f.pill === "warn").length} בדיקות דורשות החלטה`);
+}
+
+function onStep(n) {
+  if (n >= 2 && !S.recognized) { recognize(); runScan(); }
+  D.canvas.classList.toggle("selecting", n === 3);
+  D.panLeft(n !== 3);
+  if (n !== 3) S.sel.clear();
+  if (n !== 2) S.hoverType = S.pinType = null;
+  if (n === 4 && !typeByKey(S.selKey)) S.selKey = S.types[0].key;
+  D.table(n === 5 ? tableHtml() : null);
+  paint(); renderSide(); updateKpi();
+  if (n === 3) D.hint("גררו מלבן על החזית כדי לבחור אזור");
+}
+
+D.ready();
+})();
+</script>
+</body>
+</html>
