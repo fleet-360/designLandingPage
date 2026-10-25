@@ -670,7 +670,7 @@ def demos_teaser():
 
 def load_conferences():
     """data/conferences.json, each with is_past set against today's date, upcoming first."""
-    confs = load("conferences")
+    confs = sorted(load("conferences"), key=lambda c: c["date"])
     for c in confs:
         c["is_past"] = c["date"] < TODAY
     return [c for c in confs if not c["is_past"]] + [c for c in reversed(confs) if c["is_past"]]
