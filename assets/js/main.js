@@ -205,6 +205,28 @@
     track("video_play", { video_id: id });
   });
 
+  /* ---------- Carousel (conferences) ---------- */
+
+  document.querySelectorAll("[data-carousel]").forEach((box) => {
+    const track = box.querySelector("[data-carousel-track]");
+    const prev = box.querySelector("[data-carousel-prev]");
+    const next = box.querySelector("[data-carousel-next]");
+    // scrollLeft runs negative in RTL, so work with the distance from the start edge
+    const sign = () => (getComputedStyle(track).direction === "rtl" ? -1 : 1);
+    const step = () => (track.firstElementChild?.getBoundingClientRect().width || track.clientWidth) + 16;
+    const update = () => {
+      const pos = Math.abs(track.scrollLeft);
+      prev.disabled = pos < 4;
+      next.disabled = pos + track.clientWidth >= track.scrollWidth - 4;
+    };
+    prev.addEventListener("click", () => track.scrollBy({ left: -step() * sign(), behavior: reduce() ? "auto" : "smooth" }));
+    next.addEventListener("click", () => track.scrollBy({ left: step() * sign(), behavior: reduce() ? "auto" : "smooth" }));
+    track.addEventListener("scroll", update, { passive: true });
+    addEventListener("resize", update);
+    document.addEventListener("langchange", () => { track.scrollLeft = 0; update(); });
+    update();
+  });
+
   /* ---------- Blog filter ---------- */
 
   const chips = [...document.querySelectorAll("[data-filter]")];

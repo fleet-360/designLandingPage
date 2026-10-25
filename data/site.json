@@ -17,6 +17,8 @@
   {"href": "/Expertise", "key": "nav.expertise", "he": "מומחיות"},
   {"href": "/#construction", "key": "nav.construction", "he": "בנייה ותכנון"},
   {"href": "/Products", "key": "nav.products", "he": "מוצרים"},
+  {"href": "/catalog/", "key": "nav.demos", "he": "דמו חי"},
+  {"href": "/Conferences", "key": "nav.events", "he": "כנסים"},
   {"href": "/Blog", "key": "nav.blog", "he": "בלוג"},
   {"href": "/Podcast", "key": "nav.podcast", "he": "פודקאסט"},
   {"href": "/About", "key": "nav.about", "he": "אודות"},

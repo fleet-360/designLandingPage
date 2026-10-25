@@ -1,0 +1,124 @@
+[
+ {
+  "key": "architects",
+  "date": "2026-10-19",
+  "time": "10:00",
+  "place": "מלחמת ששת הימים 10, חדרה",
+  "place_en": "10 Milkhemet Sheshet HaYamim St., Hadera",
+  "audience": "אדריכלים ומשרדי תכנון",
+  "audience_en": "Architects and design offices",
+  "icon": "compass-tool",
+  "title": "הטמעת AI בעולם התכנון והאדריכלות",
+  "title_en": "Bringing AI into planning and architecture",
+  "lead": "בוקר אחד, שולחן אחד ומספר מצומצם של בעלי משרדים ומנהלים מהענף: מה כבר עובד בשטח, ואיך מכינים את הצוות לשינוי.",
+  "lead_en": "One morning, one table and a small group of office owners and managers: what already works in the field, and how to prepare the team for the change.",
+  "topics": [
+   "פחות שעות על מפרטים, גיליונות מכר ורשימות אלומיניום, מסגרות ונגרות",
+   "בדיקת תוכניות לפני שהטעות מגיעה לשטח: בטיחות אש, ממדים ומדרגות",
+   "ניהול פרויקט בלי לטבוע במיילים: מעקב אחרי מה שפתוח מול היועצים"
+  ],
+  "topics_en": [
+   "Fewer hours on specifications, sales sheets and aluminium, metalwork and joinery schedules",
+   "Checking plans before the mistake reaches the site: fire safety, dimensions and stairs",
+   "Running a project without drowning in email: tracking what is open with consultants"
+  ],
+  "speakers": [
+   {"name": "צח דבוש", "name_en": "Tzach Dabush", "role": "CTO, Pro Algorithm", "role_en": "CTO, Pro Algorithm"},
+   {"name": "לוטם אלוש", "name_en": "Lotem Alush", "role": "דוקטורנטית, אוניברסיטת בר-אילן", "role_en": "PhD candidate, Bar-Ilan University"}
+  ],
+  "demos": ["facades", "compare"],
+  "url": "https://conferences.buildalgo.co.il/"
+ },
+ {
+  "key": "mep",
+  "date": "2026-11-11",
+  "time": "10:00",
+  "audience": "מתכנני חשמל, אינסטלציה ומיזוג (MEP)",
+  "audience_en": "Electrical, plumbing and HVAC designers (MEP)",
+  "icon": "lightning",
+  "title": "AI לתכנון מערכות: חשמל, אינסטלציה ומיזוג",
+  "title_en": "AI for building services: electrical, plumbing and HVAC",
+  "lead": "מהמקרא לכתב כמויות בלי לספור סמלים ביד, ותיאום מול האדריכלות שמוצא את מה שהעין מפספסת.",
+  "lead_en": "From the legend to a bill of quantities without counting symbols by hand, and coordination with architecture that finds what the eye misses.",
+  "topics": [
+   "קריאת המקרא וספירת כל סמל בשרטוט, כולל צימוד מפסק למנוע תריס לפי התגים",
+   "קווי ביוב ומים: סיווג לפי מערכת, קוטר וחומר, ובדיקת שיפועים מול רומי הקרקעית",
+   "תיאום מערכות על רקע אדריכלי: יישור אוטומטי, שכבת הפרשים ויומן ממצאים"
+  ],
+  "topics_en": [
+   "Reading the legend and counting every symbol, including pairing switches to shutter motors by tag",
+   "Sewage and water lines by system, diameter and material, with slopes checked against invert levels",
+   "MEP coordination over the architectural background: auto-alignment, a diff layer and a findings log"
+  ],
+  "demos": ["electrical", "plumbing", "compare"]
+ },
+ {
+  "key": "developers",
+  "date": "2026-12-02",
+  "time": "10:00",
+  "audience": "קבלנים, יזמים ומנהלי פרויקטים",
+  "audience_en": "Contractors, developers and project managers",
+  "icon": "buildings",
+  "title": "AI לקבלנים ויזמים: מהתוכנית לביצוע ולמסירה",
+  "title_en": "AI for contractors and developers: from plan to site to handover",
+  "lead": "שינויי דיירים, כתבי כמויות והתנהלות מול רוכשים: איפה AI חוסך כסף אמיתי לחברה קבלנית כבר בפרויקט הבא.",
+  "lead_en": "Tenant changes, bills of quantities and buyer paperwork: where AI saves a construction company real money on the next project.",
+  "topics": [
+   "בקרת שינויי דיירים מול תוכנית המכר והקונסטרוקציה, ותמחור אוטומטי של השינוי",
+   "כתב כמויות לפי פרקים ישירות מסט השרטוטים, כשכל שורה מקושרת לשרטוט",
+   "החתמת רוכשים דיגיטלית ומעקב אחרי מסמכים פתוחים מול הדיירים"
+  ],
+  "topics_en": [
+   "Checking tenant changes against the sales plan and the structural plan, with automatic pricing",
+   "A bill of quantities by chapter straight from the drawing set, every line linked to its drawing",
+   "Digital buyer signatures and tracking open documents with tenants"
+  ],
+  "demos": ["tenant-changes", "boq"]
+ },
+ {
+  "key": "structure",
+  "date": "2026-12-22",
+  "time": "10:00",
+  "audience": "מהנדסי קונסטרוקציה, מנהלי עבודה ופיקוח",
+  "audience_en": "Structural engineers, site managers and supervisors",
+  "icon": "wall",
+  "title": "AI לקונסטרוקציה ובקרת ביצוע",
+  "title_en": "AI for structures and site QA",
+  "lead": "מה ששורטט מול מה שהמהנדס הגדיר: בקרה אוטומטית על תמיכות, ברזל וקירות נושאים לפני הירידה לשטח.",
+  "lead_en": "What was drawn versus what the engineer specified: automatic checks on shoring, rebar and load-bearing walls before work starts on site.",
+  "topics": [
+   "הצבת מגדלי אקרו לפי טבלת המהנדס ובקרת מרווחים מקורות התקרה ומהקצוות",
+   "פריסת ברזל מול סקיצת הקונסטרוקטור, עם סימון כל חריגה במידה",
+   "קיר שנראה כמחיצה אבל יצוק בבטון: הצלבה אוטומטית בין אדריכלות לקונסטרוקציה"
+  ],
+  "topics_en": [
+   "Placing shoring towers from the engineer's table and checking spacing from beams and edges",
+   "Rebar layout against the structural engineer's sketch, with every deviation dimensioned",
+   "A wall that looks like a partition but is cast concrete: cross-checking architecture and structure"
+  ],
+  "demos": ["akro", "tenant-changes"]
+ },
+ {
+  "key": "manufacturers",
+  "date": "2027-01-12",
+  "time": "10:00",
+  "audience": "יצרנים וספקים: אלומיניום, חיפויים ומטבחים",
+  "audience_en": "Manufacturers and suppliers: aluminium, cladding and kitchens",
+  "icon": "factory",
+  "title": "AI ליצרנים בענף הבנייה: מהשרטוט לייצור",
+  "title_en": "AI for building-product manufacturers: from drawing to production",
+  "lead": "פחות שעות שרטוט במחלקה הטכנית והצעה ללקוח בתוך שעה: פריסה לייצור, ניצולת חומר ומצגות מכירה מתוך אותו קובץ.",
+  "lead_en": "Fewer drafting hours in the technical department and a client proposal within the hour: production unfolding, material yield and sales presentations from the same file.",
+  "topics": [
+   "חיפויי חזית מקטלוג להורדה לייצור: פריסה עם ניכויי כיפוף ושיבוץ על פלטות",
+   "עורך מטבחים מהתוכנית ועד תלת-ממד ומצגת ללקוח, על קטלוג של אלפי יחידות",
+   "רשימות אלומיניום, מסגרות ונגרות שנשלפות ישירות מהשרטוט"
+  ],
+  "topics_en": [
+   "Façade cladding from catalog to production: unfolding with bend deductions and nesting on sheets",
+   "A kitchen editor from plan to 3D and a client presentation, on a catalog of thousands of units",
+   "Aluminium, metalwork and joinery schedules pulled straight from the drawing"
+  ],
+  "demos": ["facades", "kitchens"]
+ }
+]

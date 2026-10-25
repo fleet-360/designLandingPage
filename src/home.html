@@ -6,7 +6,7 @@
           <p class="lead" data-i18n="hero.lead">Pro Algorithm מפתחת תוכנה, אפליקציות ומערכות AI לארגונים מובילים, עם מומחיות עומק בתכנון, בנייה ואדריכלות.</p>
           <div class="hero__cta">
             <a class="btn btn--primary" href="/Contact"><span data-i18n="cta.meeting">קבעו פגישת היכרות</span><i class="ph ph-arrow-left"></i></a>
-            <a class="btn btn--ghost" href="/Products" data-i18n="cta.products">למוצרים שלנו</a>
+            <a class="btn btn--ghost" href="/catalog/"><i class="ph ph-hand-pointing" aria-hidden="true"></i><span data-i18n="cta.demos">נסו דמו חי</span></a>
           </div>
         </div>
 
@@ -41,47 +41,6 @@
         </div>
         <div class="stats reveal">
           {{STATS}}
-        </div>
-      </div>
-    </section>
-
-    <!-- Divisions -->
-    <section class="section" id="divisions">
-      <div class="wrap">
-        <div class="section__head reveal">
-          <h2 class="h2" data-i18n="div.title">קבוצה אחת. <span class="thin">חמש חטיבות.</span></h2>
-          <p data-i18n="div.lead">מפיתוח מערכות ליבה ועד הצבת מהנדסי AI אצל הלקוח. כל חטיבה עצמאית, וכולן נשענות על אותה תשתית הנדסית.</p>
-        </div>
-
-        <div class="bento">
-          <a class="tile tile--hero reveal" href="#construction">
-            <div class="tile__img" style="background-image:url('/assets/img/brand/hero-construction.webp')"></div>
-            <div class="tile__body">
-              <h3 data-i18n="div.c.t">טכנולוגיה לבנייה, אדריכלות והנדסה</h3>
-              <p data-i18n="div.c.p">מודלי AI ו-GNN שמבינים לוגיקה תכנונית, אוטומציה לרגולציה ותוספים ייעודיים ל-Revit ול-AutoCAD.</p>
-              <div class="tile__tags"><span>GNN</span><span>BIM</span><span>Revit</span><span>AutoCAD</span><span>Dynamo</span></div>
-            </div>
-          </a>
-          <a class="tile tile--a reveal" href="/Expertise">
-            <i class="ph ph-stack"></i>
-            <h3 data-i18n="div.s.t">מערכות לארגונים</h3>
-            <p data-i18n="div.s.p">מערכות SaaS, אפליקציות Web ואוטומציה, מאפיון ועד הטמעה בשטח.</p>
-          </a>
-          <a class="tile tile--b reveal" href="/Expertise">
-            <i class="ph ph-cpu"></i>
-            <h3 data-i18n="div.ai.t">הטמעת AI</h3>
-            <p data-i18n="div.ai.p">הכשרה, מיפוי תהליכים ומהנדס AI שמוצב אצל הלקוח, למפעלים ולרשויות.</p>
-          </a>
-          <a class="tile tile--c reveal" href="/Expertise">
-            <i class="ph ph-users-three"></i>
-            <h3 data-i18n="div.t.t">צוותי פיתוח ומומחים</h3>
-            <p data-i18n="div.t.p">צוות מנוהל מקצה לקצה או השמה של מפתחים ומומחי BIM, אצלכם או מרחוק, כולל DevOps ואבטחת מידע.</p>
-          </a>
-          <a class="tile tile--d reveal" href="/Expertise">
-            <i class="ph ph-compass-tool"></i>
-            <h3 data-i18n="div.d.t">ספרינט אבחון טכנולוגי</h3>
-            <p data-i18n="div.d.p">ניתוח דרישות ומיפוי תהליכים שמסתיים במפת דרכים ברורה, בהיקף שמותאם לגודל הפרויקט.</p>
-          </a>
         </div>
       </div>
     </section>
@@ -135,6 +94,9 @@
       </div>
     </section>
 
+    <!-- Demos -->
+    {{DEMOS}}
+
     <!-- Products -->
     <section class="section" id="products">
       <div class="wrap">
@@ -143,11 +105,14 @@
           <p data-i18n="prod.lead">כל מוצר התחיל כפתרון לבעיה של לקוח, והפך לפלטפורמה עצמאית שמשרתת ארגונים רבים.</p>
         </div>
 
-        <ul class="pindex reveal">
-          {{PRODUCT_INDEX}}
+        <ul class="pcubes reveal">
+          {{PRODUCT_CUBES}}
         </ul>
       </div>
     </section>
+
+    <!-- Conferences -->
+    {{CONFERENCES}}
 
     <!-- Process -->
     <section class="section section--tight">
@@ -165,14 +130,52 @@
       </div>
     </section>
 
+    <!-- Divisions -->
+    <section class="section" id="divisions">
+      <div class="wrap">
+        <div class="section__head reveal">
+          <h2 class="h2" data-i18n="div.title">קבוצה אחת. <span class="thin">חמש חטיבות.</span></h2>
+          <p data-i18n="div.lead">מפיתוח מערכות ליבה ועד הצבת מהנדסי AI אצל הלקוח. כל חטיבה עצמאית, וכולן נשענות על אותה תשתית הנדסית.</p>
+        </div>
+
+        <div class="bento">
+          <a class="tile tile--hero reveal" href="#construction">
+            <div class="tile__img" style="background-image:url('/assets/img/brand/hero-construction.webp')"></div>
+            <div class="tile__body">
+              <h3 data-i18n="div.c.t">טכנולוגיה לבנייה, אדריכלות והנדסה</h3>
+              <p data-i18n="div.c.p">מודלי AI ו-GNN שמבינים לוגיקה תכנונית, אוטומציה לרגולציה ותוספים ייעודיים ל-Revit ול-AutoCAD.</p>
+              <div class="tile__tags"><span>GNN</span><span>BIM</span><span>Revit</span><span>AutoCAD</span><span>Dynamo</span></div>
+            </div>
+          </a>
+          <a class="tile tile--a reveal" href="/Expertise">
+            <i class="ph ph-stack"></i>
+            <h3 data-i18n="div.s.t">מערכות לארגונים</h3>
+            <p data-i18n="div.s.p">מערכות SaaS, אפליקציות Web ואוטומציה, מאפיון ועד הטמעה בשטח.</p>
+          </a>
+          <a class="tile tile--b reveal" href="/Expertise">
+            <i class="ph ph-cpu"></i>
+            <h3 data-i18n="div.ai.t">הטמעת AI</h3>
+            <p data-i18n="div.ai.p">הכשרה, מיפוי תהליכים ומהנדס AI שמוצב אצל הלקוח, למפעלים ולרשויות.</p>
+          </a>
+          <a class="tile tile--c reveal" href="/Expertise">
+            <i class="ph ph-users-three"></i>
+            <h3 data-i18n="div.t.t">צוותי פיתוח ומומחים</h3>
+            <p data-i18n="div.t.p">צוות מנוהל מקצה לקצה או השמה של מפתחים ומומחי BIM, אצלכם או מרחוק, כולל DevOps ואבטחת מידע.</p>
+          </a>
+          <a class="tile tile--d reveal" href="/Expertise">
+            <i class="ph ph-compass-tool"></i>
+            <h3 data-i18n="div.d.t">ספרינט אבחון טכנולוגי</h3>
+            <p data-i18n="div.d.p">ניתוח דרישות ומיפוי תהליכים שמסתיים במפת דרכים ברורה, בהיקף שמותאם לגודל הפרויקט.</p>
+          </a>
+        </div>
+      </div>
+    </section>
+
     <!-- Press -->
     {{PRESS}}
 
     <!-- Podcast -->
     {{PODCASTS}}
-
-    <!-- Blog -->
-    {{POSTS}}
 
     <!-- Leadership -->
     {{ORG}}

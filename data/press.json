@@ -1,5 +1,15 @@
 [
  {
+  "outlet": "Bizportal",
+  "featured": true,
+  "date": "2026-07-22",
+  "title": "מהפכת ה-AI בענף הבנייה: כך פרו אלגוריתם מסייעת לחברות לעבוד מהר, מדויק וחכם יותר",
+  "title_en": "The AI revolution in construction: how Pro Algorithm helps companies work faster, more precisely and smarter",
+  "body": "קריאת תוכניות, תהליכי BIM ואוטומציה ל-Revit ול-AutoCAD: איך Pro Algorithm בונה מערכות AI שמותאמות לתהליכי העבודה של כל לקוח, ומחזקות את אנשי המקצוע במקום להחליף אותם.",
+  "body_en": "Plan reading, BIM workflows and Revit and AutoCAD automation: how Pro Algorithm builds AI systems tailored to each client's workflow that strengthen professionals instead of replacing them.",
+  "url": "https://www.bizportal.co.il/bizpoint-sponsored/news/article/20036652"
+ },
+ {
   "outlet": "Globes",
   "logo": "press/globes.webp",
   "title": "הסטארט-אפים שיחליפו את האדריכלים",

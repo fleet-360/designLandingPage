@@ -341,7 +341,7 @@ def footer():
                                ("tiktok", "TikTok", "tiktok-logo")]
     )
     sep = "\n            "
-    company = sep.join(f"<li>{nav_link(k)}</li>" for k in ("nav.about", "nav.expertise", "nav.blog", "nav.podcast", "nav.contact"))
+    company = sep.join(f"<li>{nav_link(k)}</li>" for k in ("nav.about", "nav.expertise", "nav.demos", "nav.events", "nav.blog", "nav.podcast", "nav.contact"))
     products = sep.join(f'<li><a href="/Products#{p["key"]}">{p["name"]}</a></li>' for p in PRODUCTS)
     sites = sep.join(f'<li><a href="{u}" target="_blank" rel="noopener">{domain(u)}</a></li>' for u in SITES.values())
     return f"""<footer class="footer">
@@ -521,13 +521,20 @@ def stats_cells():
         for s in S["stats"])
 
 
-def product_index():
-    rows = []
-    for g, he in S["product_groups"].items():
-        rows.append(f'<li class="pindex__group" data-i18n="{g}">{he}</li>')
-        rows += [f'<li><a href="/Products#{p["key"]}"><span class="pindex__name">{p["name"]}</span><span class="pindex__desc" data-i18n="{p["i18n"]}">{p["tagline"]}</span><span class="pindex__domain">{domain(p["url"]) if "url" in p else ""}</span><i class="ph ph-arrow-left pindex__arrow"></i></a></li>'
-                 for p in PRODUCTS if p["group"] == g]
-    return "\n          ".join(rows)
+PRODUCT_ICONS = {"agent": "robot", "mcp": "plugs-connected", "superposition": "stack-simple", "cursor": "cursor-click",
+                 "sign": "signature", "time": "clock-countdown"}
+
+
+def product_cubes():
+    groups = S["product_groups"]
+    return "\n          ".join(
+        f'<li><a class="pcube" href="/Products#{p["key"]}">'
+        f'<span class="pcube__top"><i class="ph ph-{PRODUCT_ICONS.get(p["key"], "cube")}" aria-hidden="true"></i><span class="pcube__group" data-i18n="{p["group"]}">{groups[p["group"]]}</span></span>'
+        f'<span class="pcube__name">{p["name"]}</span>'
+        f'<span class="pcube__desc" data-i18n="{p["i18n"]}">{p["tagline"]}</span>'
+        f'<span class="pcube__foot"><span class="pcube__domain">{domain(p["url"]) if "url" in p else ""}</span><i class="ph ph-arrow-left pcube__arrow" aria-hidden="true"></i></span>'
+        f'</a></li>'
+        for p in PRODUCTS)
 
 
 def client_wall(clients, heading=True):
@@ -547,7 +554,21 @@ def client_wall(clients, heading=True):
     </section>"""
 
 
+def press_feature(p):
+    """The article written about us, set apart above the industry coverage."""
+    return f"""
+        <a class="press-feature reveal" href="{esc(p['url'])}" target="_blank" rel="noopener">
+          <span class="press-feature__mark" aria-hidden="true">”</span>
+          <span class="press-feature__meta"><span class="press-feature__badge" data-i18n="press.about">כתבה עלינו</span><span class="ltr">{esc(p['outlet'])}</span><time datetime="{p['date']}"{en(fmt_date(p['date'], 'en'))}>{fmt_date(p['date'])}</time></span>
+          <span class="press-feature__title"{en(p.get('title_en'))}>{esc(p['title'])}</span>
+          <span class="press-feature__body"{en(p.get('body_en'))}>{esc(p['body'])}</span>
+          <span class="press-card__more"><span data-i18n="press.read">לכתבה המלאה</span><i class="ph ph-arrow-up-left" aria-hidden="true"></i></span>
+        </a>"""
+
+
 def press_block(press):
+    feature = "".join(press_feature(p) for p in press if p.get("featured"))
+    press = [p for p in press if not p.get("featured")]
     cards = "".join(f"""
           <li><a class="press-card" href="{esc(p['url'])}" target="_blank" rel="noopener">
             <span class="press-card__logo"><img src="{img(p['logo'])}" alt="{esc(p['outlet'])}" loading="lazy" width="120" height="40"></span>
@@ -559,8 +580,8 @@ def press_block(press):
       <div class="wrap">
         <div class="section__head reveal">
           <h2 class="h2" data-i18n="press.title">AI בעולם האדריכלות, <span class="thin">בכלי התקשורת המובילים.</span></h2>
-          <p data-i18n="press.lead">{len(press)} כתבות בגלובס, כלכליסט, ynet, mako, וואלה ומרכז הנדל"ן על הטכנולוגיה שאנחנו מפתחים ועל עתיד הנדל"ן.</p>
-        </div>
+          <p data-i18n="press.lead">כתבה עלינו בביזפורטל, ועוד {len(press)} כתבות בגלובס, כלכליסט, ynet, mako, וואלה ומרכז הנדל"ן על הטכנולוגיה שאנחנו מפתחים ועל עתיד הנדל"ן.</p>
+        </div>{feature}
         <ul class="press-grid reveal">{cards}
         </ul>
       </div>
@@ -617,15 +638,84 @@ def post_card(p):
           </article>"""
 
 
-def posts_teaser(posts):
-    return f"""<section class="section section--tight" id="blog">
+def demo_card(x):
+    thumb = f"/catalog/{x['slug']}/thumb.svg"
+    has_thumb = os.path.exists(os.path.join(ROOT, "catalog", x["slug"], "thumb.svg"))
+    return f"""<article class="post-card demo-card" data-cat="{esc(x['discipline'])}">
+            <a href="/catalog/{x['slug']}/" class="post-card__link">
+              <span class="post-card__img">{f'<img src="{thumb}" alt="" loading="lazy" decoding="async" width="1200" height="675">' if has_thumb else ''}<span class="demo-card__play"><i class="ph ph-hand-pointing" aria-hidden="true"></i><span data-i18n="demos.try">נסו בעצמכם</span></span></span>
+              <span class="post-card__meta"><span>{esc(x['discipline'])}</span><span class="ltr">{esc(x['tool'])}</span></span>
+              <span class="post-card__title">{esc(x['title'])}</span>
+              <span class="post-card__excerpt">{esc(x['tagline'])}</span>
+            </a>
+          </article>"""
+
+
+def demos_teaser():
+    demos = live_demos()
+    return f"""<section class="section section--tight demos" id="demos">
       <div class="wrap">
         <div class="section__head reveal">
-          <h2 class="h2" data-i18n="blog.title">ידע שנבנה <span class="thin">בשטח.</span></h2>
-          <p data-i18n="blog.lead">מדריכים, תובנות ומחקר על AI, אלגוריתמים, פיתוח מערכות וטכנולוגיה לענף הבנייה.</p>
+          <div>
+            <p class="live-badge"><span class="live-badge__dot" aria-hidden="true"></span><span data-i18n="demos.badge">{len(demos)} דמואים חיים, בלי הרשמה</span></p>
+            <h2 class="h2" data-i18n="demos.title">אל תקראו עלינו. <span class="thin">תנסו את המוצרים.</span></h2>
+          </div>
+          <p data-i18n="demos.lead">כל דמו רץ בדפדפן על שרטוט אמיתי: גוררים מגדל אקרו, סופרים סמלי חשמל, בודקים שינוי דיירים ומפיקים כתב כמויות. שתי דקות, ורואים בדיוק מה המערכת עושה.</p>
         </div>
-        <div class="post-grid reveal">{''.join(post_card(p) for p in posts[:3])}</div>
-        <div class="section__more reveal"><a class="btn btn--ghost" href="/Blog"><span data-i18n="blog.all">לכל המאמרים</span><i class="ph ph-arrow-left" aria-hidden="true"></i></a></div>
+        <div class="post-grid reveal">{''.join(demo_card(x) for x in demos[:6])}</div>
+        <div class="section__more reveal"><a class="btn btn--primary" href="/catalog/"><span data-i18n="demos.all">לכל הדמואים</span><i class="ph ph-arrow-left" aria-hidden="true"></i></a></div>
+      </div>
+    </section>"""
+
+
+def load_conferences():
+    """data/conferences.json, each with is_past set against today's date, upcoming first."""
+    confs = load("conferences")
+    for c in confs:
+        c["is_past"] = c["date"] < TODAY
+    return [c for c in confs if not c["is_past"]] + [c for c in reversed(confs) if c["is_past"]]
+
+
+def conf_date(c):
+    d = datetime.fromisoformat(c["date"])
+    return f"""<span class="conf__date"><time datetime="{c['date']}T{c['time']}"><span class="conf__day">{d.day}</span><span class="conf__month"{en(EN_MONTHS[d.month - 1] + " " + str(d.year))}>{HE_MONTHS[d.month - 1]} {d.year}</span></time><span class="conf__time ltr">{c['time']}</span></span>"""
+
+
+def conf_status(c):
+    return ('<span class="conf__status conf__status--past" data-i18n="conf.past">התקיים</span>' if c["is_past"]
+            else '<span class="conf__status" data-i18n="conf.open">ההרשמה פתוחה</span>')
+
+
+def conf_slide(c):
+    return f"""<li class="conf-slide">
+            <a class="conf{' conf--past' if c['is_past'] else ''}" href="/Conferences#{c['key']}">
+              <span class="conf__head">{conf_date(c)}<i class="ph ph-{c['icon']} conf__icon" aria-hidden="true"></i></span>
+              {conf_status(c)}
+              <span class="conf__audience"{en(c['audience_en'])}>{esc(c['audience'])}</span>
+              <span class="conf__title"{en(c['title_en'])}>{esc(c['title'])}</span>
+              <span class="conf__more"><span data-i18n="{'conf.recap' if c['is_past'] else 'conf.save'}">{'מה היה בכנס' if c['is_past'] else 'שריינו מקום'}</span><i class="ph ph-arrow-left" aria-hidden="true"></i></span>
+            </a>
+          </li>"""
+
+
+def conferences_teaser():
+    confs = load_conferences()
+    return f"""<section class="section section--tight" id="conferences">
+      <div class="wrap">
+        <div class="section__head reveal">
+          <h2 class="h2" data-i18n="conf.title">כנסים וימי עיון: <span class="thin">AI לכל עולם בבנייה.</span></h2>
+          <p data-i18n="conf.lead">בוקר אחד סביב שולחן עם אנשי מקצוע מהתחום שלכם: מה כבר עובד בשטח, דוגמאות חיות מפרויקטים, ושיחה פתוחה. מספר המקומות מוגבל.</p>
+        </div>
+        <div class="carousel reveal" data-carousel>
+          <ul class="carousel__track" data-carousel-track>
+          {''.join(conf_slide(c) for c in confs)}
+          </ul>
+          <div class="carousel__nav">
+            <button type="button" class="carousel__btn" data-carousel-prev aria-label="הקודם" data-i18n-attr="aria-label:carousel.prev"><i class="ph ph-arrow-right" aria-hidden="true"></i></button>
+            <button type="button" class="carousel__btn" data-carousel-next aria-label="הבא" data-i18n-attr="aria-label:carousel.next"><i class="ph ph-arrow-left" aria-hidden="true"></i></button>
+            <a class="btn btn--ghost" href="/Conferences"><span data-i18n="conf.all">לכל הכנסים</span><i class="ph ph-arrow-left" aria-hidden="true"></i></a>
+          </div>
+        </div>
       </div>
     </section>"""
 
@@ -767,13 +857,14 @@ def build_home(d):
     body = (body.replace("{{CLIENTS}}", client_wall(d["clients"]))
                 .replace("{{PRESS}}", press_block(d["press"]))
                 .replace("{{PODCASTS}}", podcast_teaser(d["podcasts"]))
-                .replace("{{POSTS}}", posts_teaser(d["posts"]))
+                .replace("{{DEMOS}}", demos_teaser())
+                .replace("{{CONFERENCES}}", conferences_teaser())
                 .replace("{{ORG}}", org_block(d["team"]))
                 .replace("{{FAQ}}", faq_block())
                 .replace("{{CONTACT_FORM}}", contact_form("home"))
                 .replace("{{CONTACT_INFO}}", contact_info())
                 .replace("{{STATS}}", stats_cells())
-                .replace("{{PRODUCT_INDEX}}", product_index()))
+                .replace("{{PRODUCT_CUBES}}", product_cubes()))
     services = {
         "@context": "https://schema.org", "@type": "ItemList", "name": "שירותי Pro Algorithm",
         "itemListElement": [
@@ -1298,7 +1389,8 @@ def build_meta_files(d):
     posts = d["posts"]
     urls = [("/", "1.0", TODAY), ("/About", "0.8", TODAY), ("/Expertise", "0.8", TODAY), ("/Products", "0.9", TODAY), ("/AutoCADMCP", "0.7", TODAY),
             ("/Blog", "0.8", posts[0]["updated"][:10] if posts else TODAY), ("/Podcast", "0.7", TODAY),
-            ("/Contact", "0.8", TODAY), ("/AccessibilityStatement", "0.3", TODAY), ("/catalog/", "0.6", TODAY)]
+            ("/Contact", "0.8", TODAY), ("/AccessibilityStatement", "0.3", TODAY), ("/catalog/", "0.8", TODAY),
+            ("/Conferences", "0.7", TODAY)]
     urls += [(f"/catalog/{x['slug']}/", "0.6", TODAY) for x in live_demos()]
     urls += [(post_url(p), "0.6", (p["updated"] or TODAY)[:10]) for p in posts]
     xml = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
@@ -1327,7 +1419,7 @@ def build_meta_files(d):
                 lines.append(f"/BlogPostPage slug={s} {post_file(p)} 200")
     lines += ["", "# lowercase and legacy variants of the old routes",
               "/about /About 301", "/blog /Blog 301", "/contact /Contact 301", "/expertise /Expertise 301",
-              "/podcast /Podcast 301", "/products /Products 301", "/autocadmcp /AutoCADMCP 301", "/mcp /AutoCADMCP 301",
+              "/podcast /Podcast 301", "/products /Products 301", "/conferences /Conferences 301", "/autocadmcp /AutoCADMCP 301", "/mcp /AutoCADMCP 301",
               "/accessibilitystatement /AccessibilityStatement 301",
               "/accessibility-statement /AccessibilityStatement 301", "/accessibility /AccessibilityStatement 301",
               "/blog-post-page /BlogPostPage 301", "/blogpostpage /BlogPostPage 301",
@@ -1408,26 +1500,14 @@ def build_catalog():
         for k, h in [("all", "הכל")] + [(c, c) for c in cats]
     )
 
-    def card(x):
-        thumb = f"/catalog/{x['slug']}/thumb.svg"
-        has_thumb = os.path.exists(os.path.join(ROOT, "catalog", x["slug"], "thumb.svg"))
-        return f"""<article class="post-card demo-card" data-cat="{esc(x['discipline'])}">
-            <a href="/catalog/{x['slug']}/" class="post-card__link">
-              <span class="post-card__img">{f'<img src="{thumb}" alt="" loading="lazy" decoding="async" width="1200" height="675">' if has_thumb else ''}</span>
-              <span class="post-card__meta"><span>{esc(x['discipline'])}</span><span class="ltr">{esc(x['tool'])}</span></span>
-              <span class="post-card__title">{esc(x['title'])}</span>
-              <span class="post-card__excerpt">{esc(x['tagline'])}</span>
-            </a>
-          </article>"""
-
     body = page_hero("קטלוג <span class=\"thin\">אינטראקטיבי.</span>",
                      "לא עוד חוברת לדפדוף. כל מוצר כאן הוא דמו חי על שרטוט אמיתי: לחצו, גררו, בחרו, וראו מה התוסף עושה בשניות.",
-                     "catalog.h1", "catalog.lead", [("בית", "/", "crumb.home"), ("קטלוג", None, None)])
+                     "catalog.h1", "catalog.lead", [("בית", "/", "crumb.home"), ("דמו חי", None, "nav.demos")])
     body += f"""
     <section class="section section--tight">
       <div class="wrap">
         <div class="chips" role="group" aria-label="סינון לפי תחום">{chips}</div>
-        <div class="post-grid post-grid--all" data-posts>{''.join(card(x) for x in demos)}</div>
+        <div class="post-grid post-grid--all" data-posts>{''.join(demo_card(x) for x in demos)}</div>
       </div>
     </section>
     <section class="section" id="contact">
@@ -1445,11 +1525,98 @@ def build_catalog():
         "hasPart": [{"@type": "WebPage", "name": x["title"], "url": f"{SITE}/catalog/{x['slug']}/"} for x in demos],
     }
     write("catalog/index.html", page(
-        "/catalog/", nav=None,
+        "/catalog/", nav="/catalog/",
         title="קטלוג אינטראקטיבי: דמואים חיים של תוספי AutoCAD ו־Revit | Pro Algorithm",
         title_en="Interactive catalog | Pro Algorithm",
         desc="דמואים אינטראקטיביים של מוצרי Pro Algorithm על שרטוטים אמיתיים: חזיתות, מטבחים, שינויי דיירים, חשמל, אינסטלציה, מגדלי אקרו, השוואת שרטוטים וכתבי כמויות.",
         body=body, schemas=[schema, breadcrumb([("בית", "/"), ("קטלוג", "/catalog/")])],
+    ))
+
+
+def build_conferences():
+    confs = load_conferences()
+    demos = {x["slug"]: x for x in live_demos()}
+
+    def row(c):
+        topics = "".join(f"<li{en(t_en)}>{esc(t)}</li>" for t, t_en in zip(c["topics"], c["topics_en"]))
+        links = "".join(f'<a class="chip" href="/catalog/{s}/">{esc(demos[s]["discipline"])}</a>' for s in c["demos"] if s in demos)
+        speakers = "".join(
+            f'<li><strong{en(sp["name_en"])}>{esc(sp["name"])}</strong><span{en(sp["role_en"])}>{esc(sp["role"])}</span></li>'
+            for sp in c.get("speakers", []))
+        place = (f'<span{en(c["place_en"])}>{esc(c["place"])}</span>' if c.get("place")
+                 else '<span data-i18n="conf.place.tba">המיקום יישלח לנרשמים</span>')
+        if c["is_past"]:
+            cta = (f'<a class="btn btn--ghost" href="{esc(c["url"])}" target="_blank" rel="noopener"><span data-i18n="conf.site">לעמוד הכנס</span><i class="ph ph-arrow-up-left" aria-hidden="true"></i></a>'
+                   if c.get("url") else "")
+        else:
+            cta = '<a class="btn btn--primary" href="#register"><span data-i18n="conf.save">שריינו מקום</span><i class="ph ph-arrow-left" aria-hidden="true"></i></a>'
+        return f"""
+        <article class="event{' event--past' if c['is_past'] else ''} reveal" id="{c['key']}">
+          <div class="event__when">
+            {conf_date(c)}
+            <i class="ph ph-{c['icon']} conf__icon" aria-hidden="true"></i>
+          </div>
+          <div class="event__body">
+            <div class="event__tags">{conf_status(c)}<span class="event__audience"{en(c['audience_en'])}>{esc(c['audience'])}</span></div>
+            <h3{en(c['title_en'])}>{esc(c['title'])}</h3>
+            <p class="event__lead"{en(c['lead_en'])}>{esc(c['lead'])}</p>
+            <ul class="event__topics">{topics}</ul>
+            {f'<ul class="event__speakers">{speakers}</ul>' if speakers else ''}
+            <dl class="event__facts">
+              <div><dt data-i18n="conf.where">מיקום</dt><dd>{place}</dd></div>
+              <div><dt data-i18n="conf.format">מתכונת</dt><dd data-i18n="conf.format.v">בוקר עיון, הרצאות ושולחן עגול</dd></div>
+            </dl>
+            {f'<div class="event__demos"><span data-i18n="conf.demos">דמואים קשורים:</span>{links}</div>' if links else ''}
+            <div class="event__cta">{cta}</div>
+          </div>
+        </article>"""
+
+    upcoming = [c for c in confs if not c["is_past"]]
+    past = [c for c in confs if c["is_past"]]
+    body = page_hero("כנסים וימי עיון <span class=\"thin\">על AI בבנייה.</span>",
+                     "סדרת מפגשי בוקר לכל עולם תוכן בענף: אדריכלים, מתכנני מערכות, קבלנים ויזמים, קונסטרוקטורים ויצרנים. דוגמאות חיות מפרויקטים, בלי מצגות שיווק.",
+                     "conf.h1", "conf.h1lead", [("בית", "/", "crumb.home"), ("כנסים", None, "nav.events")])
+    body += f"""
+    <section class="section section--tight">
+      <div class="wrap">
+        <h2 class="h2 reveal events__h" data-i18n="conf.next">הכנסים <span class="thin">הקרובים.</span></h2>
+        <div class="events">{''.join(row(c) for c in upcoming)}
+        </div>
+      </div>
+    </section>
+    {f'''<section class="section section--tight">
+      <div class="wrap">
+        <h2 class="h2 reveal events__h" data-i18n="conf.prev">כנסים <span class="thin">שהתקיימו.</span></h2>
+        <div class="events">{''.join(row(c) for c in past)}
+        </div>
+      </div>
+    </section>''' if past else ''}
+    <section class="section" id="register">
+      <div class="wrap contact">
+        <div class="reveal">
+          <h2 class="h2" data-i18n="conf.reg.t">שריינו מקום <span class="thin">סביב השולחן.</span></h2>
+          <p class="contact__lead" data-i18n="conf.reg.p">השאירו פרטים ונחזור אליכם עם הזמנה לכנס בתחום שלכם. מספר המקומות בכל מפגש מוגבל.</p>
+          {contact_info()}
+        </div>
+        {contact_form("conferences")}
+      </div>
+    </section>"""
+    events = [{
+        "@context": "https://schema.org", "@type": "Event", "name": c["title"], "description": c["lead"],
+        "startDate": f"{c['date']}T{c['time']}",
+        "eventStatus": "https://schema.org/EventScheduled",
+        "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+        "location": {"@type": "Place", "name": c.get("place") or "ישראל",
+                     "address": {"@type": "PostalAddress", "streetAddress": c.get("place", ""), "addressCountry": "IL"}},
+        "organizer": {"@id": f"{SITE}/#organization"},
+        "url": f"{SITE}/Conferences#{c['key']}",
+    } for c in confs]
+    write("Conferences.html", page(
+        "/Conferences", nav="/Conferences",
+        title="כנסים וימי עיון על AI בבנייה, אדריכלות ותכנון מערכות | Pro Algorithm",
+        title_en="Conferences on AI in construction | Pro Algorithm",
+        desc="כנסים וימי עיון של Pro Algorithm על הטמעת AI בענף הבנייה: אדריכלים, מתכנני חשמל ואינסטלציה (MEP), קבלנים ויזמים, קונסטרוקציה ויצרנים. מספר המקומות מוגבל.",
+        body=body, schemas=[*events, breadcrumb([("בית", "/"), ("כנסים", "/Conferences")])],
     ))
 
 
@@ -1481,6 +1648,7 @@ def main():
     build_blogpostpage_fallback(d)
     build_legacy_redirects(d)
     build_catalog()
+    build_conferences()
     build_meta_files(d)
     n = sum(len(f) for _, _, f in os.walk(DIST))
     print(f"built {n} files into dist/ ({len(d['posts'])} posts, {len(d['podcasts'])} episodes)")
