@@ -657,13 +657,13 @@ def demos_teaser():
       <div class="wrap">
         <div class="section__head reveal">
           <div>
-            <p class="live-badge"><span class="live-badge__dot" aria-hidden="true"></span><span data-i18n="demos.badge">{len(demos)} דמואים חיים, בלי הרשמה</span></p>
-            <h2 class="h2" data-i18n="demos.title">אל תקראו עלינו. <span class="thin">תנסו את המוצרים.</span></h2>
+            <p class="live-badge"><span class="live-badge__dot" aria-hidden="true"></span><span data-i18n="demos.badge">{len(demos)} דוגמאות חיות מפרויקטים, בלי הרשמה</span></p>
+            <h2 class="h2" data-i18n="demos.title">מה אפשר לבנות? <span class="thin">תרגישו את זה בידיים.</span></h2>
           </div>
-          <p data-i18n="demos.lead">כל דמו רץ בדפדפן על שרטוט אמיתי: גוררים מגדל אקרו, סופרים סמלי חשמל, בודקים שינוי דיירים ומפיקים כתב כמויות. שתי דקות, ורואים בדיוק מה המערכת עושה.</p>
+          <p data-i18n="demos.lead">אלה לא מוצרי מדף. כל דוגמה מבוססת על מערכת שפיתחנו לחברה או לארגון בענף, ורצה בדפדפן על שרטוט אמיתי: גוררים מגדל אקרו, סופרים סמלי חשמל, בודקים שינוי דיירים. כך תראו מה אפשר לפתח גם עבורכם.</p>
         </div>
         <div class="post-grid reveal">{''.join(demo_card(x) for x in demos[:6])}</div>
-        <div class="section__more reveal"><a class="btn btn--primary" href="/catalog/"><span data-i18n="demos.all">לכל הדמואים</span><i class="ph ph-arrow-left" aria-hidden="true"></i></a></div>
+        <div class="section__more reveal"><a class="btn btn--primary" href="/catalog/"><span data-i18n="demos.all">לכל הדוגמאות</span><i class="ph ph-arrow-left" aria-hidden="true"></i></a></div>
       </div>
     </section>"""
 
@@ -1501,7 +1501,7 @@ def build_catalog():
     )
 
     body = page_hero("קטלוג <span class=\"thin\">אינטראקטיבי.</span>",
-                     "לא עוד חוברת לדפדוף. כל מוצר כאן הוא דמו חי על שרטוט אמיתי: לחצו, גררו, בחרו, וראו מה התוסף עושה בשניות.",
+                     "לא עוד חוברת לדפדוף. כל דוגמה כאן מבוססת על פיתוח שעשינו לחברה או לארגון, ורצה על שרטוט אמיתי: לחצו, גררו, בחרו, וראו מה אפשר לפתח עבורכם.",
                      "catalog.h1", "catalog.lead", [("בית", "/", "crumb.home"), ("דמו חי", None, "nav.demos")])
     body += f"""
     <section class="section section--tight">
