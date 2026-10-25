@@ -58,7 +58,9 @@ Helpers:
 - Elements that the visitor clicks or drags must carry a `data-hit` attribute, so a left-drag on them doesn't pan.
 - `D.pt(event)` converts screen coordinates to SVG coordinates; `D.zoomTo(x, y, w, h)`, `D.fit()`, `D.setView(box, asHome)`.
 - `D.dragged` is true right after a pan/pinch (the shell already swallows the click that would follow).
-- `D.side(html)` fills the side palette. `D.nav(back, next, label, disabled)` returns the footer with back/next buttons (`data-go` is wired automatically). `D.cta()` returns the end-of-demo call to action; put it on the last step.
+- `D.side(html)` fills the side palette: `<div class="hd">` (title + one line that says what to do), `<div class="bd">` (controls first, long lists after), then `D.nav(back, next, disabled)`. The footer is pinned: on desktop the body scrolls inside the palette, on phones the footer is a bar at the bottom of the screen. The next button always reads "הבא: <next step's title>"; with `next = null` it links back to the gallery. `data-go` is wired automatically.
+- `D.more(html, summary = "איך זה עובד")` wraps background a professional may want in a closed `<details>`; put explanations there instead of `.note` boxes, so a step's task stays short.
+- `D.cta(title, text)` returns the end-of-demo call to action; put it on the last step.
 - `D.legend([{color, label, mono}])`, `D.barMid(html)` (middle of the stage bar, e.g. current layer), `D.cmd(text)` (command line).
 - `D.table(html)` swaps the canvas for a table view; `D.table(null)` brings the canvas back.
 - `D.toast(msg)`, `D.hint(msg)` (centered hint over the canvas), `D.copy(text, okMsg)` (clipboard), `D.fmt(n, decimals)`, `D.money(n)`, `D.esc(s)`.
@@ -69,6 +71,7 @@ Helpers:
 
 - Same palette as the site (`--ink*`, `--text`, `--muted`, `--redline` accent; status colours `--ok`, `--warn`, `--bad`, `--info`). CAD canvas background `#111519`.
 - Hebrew UI, short plain sentences, no hype. Industry terms as Israeli contractors and engineers use them.
+- Each step's intro starts with what the visitor should do ("בחרו…", "גררו…"), not with what "התוסף" does. The demos are examples of systems built for clients, not off-the-shelf products.
 - Every step must let the visitor *do* something (click, drag, toggle, edit), not only watch. Numbers are computed live from the data.
 - 4–6 steps. The last step summarizes or exports and shows `D.cta()`.
 - Works at 1440px and at 375px (the side palette stacks under the canvas). Touch: tap works everywhere, pinch zooms.

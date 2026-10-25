@@ -449,7 +449,7 @@ const D = Demo({
   plugin: "PA_FACADE",
   tag: "AutoCAD plug-in · חיפויי חזית",
   title: "חיפויי חזית: מקטלוג פאנלים להורדה לייצור",
-  sub: "תוכנית עבודה לדוגמה: חזית צפונית של בניין מגורים, קרקע, 3 קומות ומעקה גג. קסטות לוקובונד, לוחות HPL ופחי אלומיניום סביב הפתחים. כל פריט מזוהה, נבדק, מקוטלג ומשויך לפקודת עבודה אחת בלבד.",
+  sub: "חזית צפונית של בניין מגורים בשלוש קומות: קסטות לוקובונד, לוחות HPL ופחי אלומיניום סביב הפתחים. כל פריט מקבל קוד ונכנס לפקודת עבודה אחת.",
   file: "FACADE_DEMO_N-ELEV.dwg",
   viewBox: [-1600, -1300, 19400, 17400],
   flipY: H,
@@ -620,7 +620,7 @@ function renderSide() {
   let h = "";
   if (st === 1) {
     const c = (m) => cntMat(ents, m);
-    h = `<div class="hd"><h2>קריאת השרטוט</h2><p>התוסף קורא את תוכנית העבודה של החזית לפי מוסכמת השכבות והגדרות הייצור שנקבעו בשלב התשתית.</p></div>
+    h = `<div class="hd"><h2>קריאת השרטוט</h2><p>תוכנית העבודה נקראת לפי מוסכמת השכבות והגדרות הייצור של המפעל.</p></div>
     <div class="bd">
       <div class="lbl">שכבות שזוהו</div>
       <div class="layers">
@@ -642,10 +642,10 @@ function renderSide() {
         <div><span>שולחן CNC</span>${val(`${CNC_BED.join("×")}`)}</div>
       </div>
       <div class="note">זו תוכנית העבודה של קבלן החיפוי אחרי מדידה בשטח, לא חזית אדריכלית: כל פאנל מצויר במידת הייצור, והרווח בין פאנלים הוא המישק. במערכת המלאה התוסף קורא גם חתכים ותוכנית קומה (עומק ספלט, רגל פינה, כיוון כנפיים). בדמו הנתונים מוכנים מראש.</div>
-    </div>${D.nav(null, 2, "הפעל זיהוי ובדיקות")}`;
+    </div>${D.nav(null, 2)}`;
   } else if (st === 2) {
     const rep = S.types.filter((t) => t.ids.length > 1).length, uni = S.types.length - rep, F = findings();
-    h = `<div class="hd"><h2>זיהוי, קטלוג ובדיקות</h2><p>כל פריט קיבל קוד, פריטים זהים קובצו לסוג אחד, והתוסף סימן מה דורש החלטה לפני ייצור. לחצו על קוד כדי לשנות אותו.</p></div>
+    h = `<div class="hd"><h2>זיהוי, קטלוג ובדיקות</h2><p>לחצו על קוד כדי לשנות אותו. פריטים זהים קובצו לסוג אחד, ומה שדורש החלטה לפני ייצור מסומן לבדיקה.</p></div>
     <div class="bd">
       <div class="stats"><div><b>${items.length}</b><span>פריטים</span></div><div><b>${S.types.length}</b><span>סוגים</span></div><div><b>${rep}</b><span>חוזרים</span></div><div><b>${uni}</b><span>ייחודיים</span></div></div>
       <div class="lbl">בדיקות לפני ייצור</div>
@@ -653,7 +653,7 @@ function renderSide() {
       <div class="lbl">קטלוג סוגים</div>
       <div class="list" id="typeList">${typeRows()}</div>
       <div class="note">ריחוף או לחיצה על שורה מסמנים את הפריטים בשרטוט. לחיצה על פריט בשרטוט מסמנת את הסוג שלו ברשימה.</div>
-    </div>${D.nav(1, 3, "לפקודות ייצור")}`;
+    </div>${D.nav(1, 3)}`;
   } else if (st === 3) {
     const sel = [...S.sel], conf = sel.filter((id) => S.assigned[id] != null), free = sel.filter((id) => S.assigned[id] == null);
     const nextCode = "פק״ע-" + String(S.orders.length + 1).padStart(2, "0");
@@ -675,19 +675,19 @@ function renderSide() {
       <div class="lbl">פקודות קיימות</div>
       <div class="orders">${S.orders.length ? S.orders.map((o, i) => `<div class="ord"><span class="sw" style="background:${o.color}"></span><span><b>${o.code}</b> · <span class="mono" style="white-space:nowrap">${o.layer}</span><small>${orderMix(o.ids)}</small></span><span class="mono">${o.ids.length} פר׳ · ${fmt(netM2(o.ids), 1)} מ״ר${i === S.orders.length - 1 ? ` <button class="btn sm" type="button" id="undoOrd" style="margin-inline-start:6px">בטל</button>` : ""}</span></div>`).join("") : '<div class="note">התחילו מהקרקע: בחרו אותה וצרו פקודה. אחר כך גררו מלבן שחופף לה: הכפילות נחסמת. בחירה ידנית של פאנלים סביב חלון בלי הפחים שלו תקפיץ התראה.</div>'}</div>
       <div class="note">כל פקודה נשמרת בשכבה נפרדת בשרטוט (<span class="mono ltr">PA-ORD-xx</span>) ומפוצלת בייצור לפי קו: CNC לוקובונד, CNC HPL, גיליוטינה ומכופפת לפחים.</div>
-    </div>${D.nav(2, 4, "לכרטיסי פריט")}`;
+    </div>${D.nav(2, 4)}`;
   } else if (st === 4) {
     if (!typeByKey(S.selKey)) S.selKey = S.types[0].key;
     const t = typeByKey(S.selKey);
-    h = `<div class="hd"><h2>כרטיס פריט</h2><p>מידות נטו ופריסה, קידוחים, כיפופים וקינון בפלטה, מחושבים מהגדרות החומר. בחרו סוג או לחצו על פריט בשרטוט.</p></div>
+    h = `<div class="hd"><h2>כרטיס פריט</h2><p>בחרו סוג או לחצו על פריט בשרטוט כדי לראות מידות, פריסה, קידוחים, כיפופים וקינון בפלטה.</p></div>
     <div class="bd">
       <div class="typebtns">${["LB", "HPL", "AL"].map((m) => `<div class="row">${S.types.map((x, i) => (x.mat === m ? `<button class="btn sm ${x === t ? "on" : ""}" type="button" data-pick="${i}"><span class="mono">${x.code}</span></button>` : "")).join("")}</div>`).join("")}</div>
       ${itemCard(t)}
-    </div>${D.nav(3, 5, "לריכוז ורכש")}`;
+    </div>${D.nav(3, 5)}`;
   } else if (st === 5) {
     const G = summary(), tot = totals(G);
     const asg = items.filter((p) => S.assigned[p.id] != null).length;
-    h = `<div class="hd"><h2>ריכוז ורכש</h2><p>ריכוז פריטים ופלטות לכל פקודת עבודה: מ״ר נטו, מ״א פחים, מ״ר פריסה, משקל וניצולת. מוכן להדבקה באקסל.</p></div>
+    h = `<div class="hd"><h2>ריכוז ורכש</h2><p>פריטים ופלטות לכל פקודת עבודה: מ״ר נטו, מ״א פחים, משקל וניצולת. אפשר להעתיק לאקסל.</p></div>
     <div class="bd">
       <div class="stats c3"><div><b>${S.orders.length}</b><span>פקודות</span></div><div><b>${asg}/${items.length}</b><span>שויכו</span></div><div><b>${fmt(tot.m2, 1)}</b><span>מ״ר חיפוי נטו</span></div></div>
       <div class="stats c3"><div><b>${fmt(tot.ml, 1)}</b><span>מ״א פחים</span></div><div><b>${tot.sheets}</b><span>פלטות</span></div><div><b>${pct(tot.y)}</b><span>ניצולת</span></div></div>

@@ -93,7 +93,7 @@ select.sel:focus { outline: none; border-color: var(--redline); }
 .grp .dr { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 5px 10px; padding-inline-start: 30px; border-top: 1px solid var(--line); font-size: 12.5px; cursor: pointer; }
 .grp .dr:hover, .grp .dr.on { background: var(--redline-soft); }
 .grp .dr .n { color: var(--muted); font-size: 11.5px; }
-.dlist { display: flex; flex-direction: column; gap: 6px; max-height: 360px; overflow: auto; }
+.dlist { display: flex; flex-direction: column; gap: 6px; }
 .dlist > * { flex: none; }
 .pick { border: 1px dashed var(--line-strong); border-radius: 7px; padding: 8px 10px; font-size: 12.5px; display: flex; flex-direction: column; gap: 3px; }
 .pick .row { justify-content: space-between; }
@@ -101,7 +101,7 @@ select.sel:focus { outline: none; border-color: var(--redline); }
 .qa .qh { padding: 7px 10px; background: var(--ink-3); font-size: 12px; font-weight: 600; display: flex; justify-content: space-between; gap: 8px; }
 .qa .qi { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; padding: 7px 10px; border-top: 1px solid var(--line); font-size: 12px; cursor: pointer; }
 .qa .qi:hover, .qa .qi.on { background: var(--ink-3); }
-.qa .qi.on { box-shadow: inset 3px 0 0 var(--redline); }
+.qa .qi.on { background: var(--redline-soft); }
 .qa .qi .t { min-width: 0; }
 .qa .qi .s { color: var(--muted); font-size: 11.5px; grid-column: 1 / 3; }
 .qa .qi .s .mono { direction: ltr; unicode-bidi: isolate; }
@@ -300,7 +300,7 @@ const D = Demo({
   plugin: "PLUMBER",
   tag: "AutoCAD plug-in · אינסטלציה",
   title: "אינסטלציה: סיווג קווים, אורכים ואביזרים",
-  sub: "שרטוט דוגמה: תוכנית אינסטלציה של קומת מסחר בבניין מגורים, 1:50, צנרת תלויה בתקרה האקוסטית. כל קו מסווג למערכת, חומר וקוטר, האורכים והשיפועים נבדקים מול הרומים, וקולטנים, נקודות ואביזרים נספרים לפי חדר עד כתב כמויות.",
+  sub: "תוכנית אינסטלציה של קומת מסחר, 1:50. מסווגים את הקווים, בודקים שיפועים מול הרומים ומפיקים כתב כמויות.",
   file: "PLUMB_DEMO_COMMERCIAL-FL.dwg",
   viewBox: [-60, -60, W + 120, H + 120],
   flipY: H,
@@ -539,7 +539,7 @@ function renderSide() {
     const inv = DATA.sources;
     const ent = inv.reduce((a, s) => a + s.n, 0), raw = inv.reduce((a, s) => a + s.raw, 0);
     const cal = DATA.calib;
-    h = `<div class="hd"><h2>קריאת השרטוט</h2><p>התוסף סורק את ה־Model Space ומפיק מלאי שכבות: כמה ישויות יש בכל שכבה ומה אורך הקווים הגולמי שלה.</p></div>
+    h = `<div class="hd"><h2>קריאת השרטוט</h2><p>אלה שכבות הצנרת שנמצאו בשרטוט. סמנו או בטלו שכבה כדי לראות אותה על התוכנית.</p></div>
     <div class="bd">
       <div class="stats c3"><div><b>${inv.length}</b><span>שכבות אינסטלציה</span></div><div><b>${fmt(ent)}</b><span>ישויות</span></div><div><b>${fmt(raw)}</b><span>מ׳ קווים גולמיים</span></div></div>
       <div class="lbl">שכבות צנרת בשרטוט · סמנו כדי להציג</div>
@@ -550,46 +550,48 @@ function renderSide() {
         ${cal.dim ? `<span>מידת פתח כתובה ${cal.dim.txt} ס״מ, נמדדת</span><b>${fmt(cal.dim.cm, 1)} ס״מ</b><span class="ok">✓</span>` : ""}
         ${cal.pipes.map((p) => `<span>${p.d}: רוחב הקו הכפול, ${p.n === 1 ? "תווית אחת" : p.n + " תוויות"}</span><b>${fmt(p.cm, 1)} ס״מ</b><span class="${p.ok ? "ok" : ""}">${p.ok ? "✓" : "?"}</span>`).join("")}
       </div>
-      <div class="note">השרטט מצייר צנרת בקו כפול ברוחב הקוטר בעיגול (Ø110 ברוחב 10 ס״מ), ולכן הרוחב מספיק כדי לזהות קוטר בשכבות מי הגשם. מידת הפתח מאשרת את הקנ״מ עצמו.</div>
-      <div class="note">האורך הגולמי כולל טקסטים, תגיות, האותיות F ו־S בתוך הקו וקווים כפולים, ולכן אי אפשר פשוט לסכום קווים. השמות בשרטוט הזה לא לפי מוסכמה אחידה, ולכן השלב הבא הוא מיפוי.</div>
-    </div>${D.nav(null, 2, "למיפוי מערכות")}`;
+      ${D.more(`<p>במי הגשם הצנרת משורטטת בקו כפול ברוחב הקוטר (Ø110 ברוחב 10 ס״מ), ולפי הרוחב מזהים את הקוטר. מידת הפתח מאשרת את הקנ״מ.</p>
+        <p>האורך הגולמי כולל טקסטים, תגיות וקווים כפולים, ולכן הוא לא אורך הצנרת. שמות השכבות כאן לא לפי מוסכמה אחת, ולכן בשלב הבא ממפים כל שכבה למערכת.</p>`)}
+    </div>${D.nav(null, 2)}`;
   } else if (st === 2) {
     const unk = PIPE_SRC.filter((k) => !S.map[k]);
-    h = `<div class="hd"><h2>מיפוי מערכות</h2><p>כל שכבה וצבע ממופים למערכת ולחומר. הקוטר נקרא מהתוויות על הקו, מתגיות הקולטנים או מרוחב הקו הכפול. אפשר לשנות כל שורה ולראות את השרטוט מתעדכן.</p></div>
+    h = `<div class="hd"><h2>מיפוי מערכות</h2><p>בדקו לאיזו מערכת שויכה כל שכבה. שנו מערכת או חומר, והתוכנית נצבעת מחדש.</p></div>
     <div class="bd">
       ${unk.length ? `<div class="note" style="color:var(--warn)">שכבה אחת לא זוהתה לפי השם. אשרו את ההצעה או בחרו מערכת.</div>` : `<div class="note"><b>כל השכבות ממופות.</b> המיפוי נשמר כמוסכמת השכבות של המשרד ויחול אוטומטית בפרויקט הבא.</div>`}
       <div class="map">${PIPE_SRC.map((k) => mapRow(k)).join("")}</div>
-      <div class="note">שינוי מערכת צובע מחדש את הקווים ומעביר את האורך שלהם. שינוי ברירת המחדל משפיע רק על קטעים בלי תווית קוטר.</div>
-    </div>${D.nav(1, 3, "לאורכים ושיפועים")}`;
+      ${D.more(`<p>הקוטר נקרא מהתווית על הקו, מתגית הקולטן או מרוחב הקו הכפול. קוטר ברירת המחדל חל רק על קטעים בלי תווית.</p>`)}
+    </div>${D.nav(1, 3)}`;
   } else if (st === 3) {
     const R = rows(), tot = totalM();
     const bySys = {};
     R.forEach((x) => (bySys[x.s] = bySys[x.s] || []).push(x));
     const nSys = Object.keys(bySys).length;
     const pin = S.pinned != null ? runs[S.pinned] : null;
-    h = `<div class="hd"><h2>אורכים לפי מערכת וקוטר</h2><p>האורך של כל קטע נמדד לאורך הקו, כולל שבירות. רחפו או הקישו על קו בשרטוט, או בחרו שורה כדי לסמן את הקטעים שלה.</p></div>
+    h = `<div class="hd"><h2>אורכים לפי מערכת וקוטר</h2><p>בחרו ממצא כדי לראות אותו בתוכנית, או שורה בטבלה כדי לסמן את הקטעים שלה.</p></div>
     <div class="bd">
       <div class="stats c3"><div><b>${fmt(tot, 1)}</b><span>מ״א צנרת</span></div><div><b>${nSys}</b><span>מערכות</span></div><div><b>${runs.filter(counted).length}</b><span>קטעים</span></div></div>
       <div class="chips">${Object.keys(bySys).sort(sortSys).map((s) => `<button type="button" class="chip ${S.visSys.has(s) ? "" : "off"}" data-sys="${s}"><i style="background:${SYS[s].color}"></i>${sname(s)}</button>`).join("")}</div>
+      <label class="toggle"><span>הצגת קוטר ושיפוע על הקווים</span><input type="checkbox" id="labTog" ${S.labels ? "checked" : ""}></label>
+      ${qaBox()}
       ${pin ? pickCard(pin) : ""}
+      <div class="lbl">אורכים לפי מערכת וקוטר</div>
       <div class="dlist">${Object.keys(bySys).sort(sortSys).map((s) => `<div class="grp"><div class="gh">${sw(SYS[s].color)}<span>${sname(s)} <small>${[...new Set(bySys[s].flatMap((x) => [...x.mat]))].map((m) => MAT[m].n).join(" · ")}</small></span><span class="mono">${fmt(bySys[s].reduce((a, x) => a + x.m, 0), 1)} מ׳</span></div>
         ${bySys[s].map((x) => `<div class="dr ${S.hiRow && S.hiRow.s === s && S.hiRow.d === x.d ? "on" : ""}" data-row="${s}|${esc(x.d)}"><span class="mono ltr">${esc(x.d)}${x.sl.size ? ` · ${[...x.sl].sort((a, b) => b - a).map(pct).join("/")}` : ""}</span><span class="n">${nSeg(x.n)}</span><b class="mono">${fmt(x.m, 1)} מ׳</b></div>`).join("")}</div>`).join("")}</div>
-      <label class="toggle"><span>הצג קוטר ושיפוע על הקווים</span><input type="checkbox" id="labTog" ${S.labels ? "checked" : ""}></label>
-      ${qaBox()}
-      <div class="note">צנרת בקו כפול נמדדת פעם אחת, בקו האמצע. קווים שנקטעו בהצלבות או באותיות F ו־S של סוג הקו מחוברים לקטע אחד. קטעים אנכיים (קולטנים, עליות וירידות) לא מופיעים בתוכנית ונוספים לפי גובה הקומה מגיליון החתכים.</div>
-    </div>${D.nav(2, 4, "לנקודות ואביזרים")}`;
+      ${D.more(`<p>צנרת בקו כפול נמדדת פעם אחת, בקו האמצע. קווים שנקטעו בהצלבות או באותיות F ו־S של סוג הקו מחוברים לקטע אחד.</p>
+        <p>קולטנים, עליות וירידות לא מופיעים בתוכנית. הם נוספים לפי גובה הקומה מגיליון החתכים.</p>`)}
+    </div>${D.nav(2, 4)}`;
   } else if (st === 4) {
     h = side4();
   } else if (st === 5) {
     const tot = totalM();
     const nf = fits.filter((f) => counted(runs[f.r])).length, np = DATA.pts.filter(ptCounted).length;
-    h = `<div class="hd"><h2>כתב כמויות</h2><p>ארבע לשוניות כמו בקובץ האקסל שהתוסף מפיק: כתב כמויות לפי מערכת, צנרת לפי שכבה, אביזרים ונקודות, ובדיקות.</p></div>
+    h = `<div class="hd"><h2>כתב כמויות</h2><p>עברו בין הלשוניות מעל הטבלה, קבעו אחוז פחת והעתיקו לאקסל.</p></div>
     <div class="bd">
       <div class="stats c3"><div><b>${fmt(tot, 1)}</b><span>מ״א צנרת (נטו)</span></div><div><b>${nf}</b><span>אביזרים</span></div><div><b>${np}</b><span>נקודות</span></div></div>
       <div class="waste"><span>פחת להזמנת חומר</span><span><input type="number" id="waste" min="0" max="30" step="1" value="${S.waste}" aria-label="אחוז פחת"> %</span></div>
-      <div class="note">כמויות כתב הכמויות נטו, כפי שנמדדו. הפחת מתווסף רק לעמודת ההזמנה, יחד עם מספר המוטות לפי אורך המוט של כל חומר.</div>
-      <button class="btn pri" type="button" id="copyXls">העתק את הלשונית לאקסל</button>
-      <div class="note">בתוסף המלא <span class="mono">PLUMBEREXPORT</span> שומר קובץ <span class="mono">.xlsx</span> ליד השרטוט, בלי חלונות, גם בהרצה על תיקייה שלמה של שרטוטים.</div>
+      <button class="btn" type="button" id="copyXls">העתקת הלשונית לאקסל</button>
+      ${D.more(`<p>הכמויות בכתב הכמויות נטו, כפי שנמדדו. הפחת נוסף רק לעמודת ההזמנה, עם מספר המוטות לפי אורך המוט של כל חומר.</p>
+        <p>בתוסף עצמו הפקודה <span class="mono">PLUMBEREXPORT</span> שומרת קובץ <span class="mono">.xlsx</span> ליד השרטוט, גם בהרצה על תיקייה שלמה.</p>`)}
       ${D.cta()}
     </div>${D.nav(4, null)}`;
   }
@@ -664,18 +666,19 @@ function side4() {
   const pico = (s, c) => `<svg class="ico" viewBox="-20 -20 40 40">${c === "e" ? `<rect x="-13" y="-13" width="26" height="26" fill="#111519" stroke="${SYS[s].color}" stroke-width="6"/>` : `<circle r="13" fill="#111519" stroke="${SYS[s].color}" stroke-width="6"/>${c === "f" ? `<circle r="5" fill="${SYS[s].color}"/>` : ""}`}</svg>`;
   const ordF = Object.keys(FGRP);
   const ptRows = Object.entries(pk).sort((a, b) => { const [s1, k1] = a[0].split("|"), [s2, k2] = b[0].split("|"); return sortSys(s1, s2) || Object.keys(PK).indexOf(k1) - Object.keys(PK).indexOf(k2); });
-  return `<div class="hd"><h2>נקודות ואביזרים</h2><p>בחרו חדר בשרטוט או ברשימה, או גררו מלבן על אזור. הספירה מתעדכנת לבחירה.</p></div>
+  return `<div class="hd"><h2>נקודות ואביזרים</h2><p>בחרו חדר ברשימה או בתוכנית, או גררו מלבן על אזור. הספירה מתעדכנת לפי הבחירה.</p></div>
     <div class="bd">
       <div class="chips">${`<button type="button" class="chip ${!S.sel ? "on" : ""}" data-room="-1">כל הקומה</button>`}${DATA.rooms.map((r, i) => `<button type="button" class="chip ${S.sel && S.sel.room === i ? "on" : ""}" data-room="${i}">${esc(r.n)}</button>`).join("")}</div>
+      <div class="ftog">${Object.entries(FGRP).map(([k, g]) => `<label><input type="checkbox" data-fon="${k}" ${S.fOn[k] ? "checked" : ""}>${g.name}</label>`).join("")}<label><input type="checkbox" data-fon="pt" ${S.fOn.pt ? "checked" : ""}>נקודות</label></div>
       <div class="stats c3"><div><b>${Pt.length}</b><span>נקודות</span></div><div><b>${F.length}</b><span>אביזרים</span></div><div><b>${fmt(lenIn(S.sel), 1)}</b><span>מ׳ צנרת באזור</span></div></div>
       <div class="lbl">${esc(name)}${S.sel && S.sel.room != null && DATA.rooms[S.sel.room].a ? ` · ${fmt(DATA.rooms[S.sel.room].a, 2)} מ״ר` : ""}</div>
       <div class="cnt"><div class="h"><span></span><span>נקודות לפי סמלי השרטוט</span><span>יח׳</span></div>
         ${ptRows.length ? ptRows.map(([k, n]) => { const [s, kind, d] = k.split("|"); return `<div>${pico(s, PK[kind].c)}<span>${esc(PK[kind].n)} ${d ? `<span class="sz">${esc(d)}</span>` : ""} <span style="color:var(--muted)">· ${sname(s)}</span></span><b>${n}</b></div>`; }).join("") : '<div><span></span><span style="color:var(--muted)">אין נקודות בבחירה</span><b></b></div>'}</div>
       <div class="cnt"><div class="h"><span></span><span>אביזרים, לפי הגאומטריה</span><span>יח׳</span></div>
         ${Object.keys(fk).length ? Object.entries(fk).sort((a, b) => ordF.indexOf(a[1].grp) - ordF.indexOf(b[1].grp)).map(([n, x]) => `<div>${ficon(x.grp)}<span>${esc(n)}<span class="bys">${bySysLine(x.by)}</span></span><b>${Object.values(x.by).reduce((a, n) => a + n, 0)}</b></div>`).join("") : '<div><span></span><span style="color:var(--muted)">אין אביזרים בבחירה</span><b></b></div>'}</div>
-      <div class="ftog">${Object.entries(FGRP).map(([k, g]) => `<label><input type="checkbox" data-fon="${k}" ${S.fOn[k] ? "checked" : ""}>${g.name}</label>`).join("")}<label><input type="checkbox" data-fon="pt" ${S.fOn.pt ? "checked" : ""}>נקודות</label></div>
-      <div class="note">צנרת גרביטציונית (HDPE): ענף נכנס בהסתעפות 45°, בבסיס כל קולטן קשת מאנכי לאופקי, ובראש כל קו פקק ביקורת. צנרת לחץ (פלדה): מסעפי T וזוויות. ענף מוצג כקוטר ראשי/ענף, למשל <span class="mono">Ø160/110</span> או <span class="mono">3"x3/4"</span>.</div>
-    </div>${D.nav(3, 5, "לכתב כמויות")}`;
+      ${D.more(`<p>בצנרת גרביטציונית (HDPE) ענף נכנס בהסתעפות 45°, בבסיס כל קולטן יש קשת ובראש כל קו פקק ביקורת. בצנרת לחץ (פלדה) נספרים מסעפי T וזוויות.</p>
+        <p>ענף רשום כקוטר ראשי/ענף, למשל <span class="mono">Ø160/110</span> או <span class="mono">3"x3/4"</span>.</p>`)}
+    </div>${D.nav(3, 5)}`;
 }
 function lenIn(sel) {
   // pipe length clipped to the selection (one or more rectangles)

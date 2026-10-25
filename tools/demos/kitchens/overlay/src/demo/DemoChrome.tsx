@@ -61,10 +61,10 @@ export function DemoChrome() {
   return (
     <>
       <div className="demo-bar no-print">
-        <a className="demo-back" href="/catalog/"><span aria-hidden="true">→</span> כל הדמואים</a>
+        <a className="demo-back" href="/catalog/"><span aria-hidden="true">→</span> כל הדוגמאות</a>
         <span className="demo-title">סטודיו מטבחים · דמו אינטראקטיבי</span>
         <button type="button" className="demo-help" onClick={() => setHint(true)} aria-label="מה אפשר לנסות כאן" title="מה אפשר לנסות כאן">?</button>
-        <a className="demo-cta" href={`/Contact?from=demo-${SLUG}`} onClick={() => track('demo_cta', { place: 'top' })}>רוצים את זה לפרויקט שלכם?</a>
+        <a className="demo-cta" href={`/Contact?from=demo-${SLUG}`} onClick={() => track('demo_cta', { place: 'top' })}>דברו איתנו על מערכת כזו</a>
       </div>
       {hint && (
         <div className="demo-hint no-print" onClick={closeHint}>

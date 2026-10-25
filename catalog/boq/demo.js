@@ -190,7 +190,7 @@
       plugin: "BOQ-AI",
       tag: "BOQ-AI · כתב כמויות משרטוטים",
       title: "כתב כמויות אוטומטי מסט שרטוטים",
-      sub: "סט שרטוטים של בית פרטי: אדריכלות, חשמל, תאורה ואינסטלציה. המערכת מודדת חדרים, קירות ופתחים, קוראת סמלים ותוויות, מצליבה בין הגיליונות ובונה כתב כמויות לפי פרקי המפרט הכללי. כל סעיף מקושר למקור שלו בשרטוט.",
+      sub: "סט שרטוטים של בית פרטי: אדריכלות, חשמל, תאורה ואינסטלציה. כתב הכמויות נבנה לפי פרקי המפרט הכללי, וכל סעיף מקושר לשרטוט.",
       file: "A-101.pdf",
       viewBox: homeVB("A"),
       kpis: [{ id: "sheets", label: "גיליונות" }, { id: "sym", label: "סמלים ותוויות" }, { id: "lines", label: "סעיפים" }, { id: "total", label: "סה\"כ כולל מע\"מ" }],
@@ -833,10 +833,10 @@
           <div class="lbl">שכבות בגיליון ${SHEETS[k].code}</div>
           <div class="layers">${rows}</div>
           <div class="note">כל פריט נמדד בגיליון אחד בלבד: <b>חדרים, קירות, דלתות וחלונות</b> מגיליון האדריכלות; <b>סמלי חשמל ותאורה</b> מגיליונות החשמל; <b>נקודות וכלים סניטריים</b> מגיליון האינסטלציה. הרקע האדריכלי שמופיע בגיליונות האחרים לא נמדד שוב.</div>
-        </div>${D.nav(null, 2, "הרץ ניתוח")}`;
+        </div>${D.nav(null, 2)}`;
       } else if (step === 2) {
         const busy = st.running;
-        h = `<div class="hd"><h2>ניתוח הגיליונות</h2><p>לכל גיליון: זיהוי תחום, קנה מידה, קריאת מקרא, ספירת סמלים ותוויות, ומדידת חדרים, קירות ופתחים.</p></div>
+        h = `<div class="hd"><h2>ניתוח הגיליונות</h2><p>בכל גיליון מזוהים התחום וקנה המידה, נקרא המקרא, נספרים סמלים ונמדדים חדרים, קירות ופתחים.</p></div>
         <div class="bd">
           <div class="stats"><div><b>4</b><span>גיליונות</span></div><div><b>${st.analyzed ? R.length : "…"}</b><span>חדרים</span></div><div><b>${st.analyzed ? O.length : "…"}</b><span>פתחים</span></div><div><b>${st.analyzed ? nSymbols : "…"}</b><span>סמלים ותוויות</span></div></div>
           <div class="proc" id="proc">${ORDER.map(procRow).join("")}</div>
@@ -850,13 +850,13 @@
           </div>
           <div id="insp">${inspectHtml()}</div>
           <div class="row"><button class="btn sm" type="button" id="rerun">הרץ שוב</button></div>`}
-        </div>${D.nav(1, 3, "לסיווג ובדיקה", busy)}`;
+        </div>${D.nav(1, 3, busy)}`;
       } else if (step === 3) {
         const done = groups.filter((g) => g.cat).length, n = groups.length;
         const g = groups[st.selGroup];
         const opts = optsOf(g).map(([v, lab]) => `<option value="${esc(v)}" ${g.choice === v ? "selected" : ""}>${esc(lab)}</option>`).join("");
         const kindTxt = { el: "לבדיקה", unk: "לא במקרא", note: "הערה", pl: "תווית" };
-        h = `<div class="hd"><h2>סיווג ובדיקה</h2><p>מה שהמערכת זיהתה אבל לא סגרה לבד: סמלים שדומים למקרא ולא זהים לו, צורה שאינה במקרא, הערות מתכנן עם כמות, ותוויות האינסטלציה שהטקסט שלהן נקרא. אשרו את ההצעה או בחרו אחרת.</p></div>
+        h = `<div class="hd"><h2>סיווג ובדיקה</h2><p>אשרו את ההצעה או בחרו אחרת. אלה פריטים שזוהו ולא נסגרו לבד, למשל סמל שדומה למקרא ולא זהה לו.</p></div>
         <div class="bd">
           <div class="row" style="justify-content:space-between"><span>סווגו <b class="mono">${done}/${n}</b> קבוצות · <b class="mono">${sum(groups.filter((x) => x.cat), (x) => x.n)}</b> פריטים</span>${done < n ? `<button class="btn sm" type="button" id="acceptAll">אשר את כל ההצעות</button>` : '<span class="pill ok">הכל סווג</span>'}</div>
           <div class="progress"><i style="width:${(done / n) * 100}%"></i></div>
@@ -872,14 +872,14 @@
               <div class="cl ${i === st.selGroup ? "on" : ""}" data-g="${i}" role="button" tabindex="0">${symSvg(x)}<div class="t"><div>${esc(x.leg || "צורה חוזרת שאינה במקרא")}</div><div class="mt"><span class="mono">×${x.n}</span> · ${esc(kindTxt[x.kind])}${x.cat ? "" : ` · הצעה: ${esc(optLabel(x, x.choice))}`}</div></div>${x.cat ? `<span class="pill ${x.cat === "x" ? "" : "ok"}">${x.cat === "x" ? "—" : "✓"}</span>` : '<span class="pill warn">ממתין</span>'}</div>`).join("");
           }).join("")}</div>
           <div class="note">שיוך אחד מעביר את כל הפריטים של הקבוצה לסעיף. מה שלא ישויך יישאר ברשימת "לבירור" ולא ייכנס לכתב הכמויות. כשהכל מאושר, פרק 08 זהה לכתב הכמויות של החשמל.</div>
-        </div>${D.nav(2, 4, "לכתב הכמויות")}`;
+        </div>${D.nav(2, 4)}`;
       } else if (step === 4) {
         const line = st.lines.find((l) => l.id === st.selLine) || st.lines[0];
         const real = st.lines.filter((l) => !l.u99);
         const chs = [...new Set(real.map((l) => l.ch))];
         const pend = st.lines.filter((l) => l.u99);
         const C = checks();
-        h = `<div class="hd"><h2>כתב כמויות לפי פרקים</h2><p>${real.length} סעיפים ב־${chs.length} פרקים של המפרט הכללי. כמויות נטו לפי אופני המדידה; כל סעיף מקושר למה שנספר או נמדד. לחצו על סעיף כדי לראות את המקור, או על פריט בשרטוט כדי למצוא את הסעיף שלו.</p></div>
+        h = `<div class="hd"><h2>כתב כמויות לפי פרקים</h2><p>לחצו על סעיף כדי לראות את המקור שלו בשרטוט, או על פריט בשרטוט כדי למצוא את הסעיף. ${real.length} סעיפים ב־${chs.length} פרקים, כמויות נטו לפי אופני המדידה.</p></div>
         <div class="bd">
           ${st.selCheck ? checkDetail(C.find((c) => c.id === st.selCheck)) : lineDetail(line)}
           <div class="boq" id="boqList">${chs.map((ch) => {
@@ -896,7 +896,7 @@
             <label>חיפוי בשירותים ובכביסה עד (מ׳)<input type="number" step="0.1" min="0.6" max="3.6" value="${st.set.hwc}" data-set="hwc"></label>
           </div>
           <div class="note"><b>לא בכתב הזה:</b> שלד ובטון (פרק 02) ועבודות עפר, לפי תוכניות הקונסטרוקציה; גג, איטום ובידוד גג; חזיתות (אין חזיתות בסט); מטבח, כלים סניטריים וגופי תאורה (בהספקת המזמין); מיזוג אוויר וציוד הסינון בממ״ד; מערכת סולארית; מתקן גז; צנרת ביוב חיצונית, שוחות וחיבור המים; פיתוח וגינון; הזנת חברת החשמל.</div>
-        </div>${D.nav(3, 5, "לתמחור")}`;
+        </div>${D.nav(3, 5)}`;
       } else if (step === 5) {
         const T = totals();
         h = `<div class="hd"><h2>תמחור ועריכה</h2><p>${st.priced ? "המחירים נטענו ממחירון לדוגמה. ערכו כמות או מחיר בטבלה, והסכומים מתעדכנים." : "פרק 08 מתומחר כבר לפי כתב הכמויות של החשמל. טענו מחירון לשאר הפרקים, או הקלידו מחיר ישירות בטבלה."}</p></div>
@@ -913,7 +913,7 @@
           <div class="lbl">התפלגות לפי פרק</div>
           <div class="bars" id="bars">${barsHtml(T)}</div>
           <div class="note">מחירון לדוגמה: מחירי קבלן 2026 לפני מע״מ, כולל תקורה ורווח, לא הצעת מחיר. "בלתי צפויים" הוא רזרבה של אומדן מסט שעדיין חסרים בו פרטים. ${T.pend ? `<b>${T.pend}</b> קבוצות שלא סווגו אינן בסכום.` : ""} במערכת נטען המחירון שלכם, ומחיר שנערך ידנית נשמר גם כשמחשבים את הכמויות מחדש.</div>
-        </div>${D.nav(4, 6, "לייצוא")}`;
+        </div>${D.nav(4, 6)}`;
       } else if (step === 6) {
         const T = totals();
         const chs = [...new Set(st.lines.filter((l) => !l.u99).map((l) => l.ch))];

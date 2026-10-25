@@ -34,7 +34,7 @@
     plugin: "PA_TENANT",
     tag: "AI · בקרת שינויי דיירים",
     title: "בקרת שינויי דיירים: מתוכנית הדייר להצעת מחיר",
-    sub: "דירת 5 חדרים בקומה טיפוסית. הדייר הגיש תוכנית שינויים: המערכת משווה אותה לתוכנית המכר, מצליבה כל שינוי עם תוכניות הקונסטרוקציה, האינסטלציה והחשמל, ומתמחרת את מה שאושר.",
+    sub: "דירת 5 חדרים. תוכנית השינויים של הדייר נבדקת מול תוכנית המכר, הקונסטרוקציה, האינסטלציה והחשמל, ומה שאושר מתומחר.",
     file: "SALES_PLAN_APT.dwg",
     viewBox: [-40, -40, 1368, 1060],
     flipY: H,
@@ -634,7 +634,7 @@
       const byK = {};
       inRoom.forEach((p) => (byK[p.k] = (byK[p.k] || 0) + 1));
       const th = DATA.meta.thin;
-      h = `<div class="hd"><h2>תוכנית המכר</h2><p>דירת 5 חדרים בקומה טיפוסית, כפי שנמכרה. זה הבסיס: כל שינוי שהדייר מבקש נבדק מולה ומול תוכניות הייחוס.</p></div>
+      h = `<div class="hd"><h2>תוכנית המכר</h2><p>הדירה כפי שנמכרה. כל שינוי שהדייר מבקש ייבדק מולה ומול תוכניות הייחוס.</p></div>
       <div class="bd">
         <div class="stats"><div><b>5</b><span>חדרים</span></div><div><b>${fmt(area, 0)}</b><span>מ״ר נטו</span></div><div><b>${nE}</b><span>נק׳ חשמל</span></div><div><b>${nP}</b><span>נק׳ מים</span></div></div>
         <div class="stage"><b>שלב ביצוע בקומה</b>${esc(DATA.meta.stage)}</div>
@@ -654,7 +654,7 @@
         <div class="lbl">חדרים · לחצו לבחירה</div>
         <div class="list" style="max-height:200px">${DATA.rooms.map((r) => `<div class="li rm ${S.room === r.id ? "on" : ""}" data-room="${r.id}"><span>${esc(r.name)}</span><span class="mono" style="color:var(--muted)">${fmt(r.area, 1)} מ״ר</span></div>`).join("")}</div>
         ${room ? `<div class="note"><b>${esc(room.name)}</b> · ${fmt(room.area, 1)} מ״ר · ${Object.entries(byK).map(([k, v]) => `${v} ${PT_NAME[k][v > 1 ? 1 : 0]}`).join(" · ") || "ללא נקודות"}</div>` : ""}
-      </div>${D.nav(null, 2, "לתוכנית הדייר")}`;
+      </div>${D.nav(null, 2)}`;
     } else if (n === 2) {
       const a = DATA.meta.align;
       const box = S.aligned
@@ -671,13 +671,13 @@
         ${S.aligned && S.mode === "swipe" ? `<label class="lbl" for="tcSplit">מיקום קו החלוקה</label><input type="range" id="tcSplit" min="0" max="100" value="${pct}" aria-label="מיקום קו החלוקה">` : ""}
         <div class="note">${!S.aligned ? "בשכבת־על אפשר לראות שהקירות לא נופלים זה על זה: כל קו מופיע פעמיים." : S.mode === "swipe" ? "גררו את הקו הכתום על השרטוט. מימין תוכנית המכר, משמאל תוכנית הדייר. נסו למצוא את ההבדלים בעצמכם, גם את הקטנים." : S.mode === "overlay" ? "תוכנית המכר בכחול, תוכנית הדייר בכתום. קו בהיר מופיע בשתיהן, קו כחול או כתום קיים רק באחת." : S.mode === "A" ? "תוכנית המכר בלבד." : "תוכנית הדייר בלבד."}</div>
         <div class="note">בשלב הבא שלושה סוכנים עוברים על ההבדלים שכבה אחר שכבה, ומצליבים כל אחד עם הקונסטרוקציה, האינסטלציה ולוח החשמל.</div>
-      </div>${D.nav(1, 3, "הפעל זיהוי שינויים")}`;
+      </div>${D.nav(1, 3)}`;
     } else if (n === 3) {
       const done = S.detected, flags = CH.filter(flagged).length, adds = CH.filter(isAdd).length;
       const rev = CH.filter((c) => S.revealed.has(c.id)).length;
       const prog = script ? Math.round((scriptAt / script.length) * 100) : 0;
       const ag = (k, title, sub, on) => `<div class="${on ? "done" : S.detecting ? "run" : ""}"><b><i></i>${title}</b><span>${sub}</span></div>`;
-      h = `<div class="hd"><h2>זיהוי שינויים</h2><p>גאומטריה מוצאת הבדלים לפי שכבה. בקרת איכות מסננת, ומצליבה כל שינוי עם תוכניות הייחוס. תמחור משייך סעיפים.</p></div>
+      h = `<div class="hd"><h2>זיהוי שינויים</h2><p>ההבדלים בין התוכניות, לפי שכבה. כל שינוי נבדק מול תוכניות הייחוס ומקבל סעיפי תמחור.</p></div>
       <div class="bd">
         <div class="agents">
           ${ag("geo", "גאומטריה", done ? `${ALL.length} הבדלים` : `${rev} עד עכשיו`, done)}
@@ -691,7 +691,7 @@
         ${rev || NOISE.some((c) => S.revealed.has(c.id)) ? listHtml(false) : ""}
         <div class="lbl">יומן הסוכנים</div>
         ${logHtml()}
-      </div>${D.nav(2, 4, "לבדיקה ההנדסית", !done)}`;
+      </div>${D.nav(2, 4, !done)}`;
     } else if (n === 4) {
       const nSafe = CH.filter((c) => safe(c) && !S.dec[c.id]).length;
       h = `<div class="hd"><h2>בדיקה הנדסית</h2><p>החליטו על כל שינוי. שינוי שנחסם בהצלבה עם התוכניות אי אפשר לאשר: דוחים אותו עם הצעה חלופית, או מעבירים ליועץ.</p></div>
@@ -701,11 +701,11 @@
         <div class="lay">${strToggle()}</div>
         ${detailCard(true)}
         ${listHtml(true)}
-      </div>${D.nav(3, 5, "לתמחור")}`;
+      </div>${D.nav(3, 5)}`;
     } else if (n === 5) {
       const net = sumNet(), pend = count("pend"), mod = Object.keys(S.up).length;
       const nAuto = approved().reduce((a, c) => a + c.lines.filter((l) => l.auto).length, 0);
-      h = `<div class="hd"><h2>תמחור</h2><p>כל שינוי שאושר מקבל סעיפים ממחירון שינויי הדיירים, וכמות שנמדדה מהשרטוט. ערכו מחיר יחידה בטבלה, והסכום מתעדכן.</p></div>
+      h = `<div class="hd"><h2>תמחור</h2><p>ערכו מחיר יחידה בטבלה והסכום מתעדכן. כל שינוי שאושר מקבל סעיפים ממחירון שינויי הדיירים וכמות מהשרטוט.</p></div>
       <div class="bd">
         <span class="badge">מחירון לדוגמה · לא מחירון מחייב</span>
         <div class="totbox" id="tcTot">${totHtml(net)}</div>
@@ -715,7 +715,7 @@
         <div class="note">סעיף נלווה הוא עבודה שתוכנית הדייר לא כללה, אבל הבדיקה הראתה שהיא חובה. מחיצה שמבטלים לפני שנבנתה מקבלת זיכוי. דמי הטיפול נגבים פעם אחת לבקשה. במערכת המלאה נטען המחירון של החברה.</div>
         <div class="lbl">יומן הסוכנים</div>
         ${logHtml(6)}
-      </div>${D.nav(4, 6, "להצעה לדייר")}`;
+      </div>${D.nav(4, 6)}`;
     } else if (n === 6) {
       const net = sumNet();
       h = `<div class="hd"><h2>הצעה לדייר</h2><p>הצעת מחיר לחתימת הדייר: מה אושר ובכמה, מה נדחה ולמה, מה ההצעה החלופית, ומה ממתין ליועץ.</p></div>

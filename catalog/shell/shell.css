@@ -92,6 +92,10 @@ button { font: inherit; color: inherit; }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .btn.sm { padding: 5px 10px; font-size: 12px; font-weight: 500; border-radius: 6px; }
 .btn.on { background: var(--redline-soft); border-color: var(--redline); color: var(--text); }
+.btn.outline { background: transparent; border-color: var(--redline); color: var(--text); }
+.btn.outline:hover { background: var(--redline-soft); }
+.btn:active:not(:disabled) { transform: scale(0.97); }
+.d-arr { width: 14px; height: 14px; flex: none; }
 
 /* ---------- ribbon of steps ---------- */
 .d-ribbon { background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--radius); display: flex; overflow-x: auto; scrollbar-width: thin; }
@@ -137,7 +141,40 @@ button { font: inherit; color: inherit; }
 .d-side .hd h2 { font-size: 16px; margin: 0; font-weight: 600; }
 .d-side .hd p { margin: 4px 0 0; color: var(--muted); font-size: 12.5px; }
 .d-side .bd { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; }
-.d-side .ft { padding: 12px 16px; border-top: 1px solid var(--line); display: flex; gap: 8px; justify-content: space-between; }
+.d-side .ft { padding: 12px 16px; border-top: 1px solid var(--line); display: flex; gap: 8px; align-items: center; justify-content: space-between; background: var(--ink-2); border-radius: 0 0 var(--radius) var(--radius); }
+.d-side .ft .btn { min-height: 40px; }
+.d-side .ft .btn.pri { padding-inline: 16px; font-size: 14px; }
+.ft__n { color: var(--faint); font-size: 12px; }
+
+/* desktop: canvas and palette share the window height under the header (--ws-h, set in shell.js);
+   the palette body scrolls on its own and its footer never leaves the screen */
+@media (min-width: 1021px) {
+  .d-ws { height: var(--ws-h, auto); align-items: stretch; }
+  .d-stage { display: flex; flex-direction: column; min-height: 0; }
+  .d-canvas { flex: 1; min-height: 0; }
+  .d-canvas > svg, .d-canvas.tall > svg { height: 100%; max-height: none; }
+  .d-table { flex: 1; min-height: 0; max-height: none; }
+  .d-side { min-height: 0; overflow: hidden; }
+  .d-side .bd { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--ink-4) transparent; }
+  .d-side .bd > * { flex-shrink: 0; }
+}
+/* phones and tablets: the palette sits under the canvas, back / next stay on a bar at the bottom of the screen */
+@media (max-width: 1020px) {
+  body.demo { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
+  .d-side .ft { position: fixed; inset-inline: 0; bottom: 0; z-index: 15; border-radius: 0; border-top-color: var(--line-strong); padding: 10px max(16px, env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)); box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); }
+  .d-side .ft .btn.pri { flex: 1; max-width: 340px; }
+  .d-toast { bottom: calc(80px + env(safe-area-inset-bottom)); }
+}
+
+/* "how it works" disclosure for background a professional may want */
+.more { border: 1px solid var(--line); border-radius: 6px; }
+.more summary { cursor: pointer; padding: 8px 10px; font-size: 12.5px; color: var(--muted); list-style: none; display: flex; align-items: center; gap: 8px; }
+.more summary::-webkit-details-marker { display: none; }
+.more summary::before { content: ""; width: 6px; height: 6px; border-inline-start: 1.5px solid currentColor; border-block-end: 1.5px solid currentColor; transform: rotate(45deg); transition: transform 160ms var(--ease-out); }
+.more[open] summary::before { transform: rotate(-45deg); }
+.more summary:hover { color: var(--text); }
+.more__bd { padding: 0 10px 10px; display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; color: var(--muted); }
+.more__bd p { margin: 0; }
 
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .lbl { font-size: 11px; letter-spacing: 0.05em; color: var(--muted); text-transform: uppercase; font-weight: 600; }

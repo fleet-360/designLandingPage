@@ -657,10 +657,10 @@ def demos_teaser():
       <div class="wrap">
         <div class="section__head reveal">
           <div>
-            <p class="live-badge"><span class="live-badge__dot" aria-hidden="true"></span><span data-i18n="demos.badge">{len(demos)} דוגמאות חיות מפרויקטים, בלי הרשמה</span></p>
+            <p class="live-badge"><span class="live-badge__dot" aria-hidden="true"></span><span data-i18n="demos.badge">{len(demos)} דוגמאות מפרויקטים</span></p>
             <h2 class="h2" data-i18n="demos.title">מה אפשר לבנות? <span class="thin">תרגישו את זה בידיים.</span></h2>
           </div>
-          <p data-i18n="demos.lead">אלה לא מוצרי מדף. כל דוגמה מבוססת על מערכת שפיתחנו לחברה או לארגון בענף, ורצה בדפדפן על שרטוט אמיתי: גוררים מגדל אקרו, סופרים סמלי חשמל, בודקים שינוי דיירים. כך תראו מה אפשר לפתח גם עבורכם.</p>
+          <p data-i18n="demos.lead">כל דוגמה מבוססת על מערכת שפיתחנו לחברה בענף הבנייה ועובדת על שרטוט אמיתי. פתחו אחת ועבדו איתה כאן בדפדפן.</p>
         </div>
         <div class="post-grid reveal">{''.join(demo_card(x) for x in demos[:6])}</div>
         <div class="section__more reveal"><a class="btn btn--primary" href="/catalog/"><span data-i18n="demos.all">לכל הדוגמאות</span><i class="ph ph-arrow-left" aria-hidden="true"></i></a></div>
@@ -704,7 +704,7 @@ def conferences_teaser():
       <div class="wrap">
         <div class="section__head reveal">
           <h2 class="h2" data-i18n="conf.title">כנסים וימי עיון: <span class="thin">AI לכל עולם בבנייה.</span></h2>
-          <p data-i18n="conf.lead">בוקר אחד סביב שולחן עם אנשי מקצוע מהתחום שלכם: מה כבר עובד בשטח, דוגמאות חיות מפרויקטים, ושיחה פתוחה. מספר המקומות מוגבל.</p>
+          <p data-i18n="conf.lead">מפגשי בוקר לקבוצות קטנות, כל פעם לתחום אחר בענף. מציגים עבודות מפרויקטים ועונים על שאלות.</p>
         </div>
         <div class="carousel reveal" data-carousel>
           <ul class="carousel__track" data-carousel-track>
@@ -1501,7 +1501,7 @@ def build_catalog():
     )
 
     body = page_hero("קטלוג <span class=\"thin\">אינטראקטיבי.</span>",
-                     "לא עוד חוברת לדפדוף. כל דוגמה כאן מבוססת על פיתוח שעשינו לחברה או לארגון, ורצה על שרטוט אמיתי: לחצו, גררו, בחרו, וראו מה אפשר לפתח עבורכם.",
+                     "דוגמאות עבודה ממערכות שפיתחנו לחברות בענף הבנייה. כל אחת פועלת על שרטוט אמיתי, ואפשר לנסות אותה כאן בדפדפן.",
                      "catalog.h1", "catalog.lead", [("בית", "/", "crumb.home"), ("דמו חי", None, "nav.demos")])
     body += f"""
     <section class="section section--tight">
@@ -1574,7 +1574,7 @@ def build_conferences():
     upcoming = [c for c in confs if not c["is_past"]]
     past = [c for c in confs if c["is_past"]]
     body = page_hero("כנסים וימי עיון <span class=\"thin\">על AI בבנייה.</span>",
-                     "סדרת מפגשי בוקר לכל עולם תוכן בענף: אדריכלים, מתכנני מערכות, קבלנים ויזמים, קונסטרוקטורים ויצרנים. דוגמאות חיות מפרויקטים, בלי מצגות שיווק.",
+                     "מפגשי בוקר לקבוצות קטנות של אנשי מקצוע, כל פעם לתחום אחר בענף. מציגים עבודות מפרויקטים ועונים על שאלות.",
                      "conf.h1", "conf.h1lead", [("בית", "/", "crumb.home"), ("כנסים", None, "nav.events")])
     body += f"""
     <section class="section section--tight">

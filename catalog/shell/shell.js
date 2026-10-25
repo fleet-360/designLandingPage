@@ -11,7 +11,11 @@
 */
 (() => {
   const NS = "http://www.w3.org/2000/svg";
-  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  // arrows for RTL: "back" points right, "forward" points left
+  const arrow = (d) => `<svg class="d-arr" viewBox="0 0 16 16" aria-hidden="true"><path d="${d}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const ARROW_BACK = arrow("M6 3l5 5-5 5");
+  const ARROW_NEXT = arrow("M10 3L5 8l5 5");
+  const esc =(s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   function Demo(cfg) {
     const steps = cfg.steps || [];
@@ -25,14 +29,13 @@
 <div class="d-wrap">
   <header class="d-top">
     <div class="d-top__main">
-      <a class="d-back" href="/catalog/"><span aria-hidden="true">→</span> כל הדמואים</a>
-      <span class="d-tag">${esc(cfg.tag || "Pro Algorithm · DEMO")}</span>
+      <a class="d-back" href="/catalog/">${ARROW_BACK} כל הדוגמאות</a>
       <h1>${esc(cfg.title)}</h1>
       ${cfg.sub ? `<div class="d-sub">${esc(cfg.sub)}</div>` : ""}
     </div>
     <div class="d-top__side">
       ${kpis ? `<div class="d-kpi">${kpis}</div>` : ""}
-      <a class="btn pri" href="/Contact?from=demo-${esc(cfg.slug)}" data-cta="top">רוצים את זה על השרטוטים שלכם?</a>
+      <a class="btn outline" href="/Contact?from=demo-${esc(cfg.slug)}" data-cta="top">דברו איתנו על מערכת כזו</a>
     </div>
   </header>
   <nav class="d-ribbon" aria-label="שלבי הדמו">
@@ -113,16 +116,25 @@
       catch { D.toast("ההעתקה נחסמה בדפדפן. סמנו את הטבלה ידנית והעתיקו."); }
     };
 
-    /* side palette: header, body, footer with back/next */
-    D.nav = (back, next, nextLabel = "לשלב הבא", nextDisabled = false) =>
-      `<div class="ft">${back ? `<button class="btn" type="button" data-go="${back}">→ חזרה</button>` : "<span></span>"}${next ? `<button class="btn pri" type="button" data-go="${next}" ${nextDisabled ? "disabled" : ""}>${esc(nextLabel)} ←</button>` : ""}</div>`;
+    /* side palette: header, scrolling body, footer pinned under it with back / step count / next.
+       The next button always names the step it opens, so every demo reads the same way. */
+    D.nav = (back, next, nextDisabled = false) => {
+      const n = D.step;
+      const backBtn = back ? `<button class="btn ghost" type="button" data-go="${back}">${ARROW_BACK}הקודם</button>` : "<span></span>";
+      const fwd = next
+        ? `<button class="btn pri" type="button" data-go="${next}" ${nextDisabled ? 'disabled title="השלימו את השלב כדי להמשיך"' : ""}>הבא: ${esc(steps[next - 1]?.t || "")}${ARROW_NEXT}</button>`
+        : `<a class="btn ghost" href="/catalog/">לכל הדוגמאות</a>`;
+      return `<div class="ft">${backBtn}<span class="ft__n mono ltr" aria-label="שלב ${n} מתוך ${steps.length}">${n} / ${steps.length}</span>${fwd}</div>`;
+    };
+    // explanations a professional may want but the task doesn't need: collapsed under the step's controls
+    D.more = (html, summary = "איך זה עובד") => `<details class="more"><summary>${esc(summary)}</summary><div class="more__bd">${html}</div></details>`;
     D.side = (html) => {
       D.sideEl.innerHTML = html;
       D.sideEl.querySelectorAll("[data-go]").forEach((b) => (b.onclick = () => D.go(+b.dataset.go)));
       D.sideEl.querySelectorAll("[data-cta]").forEach((a) => a.addEventListener("click", () => D.track("demo_cta", { place: a.dataset.cta })));
     };
-    D.cta = (title = "רוצים את זה על השרטוטים שלכם?", text = "נריץ את התוסף על פרויקט אמיתי שלכם ונראה את התוצאה יחד.") =>
-      `<div class="d-cta"><b>${esc(title)}</b><p>${esc(text)}</p><a class="btn pri" href="/Contact?from=demo-${esc(cfg.slug)}" data-cta="end">קבעו הדגמה</a></div>`;
+    D.cta = (title = "רוצים מערכת כזו אצלכם?", text = "נבנה אותה סביב השרטוטים, המוסכמות ותהליכי העבודה של המשרד שלכם.") =>
+      `<div class="d-cta"><b>${esc(title)}</b><p>${esc(text)}</p><a class="btn pri" href="/Contact?from=demo-${esc(cfg.slug)}" data-cta="end">קבעו שיחה</a></div>`;
 
     /* ---------- analytics ---------- */
     D.track = (event, params = {}) => {
@@ -148,6 +160,11 @@
       const s = steps[n - 1] || {};
       if (s.cmd) D.cmd(s.cmd);
       cfg.onStep?.(n, D, prev);
+      // stacked layout: a new step redraws the plan above the palette, so bring the plan back into view
+      if (prev && matchMedia("(max-width: 1020px)").matches) {
+        const top = document.querySelector(".d-stage").getBoundingClientRect().top + scrollY - 8;
+        if (scrollY > top) scrollTo({ top, behavior: "instant" });
+      }
       if (prev) {
         markStart();
         D.track("demo_step", { step: n, step_name: s.t });
@@ -263,7 +280,17 @@
     D.svg.addEventListener("click", (e) => { if (D.dragged) { e.stopPropagation(); e.preventDefault(); } }, true);
     D.svg.addEventListener("pointerdown", markStart, { once: true });
 
-    D.ready = () => D.go(1);
+    /* the workspace fills the window under the header, so the palette's footer is always on screen */
+    const ws = document.querySelector(".d-ws");
+    const fitWs = () => {
+      const top = ws.getBoundingClientRect().top + scrollY;
+      // 24px: the wrap's bottom padding
+      ws.style.setProperty("--ws-h", Math.max(520, innerHeight - top - 24) + "px");
+    };
+    addEventListener("resize", fitWs);
+    fitWs();
+
+    D.ready = () => { D.go(1); fitWs(); };
     return D;
   }
 

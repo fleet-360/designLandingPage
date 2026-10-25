@@ -56,7 +56,7 @@
     plugin: "SUPERPOSITION",
     tag: "Web app · השוואת שרטוטים",
     title: "SuperPosition: השוואת שרטוטים בין דיסציפלינות",
-    sub: "שרטוט דוגמה: קומת מסחר תת־קרקעית מתחת לבנייני מגורים. A: תוכנית האדריכלות בגרסה האחרונה. B: תוכנית המיזוג של היועץ, על הרקע האדריכלי שהיה בידיו. המערכת מיישרת את B על A, מראה מה קיים רק באחד מהם, ומוציאה ממצאי תיאום עם חומרה וגורם אחראי.",
+    sub: "קומת מסחר תת־קרקעית. תוכנית המיזוג של היועץ מיושרת על תוכנית האדריכלות האחרונה, וההבדלים הופכים לממצאי תיאום.",
     file: "A_ARCH.pdf + B_HVAC.pdf",
     viewBox: HOME,
     kpis: [{ id: "regions", label: "אזורי שינוי" }, { id: "real", label: "ממצאים" }, { id: "coord", label: "לתיאום" }, { id: "done", label: "טופלו" }],
@@ -478,7 +478,7 @@
     const [aw, ah] = REGI.a_page, [bw, bh] = REGI.b_page;
     const cm = (v) => Math.round(v * PT_CM);
     const bgShare = pct(LEN.bbg, LEN.bown);
-    return `<div class="hd"><h2>שני שרטוטים של אותה קומה</h2><p>A היא תוכנית האדריכלות בגרסה האחרונה. B היא תוכנית המיזוג של היועץ, עם הרקע האדריכלי שקיבל. אותה קומה, אבל גיליונות שונים, משרדים שונים וגרסאות שונות.</p></div>
+    return `<div class="hd"><h2>שני שרטוטים של אותה קומה</h2><p>A היא תוכנית האדריכלות בגרסה האחרונה. B היא תוכנית המיזוג של היועץ, על הרקע האדריכלי שהיה אצלו.</p></div>
     <div class="bd">
       <div class="slots">
         <button class="slot ${S.view === "a" ? "on" : ""}" type="button" data-view="a"><span class="row"><span class="tag a">A</span><b>שרטוט הבסיס</b></span><small>אדריכלות · תוכנית עבודה 1:${SCALE}</small><span class="mono">${cm(aw)}×${cm(ah)} ס״מ · כ־${thousands(CNT.a)} אלף קווים</span></button>
@@ -491,7 +491,7 @@
       <div class="note">היועץ מתכנן על <b>עותק</b> של האדריכלות. אם האדריכל שינה חדר או קיר אחרי שהעותק נשלח, התעלה, התריס או הפיר של היועץ כבר לא מתאימים. את זה ההשוואה מחפשת, ולא את התעלות עצמן: הן אמורות להיות רק ב-B.</div>`
       : `<div class="note">בחרו את <b>B</b> כדי לראות את תוכנית המיזוג. הגיליון שלה בגודל אחר ומוזז ביחס ל-A, כמו שקורה כמעט תמיד בין משרדים.</div>`}
       <div class="note">בדמו הוסרו מהשרטוטים טקסטים, מידות, כותרת וחותמות. ה-AI קרא את הגיליונות המלאים.</div>
-    </div>${D.nav(null, 2, "ליישור אוטומטי")}`;
+    </div>${D.nav(null, 2)}`;
   }
   function side2() {
     const pipe = PIPE.map(([t, sub], i) => {
@@ -516,7 +516,7 @@
       ${!S.aligned && S.moved && !S.anim ? `<div class="note">גם בהזזה מדויקת נשארת סטייה: B קטן מ-A ב-${shrink().toFixed(1)}% (הודפס ב-1:${bScale().toFixed(0)}), ואת זה אי אפשר לתקן בגרירה.</div>` : ""}
       <div class="lbl">תהליך ההשוואה</div>
       <ol class="pipe">${pipe}</ol>
-    </div>${D.nav(1, 3, "לשכבת ההפרשים")}`;
+    </div>${D.nav(1, 3)}`;
   }
   function side3() {
     const vals = [S.op.a, S.op.b, S.op.c];
@@ -534,7 +534,7 @@
       <div class="lbl">מה ההבדלים אומרים</div>
       <div class="stats c2"><div><b>${matchA}%</b><span>מהקווים של A נמצאים גם ב-B</span></div><div><b>${bgOnly}%</b><span>מקווי הרקע האדריכלי של B לא נמצאים ב-A</span></div></div>
       <div class="note">רוב האדום והכחול צפוי: ב-A יש ריהוט, ריצוף וקווים של יועצים אחרים, ו-B מוסיף תעלות, תריסים וכיתובים. מה שלא צפוי הוא שהרקע האדריכלי של B שונה מ-A: היועץ עבד על גרסה קודמת, ושם צריך לחפש.</div>
-    </div>${D.nav(2, 4, "לממצאי התיאום")}`;
+    </div>${D.nav(2, 4)}`;
   }
   function side4() {
     const real = REG.filter((r) => r.real).length, none = REG.length - real, high = REG.filter((r) => r.sev === "high").length;
@@ -550,7 +550,7 @@
       <div class="seg" role="group" aria-label="חומרה">${[["all", `הכל ${REG.length}`], ["real", `ממצאים ${real}`], ["none", `ללא משמעות ${none}`]].map(([k, t]) => `<button type="button" data-sev="${k}" class="${S.sev === k ? "on" : ""}">${t}</button>`).join("")}</div>
       <div class="filt">${Object.entries(types).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<button type="button" data-type="${k}" class="${S.type === k ? "on" : ""}">${esc(TYPE[k] || k)} · ${n}</button>`).join("")}</div>
       <div class="rgl">${list.length ? list.map(card).join("") : `<div class="note">אין אזורים שמתאימים לסינון.</div>`}</div>
-    </div>${D.nav(3, 5, "לדוח התיאום")}`;
+    </div>${D.nav(3, 5)}`;
   }
   const causeShort = (c) => c.replace(/ ב-A$/, "");
   function chips(r) {
@@ -598,7 +598,7 @@
       <label class="toggle"><span>לכלול בדוח ${none} אזורים ללא משמעות</span><input type="checkbox" id="withNoise" ${S.withNoise ? "checked" : ""}></label>
       ${open ? `<div class="note"><b>${open}</b> ממצאים עוד בלי סטטוס. לחצו על שורה בטבלה כדי לפתוח אותה על השרטוט.</div>` : `<div class="note">לכל הממצאים יש סטטוס.</div>`}
       <div class="row"><button class="btn pri" type="button" id="copyXls">העתק לאקסל</button><button class="btn" type="button" id="dlCsv">הורדת CSV</button><button class="btn" type="button" id="viewToggle">${S.tableView ? "הצג על השרטוט" : "הצג טבלה"}</button></div>
-      ${D.cta("רוצים את זה על השרטוטים שלכם?", "נריץ השוואה על זוג גיליונות אמיתי מהפרויקט שלכם ונעבור יחד על הממצאים.")}
+      ${D.cta("רוצים בקרת תיאום כזו בפרויקטים שלכם?", "נריץ השוואה על זוג גיליונות מפרויקט שלכם ונעבור יחד על הממצאים.")}
     </div>${D.nav(4, null)}`;
   }
   function reportRows() {

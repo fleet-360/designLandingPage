@@ -544,7 +544,7 @@
       plugin: "AKRO",
       tag: "AutoCAD plug-in · תמיכות זמניות",
       title: "מגדלי אקרו: הצבה ובקרת מרווחים",
-      sub: "שרטוט דוגמה: תקרת גג של בית פרטי בשני מפלסים, כולל ממ״ד. התוסף מציב מגדלי תמיכה לפי כללי המהנדס, מניח שתי קורות ראשיות על כל מגדל ובודק כל מרווח.",
+      sub: "תקרת גג של בית פרטי בשני מפלסים, כולל ממ״ד. מגדלי תמיכה מוצבים לפי כללי המהנדס, וכל מרווח נבדק.",
       file: "ROOF_SLAB_DEMO.dwg",
       viewBox: [-170, -175, W + 340, H + 330],
       flipY: H,
@@ -1040,7 +1040,7 @@
       let h = "";
       if (st === 1) {
         const cA = comp("A"), cB = comp("B");
-        h = `<div class="hd"><h2>קריאת התקרה</h2><p>התוסף קורא את תכנית התקרה: קצה התקרה, הקירות שמתחת, הקורות, ובכל אזור את המפלס והעובי שרשומים בשרטוט. כל חדר הוא אזור הצבה אחד.</p></div>
+        h = `<div class="hd"><h2>קריאת התקרה</h2><p>מתוכנית התקרה נקראים הקצה, הקירות שמתחת, הקורות, והמפלס והעובי בכל אזור. כל חדר הוא אזור הצבה אחד.</p></div>
         <div class="bd">
           <div class="stats c3"><div><b>${fmt(AREA, 0)}</b><span>מ״ר תבנית נטו</span></div><div><b>${BAYS.length}</b><span>אזורי תקרה</span></div><div><b>${WIN.length}</b><span>פתחים בקירות</span></div></div>
           <div class="lbl">אזורי תקרה · לחצו לזום</div>
@@ -1063,13 +1063,13 @@
             <div><span><code>A-GLAZ</code> פתחים</span><span class="mono">${WIN.length}</span></div>
             <div><span><code>S-BEAM</code> קורות (מקווקו)</span><span class="mono">${SB.length}</span></div>
           </div>
-        </div>${D.nav(null, 2, "לכללי המהנדס")}`;
+        </div>${D.nav(null, 2)}`;
       } else if (st === 2) {
         const opts = (b) => THK.map((d) => `<option value="${d}" ${S.thick[b] === d ? "selected" : ""}>${d}</option>`).join("");
         const cnt = {};
         S.towers.forEach((s) => (cnt[s.bay] = (cnt[s.bay] || 0) + 1));
         const legCell = (v) => `<span class="${v > S.swl + 0.05 ? "bad-t" : ""}">${fmt(v, 1)}</span>`;
-        h = `<div class="hd"><h2>כללי המהנדס</h2><p>המהנדס קובע מרווח מקסימלי בין רגלי המגדלים, לאורך הקורות הראשיות ובין השורות. התוסף מציב לפי הכללים ובודק שכל מרווח עומד בהם; את העומסים הוא לא מחשב.</p></div>
+        h = `<div class="hd"><h2>כללי המהנדס</h2><p>הזינו את המרווחים המקסימליים שקבע המהנדס. ההצבה והבדיקה נעשות לפיהם; העומסים עצמם לא מחושבים כאן.</p></div>
         <div class="bd">
           <div class="rules">
             <div class="rule hd"><span></span><span>אזור</span><span>עובי</span><span>לאורך קורות</span><span>בין שורות</span></div>
@@ -1088,11 +1088,11 @@
           <ul class="fixed"><li>כל מרחק נמדד ממרכז הג'ק</li><li>מרווח בין רגליים בכפולות של 5 ס״מ, בלי חריגים</li><li>בסיס המגדל לפחות ${AK.SAFE} ס״מ מכל קיר</li><li>אין מרווח מינימלי: מכוונים למקסימום, הכי מעט מגדלים</li><li>יתרה מתחלקת שווה בין שני הקירות</li><li>חדר אחד = גריד אחד רציף</li></ul>
           <div class="lbl">סוגי מגדלים · מסגרת 1.22 × מפתח הצלב</div>
           <div class="types">${AK.TYPES.map((t) => `<label>${t.main ? `<input type="checkbox" checked disabled>` : `<input type="checkbox" data-sec="${t.id}" ${S.sec[t.id] ? "checked" : ""}>`}${sw(t.color)}<span class="mono">${t.name}</span>${t.main ? " ראשי" : ""}</label>`).join("")}</div>
-        </div>${D.nav(1, 3, "הצב מגדלים")}`;
+        </div>${D.nav(1, 3)}`;
       } else if (st === 3) {
         const c = counts(), main = c.byType.T1 || 0, sel = S.sel && byId(S.sel);
         const bent = BAYS.filter((b) => S.v.issues.some((i) => i.bay === b.id && !i.hard && S.baseKeys.has(issueKey(i))));
-        h = `<div class="hd"><h2>הצבה אוטומטית</h2><p>כל חדר מקבל גריד אחד: שורות לאורך הקורות הראשיות, הכי פחות מגדלים, מרווחים במודול 5 ס״מ, ושורת מגדלים משניים רק איפה שהראשי לא נכנס.</p></div>
+        h = `<div class="hd"><h2>הצבה אוטומטית</h2><p>כל חדר מקבל גריד אחד עם כמה שפחות מגדלים, במודול 5 ס״מ. מגדלים משניים נוספים רק איפה שהגריד הראשי לא נכנס.</p></div>
         <div class="bd">
           <div class="stats"><div><b>${S.towers.length}</b><span>מגדלים</span></div><div><b>${main}</b><span>ראשיים</span></div><div><b>${S.towers.length - main}</b><span>משניים</span></div><div><b>${S.bm.beams.length}</b><span>קורות ראשיות</span></div></div>
           <div class="list">${AK.TYPES.filter((t) => c.byType[t.id]).map((t) => `<div class="li" data-type="${t.id}">${sw(t.color)}<span class="meta"><span class="mono">${t.name}</span> · ${t.main ? "מגדל ראשי" : "מגדל משני"}</span><span class="mono">${c.byType[t.id]}</span></div>`).join("")}</div>
@@ -1108,7 +1108,7 @@
             ${[["tw", "AKRO-SHORES", "מגדלים"], ["bm", "AKRO-BEAMS", "קורות ראשיות"], ["dim", "AKRO-DIMENSIONS", "שרשראות מידה"], ["pz", "AKRO-ZONES", "אזורי הצבה (חדרים)"], ["lb", "AKRO-LABELS", "מספרי מגדלים"]].map(([k, code, name]) => `<label><span><code>${code}</code> ${name}</span><input type="checkbox" data-layer="${k}" ${S.layers[k] ? "checked" : ""}></label>`).join("")}
           </div>
           <button class="btn" type="button" id="replace">הצב מחדש</button>
-        </div>${D.nav(2, 4, "לבקרת מרווחים")}`;
+        </div>${D.nav(2, 4)}`;
       } else if (st === 4) {
         const c = counts(), n = S.v.issues.length;
         h = `<div class="hd"><h2>בקרת מרווחים</h2><p>גררו מגדל. המידות לשכנים ולקיר מתעדכנות תוך כדי, ומידה אדומה מסמנת מרווח שחורג מהכללים.</p></div>
@@ -1119,11 +1119,11 @@
           <div class="list issues">${n ? S.v.issues.map((i, k) => { const base = !i.hard && S.baseKeys.has(issueKey(i)); return `<div class="iss ${S.sel && (i.a === S.sel || i.b === S.sel) ? "on" : ""}" data-iss="${k}"><span class="pill ${i.hard ? "bad" : "warn"}"><span class="mono">${k + 1}</span> ${i.hard ? "אסור" : base ? "כופף" : "חריגה"}</span><span class="tx">${issueText(i)}<small>אזור ${esc(i.bay)}${base ? " · מההצבה, לאישור המהנדס" : ""}</small></span>${base ? "<span></span>" : `<button class="btn sm" type="button" data-fix="${k}">תקן</button>`}</div>`; }).join("") : `<div class="empty">✓ כל המרווחים בטווח ובמודול</div>`}</div>
           <button class="btn pri" type="button" id="fixall" ${n > c.bent ? "" : "disabled"}>תקן הכל</button>
           <div class="note"><b>אסור (אדום):</b> מגדלים חופפים, בסיס על קיר או פחות מ־${AK.SAFE} ס״מ ממנו, מרווח בין רגליים שלא בכפולה של 5. <b>כלל רך (כתום):</b> מרווח מעל המקסימום, או ג'ק רחוק מהקיר יותר מהמותר. "כופף" הוא מקום שבו צורת החדר לא משאירה פתרון שעומד בכל הכללים: המהנדס מאשר או מוסיף פרופ.</div>
-        </div>${D.nav(3, 5, "לרשימת ציוד")}`;
+        </div>${D.nav(3, 5)}`;
       } else if (st === 5) {
         const c = counts(), rows = boqRows();
         const comps = rows.filter((r) => r.kind === "comp").reduce((a, r) => a + r.n, 0);
-        h = `<div class="hd"><h2>רשימת ציוד</h2><p>הזמנה לספק: רכיבי המגדלים לפי סוג וגובה, קורות ראשיות לפי אורך, ראשים ובסיסים, ובסוף הערכות לקורות משניות, לביד ופרופים.</p></div>
+        h = `<div class="hd"><h2>רשימת ציוד</h2><p>רשימת הזמנה לספק: רכיבי מגדלים לפי סוג וגובה, קורות ראשיות לפי אורך, ראשים ובסיסים, והערכה לקורות משניות, לביד ופרופים.</p></div>
         <div class="bd">
           <div class="stats c3"><div><b>${S.towers.length}</b><span>מגדלים</span></div><div><b>${fmt(comps)}</b><span>רכיבי מגדלים</span></div><div><b>${fmt(S.bm.beams.reduce((a, b) => a + b.len, 0) / 100, 0)}</b><span>מ׳ קורות ראשיות</span></div></div>
           <button class="btn pri" type="button" id="copyXls">העתק טבלה לאקסל</button>

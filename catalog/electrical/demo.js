@@ -119,7 +119,7 @@
     plugin: "PA_ELEC",
     tag: "AutoCAD plug-in · חשמל ותאורה",
     title: "חשמל ותאורה: מהמקרא לבקרת תכנון ולכתב כמויות",
-    sub: "שרטוט דוגמה: בית פרטי חד־קומתי, גיליון חשמל וגיליון תאורה. התוסף קורא את המקרא ואת התגיות שליד כל סמל, סופר, בודק את התכנון ומפיק כתב כמויות מתומחר.",
+    sub: "בית פרטי חד־קומתי, גיליון חשמל וגיליון תאורה. מהמקרא והתגיות לספירה, לבקרת תכנון ולכתב כמויות מתומחר.",
     file: SHEETS.E.file,
     viewBox: [-60, -60, W + 120, H + 120],
     flipY: H,
@@ -475,7 +475,7 @@
       const nTags = INST.filter((it) => it.t).length + UNK.reduce((a, u) => a + u.items.filter((t) => t.t).length, 0);
       const nMul = INST.filter((it) => it.m > 1).length;
       const nBoxes = new Set(NOTES.map((n) => n.b.join())).size;
-      h = `<div class="hd"><h2>קריאת השרטוט</h2><p>שני גיליונות של אותה קומה: חשמל ותקשורת, ותאורה. התוסף מפריד בין הרקע האדריכלי לשכבות הסמלים, מיישר את שני הגיליונות זה על זה וקורא את הטקסט שליד הסמלים.</p></div>
+      h = `<div class="hd"><h2>קריאת השרטוט</h2><p>שני גיליונות של אותה קומה: חשמל ותקשורת, ותאורה. הרקע האדריכלי מופרד מהסמלים, והגיליונות מיושרים זה על זה.</p></div>
       <div class="bd">
         <div><div class="lbl" style="margin-bottom:6px">גיליון</div>${segSheet(true)}</div>
         <div><div class="lbl" style="margin-bottom:4px">שכבות (סמנו כדי להציג)</div>
@@ -483,7 +483,7 @@
         <div class="stats c3"><div><b>1:50</b><span>קנה מידה</span></div><div><b>${nTags}</b><span>תגיות מעגל</span></div><div><b>${nBoxes}</b><span>הערות מתכנן</span></div></div>
         <div class="note">ליד כל סמל בגיליון התאורה כתובה תגית: <b class="mono ltr">4/1</b> (חדר 4, נקודה 1), <b class="mono ltr">A/6</b> לתאורת חוץ, <b class="mono ltr">B/8</b> לתריס. בגיליון החשמל כתובים מספר השקעים בקופסה (<b class="mono ltr">x2</b> ב־${nMul} קופסאות) וגובה ההתקנה (<b class="mono ltr">h=60</b>). התוסף קורא את הטקסט מקווי השרטוט, גם כשהוא לא טקסט של AutoCAD.</div>
         <div class="note">גיליון התאורה ממוקם אחרת בדף. התוסף מצא את ההזזה לפי התוכנית המשותפת (<b class="mono">${fmt(dist, 2)} מ׳</b>), כך שכל נקודה נספרת פעם אחת ובחדר הנכון. קנה המידה נגזר מ־14 קשתות דלת.</div>
-      </div>${D.nav(null, 2, "לקריאת המקרא")}`;
+      </div>${D.nav(null, 2)}`;
     } else if (st === 2) {
       const m = codesFound();
       const withSyms = Object.keys(m).filter((c) => m[c].n + m[c].p > 0).length;
@@ -491,7 +491,7 @@
       const f = m[l.c] || { n: 0, p: 0 };
       const b = BOQ[l.k];
       const sec = ROWBOQ[l.k] || b?.code || "";
-      h = `<div class="hd"><h2>קריאת המקרא</h2><p>המקרא נקרא כטבלה: סמל ותיאור בכל שורה. הסמל נשמר כגאומטריה, וזה מה שהתוסף מחפש בשרטוט. כל שורה ממופה לסעיף בכתב הכמויות.</p></div>
+      h = `<div class="hd"><h2>קריאת המקרא</h2><p>כל שורה במקרא היא סמל ותיאור. את הסמל מחפשים בשרטוט, ואת השורה משייכים לסעיף בכתב הכמויות.</p></div>
       <div class="bd">
         <div class="stats c3"><div><b>${DATA.legend.length}</b><span>שורות</span></div><div><b>${DATA.groups.length}</b><span>קבוצות</span></div><div><b>${withSyms}</b><span>שורות בשרטוט</span></div></div>
         <div class="chips" role="group" aria-label="סינון לפי קבוצה"><button type="button" data-grp="all" class="${S.grp === "all" ? "on" : ""}">הכל</button>${DATA.groups.map(([k, t]) => `<button type="button" data-grp="${k}" class="${S.grp === k ? "on" : ""}">${t}</button>`).join("")}</div>
@@ -501,7 +501,7 @@
           <div class="act"><span style="font-size:12px;color:var(--muted);min-width:0">${esc(b && !ROWBOQ[l.k] ? b.desc : l.k === "light" ? "נקודת מאור; גוף נוסף על אותו מפסק בסעיף 08.01.020" : l.k === "sw" ? "כלול בנקודת המאור; מחליף וצלב כתוספת" : "כלול בנקודת התריס")}</span><button class="btn sm pri" type="button" id="toPlan" ${f.n + f.p ? "" : "disabled"}>הדלק בשרטוט ←</button></div>
         </div>
         <div class="note">לחצו על שורה בטבלה. בשורת המזגן שני סמלים (חד־פאזי ותלת־פאזי), והתוסף מפצל אותה לשתי שורות. שורת צינור הקוברה נקראה מהתא שלה בטבלה.</div>
-      </div>${D.nav(1, 3, "לזיהוי וספירה")}`;
+      </div>${D.nav(1, 3)}`;
     } else if (st === 3) {
       const m = codesFound();
       const codes = sortCodes(Object.keys(m).filter((c) => m[c].n + m[c].p > 0));
@@ -536,7 +536,7 @@
         <div class="list" id="rowList">${codes.map((c) => `<div class="li g ${S.sel === c ? "on" : ""}" data-c="${c}" role="button" tabindex="0"><span>${glyph(LG[c].gl, 20, rowColor(c))}</span><span class="meta">${esc(LG[c].he)}<span class="mono">${c}</span></span><span class="cnt">${m[c].n ? `<span class="pill">${m[c].n}</span>` : ""}${m[c].p ? `<span class="pill warn ltr" title="ממתינים לבדיקה">+${m[c].p}</span>` : ""}</span></div>`).join("")}</div></div>
         ${rvCards}${unkCards}
         <div class="note">${DATA.legend.length - codes.length} שורות במקרא לא מופיעות בשרטוט, למשל גלאי עשן ואינטרקום. הן נשארות בטבלה עם כמות 0, ובבקרת התכנון בשלב הבא.</div>
-      </div>${D.nav(2, 4, "לבקרת התכנון")}`;
+      </div>${D.nav(2, 4)}`;
     } else if (st === 4) {
       const F = checks();
       const sevTxt = { ok: "תקין", warn: "לבדיקה", bad: "חסר", info: "מידע" };
@@ -554,14 +554,14 @@
         return `<div class="nr ${S.qa === "n:" + ids ? "on" : ""}"><button class="nt" type="button" data-note="${ids}"><span class="mono">${ns.length > 1 ? ns.length + "×" : ""}</span>${esc(n0.t)}</button>
           ${b ? `<label class="na"><input type="checkbox" data-apply="${ns.map((n) => n.i).join(",")}" ${on ? "checked" : ""}><span>${esc(b.desc)} · <b class="mono">${q}</b> ${esc(b.unit)}</span></label>` : `<span class="na mute">מידע, בלי סעיף</span>`}</div>`;
       }).join("");
-      h = `<div class="hd"><h2>בקרת תכנון</h2><p>התוסף מצליב את הסמלים עם התגיות, עם המקרא ועם ההערות של המתכנן. לחצו על ממצא כדי לראות אותו בשרטוט.</p></div>
+      h = `<div class="hd"><h2>בקרת תכנון</h2><p>לחצו על ממצא כדי לראות אותו בשרטוט. הבדיקה מצליבה סמלים, תגיות, מקרא והערות המתכנן.</p></div>
       <div class="bd">
         ${pendingNote()}
         <div class="qal">${F.map(card).join("")}</div>
         <div class="card"><div class="ch"><b>הערות המתכנן בשרטוט</b><span class="mono">${nApplied}/${nWith}</span></div>
           <div class="notesl">${noteRows}</div>
           <div style="padding:8px 12px;border-top:1px solid var(--line)"><button class="btn sm ${nApplied === nWith ? "" : "pri"}" type="button" id="applyAll">${nApplied === nWith ? "הסר את ההערות מכתב הכמויות" : "הוסף את כל ההערות לכתב הכמויות"}</button></div></div>
-      </div>${D.nav(3, 5, "לספירה לפי חדר")}`;
+      </div>${D.nav(3, 5)}`;
     } else if (st === 5) {
       const sy = symbols();
       const pts = sy.filter(isPoint);
@@ -581,18 +581,18 @@
           ${hs.length || out ? `<div class="rsub">${out ? `${out} בתי תקע` : ""}${out && hs.length ? " · " : ""}${hs.length ? `מפסקים: ${swTxt}` : ""}</div>` : ""}</div></div>`;
       }
       const list = ROOMS.map((r, k) => [k, r]).concat([[-1, OUT]]);
-      h = `<div class="hd"><h2>ספירה לפי חדר</h2><p>החדרים נסגרים מהקירות, החלונות ומשקופי הדלתות. כל נקודה משויכת לחדר שבו היא נמצאת. מפסקים לא נספרים כנקודה; הם חלק מנקודת המאור או התריס.</p></div>
+      h = `<div class="hd"><h2>ספירה לפי חדר</h2><p>בחרו חדר כדי לראות את הנקודות שבו. מפסק לא נספר כנקודה נפרדת, הוא חלק מנקודת המאור או התריס.</p></div>
       <div class="bd">
         <div class="stats c3"><div><b>${ROOMS.length}</b><span>חדרים</span></div><div><b>${inRooms}</b><span>נק׳ בחדרים</span></div><div><b>${pts.length - inRooms}</b><span>חוץ</span></div></div>
         ${pendingNote()}
         <button class="btn ${S.roomTable ? "on" : ""}" type="button" id="roomTable">${S.roomTable ? "חזרה לשרטוט" : "טבלת ספירה לפי חדר"}</button>
         ${card}
         <div class="list" id="roomList">${list.map(([k, r]) => `<div class="li ${S.room === k ? "on" : ""}" data-room="${k}" role="button" tabindex="0"><span class="sw" style="background:${k < 0 ? "#59646b" : "rgba(62,207,142,.6)"}"></span><span class="meta" style="color:var(--text)">${esc(r.n)}${r.a ? ` <span style="color:var(--faint)" class="mono">${fmt(r.a, 1)} מ״ר</span>` : ""}</span><span class="pill">${byRoom[k] || 0}</span></div>`).join("")}</div>
-      </div>${D.nav(4, 6, "לכתב הכמויות")}`;
+      </div>${D.nav(4, 6)}`;
     } else if (st === 6) {
       const lines = boqLines(), T = totals();
       const nNotes = NOTES.filter((n) => n.k).length, nApplied = NOTES.filter((n) => n.k && S.notes.has(n.i)).length;
-      h = `<div class="hd"><h2>כתב כמויות מתומחר</h2><p>הכמויות מחושבות מהספירה ומהתגיות: נקודת מאור לכל מעגל הדלקה, גוף נוסף על אותו מפסק, תוספת למחליף ולצלב, בית תקע נוסף בקופסה כפולה. המחירים לדוגמה; אפשר לשנות אותם בטבלה.</p></div>
+      h = `<div class="hd"><h2>כתב כמויות מתומחר</h2><p>הכמויות מחושבות מהספירה ומהתגיות: נקודת מאור לכל מעגל הדלקה, תוספת למחליף ולצלב, בית תקע נוסף בקופסה כפולה. המחירים לדוגמה, ואפשר לשנות אותם בטבלה.</p></div>
       <div class="bd">
         <div class="stats c3"><div><b>${lines.length}</b><span>סעיפים</span></div><div><b>${fmt(points().length)}</b><span>נקודות</span></div><div><b>${DATA.vat}%</b><span>מע״מ</span></div></div>
         <div class="sum3"><div><span>סה״כ לפני מע״מ</span><b id="s-net">${D.money(T.net)}</b></div><div><span>מע״מ ${DATA.vat}%</span><b id="s-vat">${D.money(T.vat)}</b></div><div><span>סה״כ כולל מע״מ</span><b id="s-gross">${D.money(T.gross)}</b></div></div>
