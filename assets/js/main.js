@@ -56,6 +56,16 @@
         if (val != null) el.setAttribute(attr, val);
       });
     });
+    // generated alt / aria-label text carries its own English copy too
+    document.querySelectorAll("[data-en-alt],[data-en-label]").forEach((el) => {
+      if (!attrCache.has(el)) attrCache.set(el, {});
+      const cache = attrCache.get(el);
+      [["alt", "enAlt"], ["aria-label", "enLabel"]].forEach(([attr, k]) => {
+        if (el.dataset[k] == null) return;
+        if (!(attr in cache)) cache[attr] = el.getAttribute(attr);
+        el.setAttribute(attr, next === "en" ? el.dataset[k] : cache[attr]);
+      });
+    });
     if (prose && proseEn) {
       if (!heCache.has(prose)) heCache.set(prose, prose.innerHTML);
       prose.innerHTML = next === "en" ? proseEn.innerHTML : heCache.get(prose);

@@ -157,6 +157,20 @@ BA_PODCASTS = [
 ]
 
 
+def keep_translations(name, obj):
+    """English added by hand to data/<name>.json survives a re-fetch when the source has none."""
+    path = os.path.join(DATA, f"{name}.json")
+    if not os.path.exists(path):
+        return
+    with open(path, encoding="utf-8") as f:
+        ident = lambda x: x.get("id") or x.get("key") or x.get("url")
+        prev = {ident(x): x for x in json.load(f)}
+    for x in obj:
+        for k, v in prev.get(ident(x), {}).items():
+            if k.endswith("_en") and v and not x.get(k):
+                x[k] = v
+
+
 def slug_ok(s):
     return (s or "").strip().strip("/")
 
@@ -245,6 +259,7 @@ def main():
     print("  episodes:", len(pods))
 
     for name, obj in [("team", team), ("clients", clients), ("press", press), ("posts", clean), ("podcasts", pods)]:
+        keep_translations(name, obj)
         with open(os.path.join(DATA, f"{name}.json"), "w", encoding="utf-8") as f:
             json.dump(obj, f, ensure_ascii=False, indent=1)
     write_posts_index(clean)

@@ -14,55 +14,71 @@
   "logo": "press/globes.webp",
   "title": "הסטארט-אפים שיחליפו את האדריכלים",
   "body": "שתי חברות סטארט-אפ ישראליות מציעות תוכנות שמנסות להחליף אלמנטים מרכזיים בעבודת התכנון",
-  "url": "https://www.globes.co.il/news/article.aspx?did=1001380915"
+  "url": "https://www.globes.co.il/news/article.aspx?did=1001380915",
+  "title_en": "The startups that will replace architects",
+  "body_en": "Two Israeli startups offer software that aims to replace key parts of the planning process"
  },
  {
   "outlet": "Calcalist",
   "logo": "press/calcalist.webp",
   "title": "מה יעשה ה-AI לאדריכלות והבנייה?",
   "body": "השפעת ה-AI על מקצוע האדריכלות והחשש מהחלפת כוח אדם אנושי במכונות",
-  "url": "https://www.calcalist.co.il/real-estate/article/b1hwhj251x"
+  "url": "https://www.calcalist.co.il/real-estate/article/b1hwhj251x",
+  "title_en": "What will AI do to architecture and construction?",
+  "body_en": "AI's impact on the architecture profession, and the fear of machines replacing people"
  },
  {
   "outlet": "Globes",
   "logo": "press/globes.webp",
   "title": "אנחנו מחליפים את מהנדסי הבניין ב-AI, מי שיישאר זה רק האדריכל",
   "body": "סטארט-אפ חדש לשילוב בינה מלאכותית בתכנון",
-  "url": "https://www.globes.co.il/news/article.aspx?did=1001526847"
+  "url": "https://www.globes.co.il/news/article.aspx?did=1001526847",
+  "title_en": "“We're replacing structural engineers with AI. Only the architect will remain”",
+  "body_en": "A new startup bringing artificial intelligence into planning"
  },
  {
   "outlet": "Calcalist",
   "logo": "press/calcalist.webp",
   "title": "\"המענה לבעיות בענף הנדל\"ן יגיע מ-AI\"",
   "body": "ענף הנדל\"ן, אחד האיטיים ביותר באימוץ טכנולוגיה, נדחק למצב הדורש שינוי מהותי, והמענה לאתגרים יגיע מ-AI ואימוץ טכנולוגיה בקנה מידה רחב",
-  "url": "https://www.calcalist.co.il/conferences/article/sjbpz9p11wl"
+  "url": "https://www.calcalist.co.il/conferences/article/sjbpz9p11wl",
+  "title_en": "“The answer to the real estate industry's problems will come from AI”",
+  "body_en": "Real estate, one of the slowest industries to adopt technology, is being pushed to fundamental change, and the answer will come from AI and technology adopted at scale"
  },
  {
   "outlet": "mako",
   "logo": "press/mako.webp",
   "title": "AI וניהול חכם: הדרך של ענף הבנייה להתחדשות וצמיחה",
   "body": "הטכנולוגיות החדשות שקיימות היום בשוק יכולות לצמצם משמעותית את בעיית הדיור הלאומית",
-  "url": "https://www.mako.co.il/news-business/duns_100-realestate/Article-ebba5c87bde1691026.htm"
+  "url": "https://www.mako.co.il/news-business/duns_100-realestate/Article-ebba5c87bde1691026.htm",
+  "title_en": "AI and smart management: construction's path to renewal and growth",
+  "body_en": "The new technologies already on the market can significantly ease Israel's national housing problem"
  },
  {
   "outlet": "ynet",
   "logo": "press/ynet.webp",
   "title": "בינה מלאכותית בעיצוב ואדריכלות: חיובי או שלילי?",
   "body": "בשנים הקרובות נפח העבודה שייעשה באמצעות בינה מלאכותית ואוטומציה יגיע לכ-40%",
-  "url": "https://www.ynet.co.il/architecture/article/sygzyvxt3"
+  "url": "https://www.ynet.co.il/architecture/article/sygzyvxt3",
+  "title_en": "AI in design and architecture: good or bad?",
+  "body_en": "In the coming years, about 40% of the workload will be done with artificial intelligence and automation"
  },
  {
   "outlet": "Nadlan Center",
   "logo": "press/nadlan-center.webp",
   "title": "ה-AI משנה את האדריכלות, האם יחליף אותה?",
   "body": "משרדי אדריכלים ומעצבי פנים משתמשים ב-AI כדי ליצור הדמיות וסרטונים במהירות ולייעל תהליכים",
-  "url": "https://www.nadlancenter.co.il/article/13052"
+  "url": "https://www.nadlancenter.co.il/article/13052",
+  "title_en": "AI is changing architecture. Will it replace it?",
+  "body_en": "Architecture and interior design firms use AI to produce renderings and videos quickly and streamline their processes"
  },
  {
   "outlet": "Walla",
   "logo": "press/walla.webp",
   "title": "זה כבר כאן: האם אנו לפני מהפכת ה-AI בעולם האדריכלות, העיצוב והבנייה?",
   "body": "עולם הבינה המלאכותית ישפיע נמרצות על תחומים רבים בענף",
-  "url": "https://home.walla.co.il/item/3647977"
+  "url": "https://home.walla.co.il/item/3647977",
+  "title_en": "It's already here: are we on the eve of an AI revolution in architecture, design and construction?",
+  "body_en": "Artificial intelligence will have a strong impact on many areas of the industry"
  }
 ]

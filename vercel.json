@@ -5,6 +5,26 @@
   "buildCommand": ".venv/bin/python tools/build.py",
   "outputDirectory": "dist",
   "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "agent.pro-algorithm.co.il" }],
+      "destination": "https://auth-cad-core.base44.app/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "cursor.pro-algorithm.co.il" }],
+      "destination": "https://cursor.buildalgo.co.il/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "superposition.pro-algorithm.co.il" }],
+      "destination": "https://superposition.buildalgo.co.il/:path*",
+      "permanent": false
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
