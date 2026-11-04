@@ -7,21 +7,21 @@
   "cleanUrls": true,
   "redirects": [
     {
-      "source": "/:path*",
+      "source": "/(.*)",
       "has": [{ "type": "host", "value": "agent.pro-algorithm.co.il" }],
-      "destination": "https://auth-cad-core.base44.app/:path*",
+      "destination": "https://auth-cad-core.base44.app/$1",
       "permanent": false
     },
     {
-      "source": "/:path*",
+      "source": "/(.*)",
       "has": [{ "type": "host", "value": "cursor.pro-algorithm.co.il" }],
-      "destination": "https://cursor.buildalgo.co.il/:path*",
+      "destination": "https://cursor.buildalgo.co.il/$1",
       "permanent": false
     },
     {
-      "source": "/:path*",
+      "source": "/(.*)",
       "has": [{ "type": "host", "value": "superposition.pro-algorithm.co.il" }],
-      "destination": "https://superposition.buildalgo.co.il/:path*",
+      "destination": "https://superposition.buildalgo.co.il/$1",
       "permanent": false
     }
   ],
