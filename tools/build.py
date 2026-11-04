@@ -60,6 +60,19 @@ CATS = {
     "technology": ("טכנולוגיה", "Technology"),
 }
 
+# Hebrew tags (blog posts, team units) -> English; tags already in English need no entry
+TAGS_EN = {
+    "פיתוח תוכנה": "Software development", "אוטומציה": "Automation", "פיתוח אפליקציות": "App development",
+    "בנייה": "Construction", "נדלן": "Real estate", "מחקר": "Research", "אלגוריתמים": "Algorithms",
+    "צח דבוש": "Tzach Dabush", "אבטחה": "Security", "פיתוח אתרים": "Web development",
+    "בינה מלאכותית": "Artificial intelligence", "קידום אתרים": "SEO", "בית תוכנה": "Software house",
+    "ישראל": "Israel", "היי-טק": "High tech", "בחירת ספק": "Choosing a vendor", "אפליקציות מובייל": "Mobile apps",
+    "מחירים": "Pricing", "עלויות": "Costs", "אפליקציות": "Apps", "אפיון": "Specification",
+    "פיתוח מערכות": "Systems development", "טיפים": "Tips",
+    "ענן": "Cloud", "ניהול לקוחות": "Account management", "מסירה": "Delivery", "ארגונים": "Enterprise",
+    "מגזר ציבורי": "Public sector", "תפעול": "Operations", "כספים": "Finance",
+}
+
 HE_MONTHS = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"]
 EN_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
@@ -141,6 +154,11 @@ def fmt_date(iso, lang="he"):
 def en(text):
     """data-en attribute: the English replacement swapped in by main.js."""
     return f' data-en="{esc(text)}"' if text else ""
+
+
+def en_attr(name, text):
+    """data-en-alt / data-en-label: English alt or aria-label swapped in by main.js."""
+    return f' data-en-{name}="{esc(text)}"' if text else ""
 
 
 def post_url(p):
@@ -292,7 +310,7 @@ def header(current):
         links.append(f'<a href="{href}" data-i18n="{key}"{cur}>{label}</a>')
     return f"""<header class="header" id="top">
     <div class="wrap header__bar">
-      <a class="logo" href="/" aria-label="Pro Algorithm, דף הבית">
+      <a class="logo" href="/" aria-label="Pro Algorithm, דף הבית" data-i18n-attr="aria-label:home.label">
         <img src="/assets/img/brand/logo-white-480.png" alt="Pro Algorithm" width="180" height="22">
       </a>
       <nav class="nav" id="nav" aria-label="ראשי" data-i18n-attr="aria-label:nav.label">
@@ -382,7 +400,7 @@ def footer():
         <ul>{''.join(ql)}</ul>
       </div>
       <div class="footer__bottom">
-        <span data-i18n="foot.rights">© {date.today().year} Pro Algorithm. כל הזכויות שמורות.</span>
+        <span{en(f"© {date.today().year} Pro Algorithm. All rights reserved.")}>© {date.today().year} Pro Algorithm. כל הזכויות שמורות.</span>
         <a href="/AccessibilityStatement" data-i18n="foot.a11y">הצהרת נגישות</a>
       </div>
     </div>
@@ -390,11 +408,11 @@ def footer():
 
 
 def floating():
-    return f"""<a class="fab fab--wa" href="{ORG['whatsapp']}" target="_blank" rel="noopener" aria-label="וואטסאפ" data-track="whatsapp"><i class="ph ph-whatsapp-logo" aria-hidden="true"></i></a>
+    return f"""<a class="fab fab--wa" href="{ORG['whatsapp']}" target="_blank" rel="noopener" aria-label="וואטסאפ" data-i18n-attr="aria-label:fab.wa" data-track="whatsapp"><i class="ph ph-whatsapp-logo" aria-hidden="true"></i></a>
   <button class="fab fab--a11y" type="button" data-a11y-toggle aria-expanded="false" aria-controls="a11y" aria-label="תפריט נגישות" data-i18n-attr="aria-label:a11y.title"><i class="ph ph-person-arms-spread" aria-hidden="true"></i></button>
-  <div class="a11y" id="a11y" role="dialog" aria-label="תפריט נגישות" hidden>
-    <div class="a11y__head"><strong data-i18n="a11y.title">תפריט נגישות</strong><button type="button" class="a11y__close" data-a11y-close aria-label="סגירה"><i class="ph ph-x" aria-hidden="true"></i></button></div>
-    <div class="a11y__row"><span data-i18n="a11y.size">גודל טקסט</span><div class="a11y__steps"><button type="button" data-a11y="font-down" aria-label="הקטנת טקסט">A-</button><button type="button" data-a11y="font-up" aria-label="הגדלת טקסט">A+</button></div></div>
+  <div class="a11y" id="a11y" role="dialog" aria-label="תפריט נגישות" data-i18n-attr="aria-label:a11y.title" hidden>
+    <div class="a11y__head"><strong data-i18n="a11y.title">תפריט נגישות</strong><button type="button" class="a11y__close" data-a11y-close aria-label="סגירה" data-i18n-attr="aria-label:a11y.close"><i class="ph ph-x" aria-hidden="true"></i></button></div>
+    <div class="a11y__row"><span data-i18n="a11y.size">גודל טקסט</span><div class="a11y__steps"><button type="button" data-a11y="font-down" aria-label="הקטנת טקסט" data-i18n-attr="aria-label:a11y.smaller">A-</button><button type="button" data-a11y="font-up" aria-label="הגדלת טקסט" data-i18n-attr="aria-label:a11y.larger">A+</button></div></div>
     <button type="button" class="a11y__opt" data-a11y="contrast" aria-pressed="false" data-i18n="a11y.contrast">ניגודיות גבוהה</button>
     <button type="button" class="a11y__opt" data-a11y="links" aria-pressed="false" data-i18n="a11y.links">הדגשת קישורים</button>
     <button type="button" class="a11y__opt" data-a11y="readable" aria-pressed="false" data-i18n="a11y.font">גופן קריא</button>
@@ -539,7 +557,7 @@ def product_cubes():
 
 def client_wall(clients, heading=True):
     logos = [c for c in clients if c.get("image")]
-    li = lambda c, hidden="": f'<li{hidden}><img src="{img(c["image"])}" alt="{"" if hidden else esc(c["name_he"])}" loading="lazy" decoding="async" width="180" height="80"></li>'
+    li = lambda c, hidden="": f'<li{hidden}><img src="{img(c["image"])}" alt="{"" if hidden else esc(c["name_he"])}"{"" if hidden else en_attr("alt", c.get("name_en"))} loading="lazy" decoding="async" width="180" height="80"></li>'
     # two rows; each repeats its logos (aria-hidden) so the mobile marquee loops seamlessly
     half = (len(logos) + 1) // 2
     items = "".join(
@@ -572,15 +590,15 @@ def press_block(press):
     cards = "".join(f"""
           <li><a class="press-card" href="{esc(p['url'])}" target="_blank" rel="noopener">
             <span class="press-card__logo"><img src="{img(p['logo'])}" alt="{esc(p['outlet'])}" loading="lazy" width="120" height="40"></span>
-            <span class="press-card__title">{esc(p['title'])}</span>
-            <span class="press-card__body">{esc(p['body'])}</span>
+            <span class="press-card__title"{en(p.get('title_en'))}>{esc(p['title'])}</span>
+            <span class="press-card__body"{en(p.get('body_en'))}>{esc(p['body'])}</span>
             <span class="press-card__more"><span data-i18n="press.read">לכתבה המלאה</span><i class="ph ph-arrow-up-left" aria-hidden="true"></i></span>
           </a></li>""" for p in press)
     return f"""<section class="section section--tight" id="press">
       <div class="wrap">
         <div class="section__head reveal">
           <h2 class="h2" data-i18n="press.title">AI בעולם האדריכלות, <span class="thin">בכלי התקשורת המובילים.</span></h2>
-          <p data-i18n="press.lead">כתבה עלינו בביזפורטל, ועוד {len(press)} כתבות בגלובס, כלכליסט, ynet, mako, וואלה ומרכז הנדל"ן על הטכנולוגיה שאנחנו מפתחים ועל עתיד הנדל"ן.</p>
+          <p{en(f"A feature about us in Bizportal, plus {len(press)} articles in Globes, Calcalist, ynet, mako, Walla and Nadlan Center about the technology we build and the future of real estate.")}>כתבה עלינו בביזפורטל, ועוד {len(press)} כתבות בגלובס, כלכליסט, ynet, mako, וואלה ומרכז הנדל"ן על הטכנולוגיה שאנחנו מפתחים ועל עתיד הנדל"ן.</p>
         </div>{feature}
         <ul class="press-grid reveal">{cards}
         </ul>
@@ -591,11 +609,10 @@ def press_block(press):
 def episode_card(p, big=False):
     t_en = p.get("title_en") or ""
     d_en = p.get("desc_en") or ""
-    date_he = fmt_date(p.get("date"))
-    meta = " · ".join(x for x in [date_he, p.get("duration") or ""] if x)
+    meta, meta_en = (" · ".join(x for x in [fmt_date(p.get("date"), lang), p.get("duration") or ""] if x) for lang in ("he", "en"))
     kind = "short" if p.get("short") else "full"
     return f"""<article class="ep{' ep--big' if big else ''}" data-track-cat="{p['track']}">
-            <button class="ep__media" type="button" data-yt="{p['id']}" data-short="{str(p.get('short')).lower()}" aria-label="ניגון: {esc(p['title_he'])}">
+            <button class="ep__media" type="button" data-yt="{p['id']}" data-short="{str(p.get('short')).lower()}" aria-label="ניגון: {esc(p['title_he'])}"{en_attr("label", t_en and "Play: " + t_en)}>
               <img src="{img(p.get('thumb'))}" alt="" loading="lazy" decoding="async" width="640" height="360">
               <span class="ep__play"><i class="ph ph-play" aria-hidden="true"></i></span>
               <span class="ep__kind" data-i18n="pod.{kind}">{'קצר' if kind == 'short' else 'פרק מלא'}</span>
@@ -603,7 +620,7 @@ def episode_card(p, big=False):
             <div class="ep__body">
               <h3{en(t_en)}>{esc(p['title_he'])}</h3>
               <p{en(d_en)}>{esc(p.get('desc_he'))}</p>
-              <div class="ep__meta">{esc(meta)}</div>
+              <div class="ep__meta"{en(meta_en)}>{esc(meta)}</div>
             </div>
           </article>"""
 
@@ -630,7 +647,7 @@ def post_card(p):
     cat_he, cat_en = CATS.get(p["category"], CATS["technology"])
     return f"""<article class="post-card" data-cat="{p['category']}">
             <a href="{post_url(p)}" class="post-card__link">
-              <span class="post-card__img"><img src="{img(p.get('image'))}" alt="{esc(p.get('image_alt_he') or p['title_he'])}" loading="lazy" decoding="async" width="1200" height="675"></span>
+              <span class="post-card__img"><img src="{img(p.get('image'))}" alt="{esc(p.get('image_alt_he') or p['title_he'])}"{en_attr("alt", p.get('image_alt_en') or p['title_en'])} loading="lazy" decoding="async" width="1200" height="675"></span>
               <span class="post-card__meta"><span{en(cat_en)}>{esc(cat_he)}</span><time datetime="{(p['created'] or '')[:10]}"{en(fmt_date(p['created'], 'en'))}>{fmt_date(p['created'])}</time></span>
               <span class="post-card__title"{en(p['title_en'])}>{esc(p['title_he'])}</span>
               <span class="post-card__excerpt"{en(p['excerpt_en'])}>{esc(p['excerpt_he'])}</span>
@@ -644,9 +661,9 @@ def demo_card(x):
     return f"""<article class="post-card demo-card" data-cat="{esc(x['discipline'])}">
             <a href="/catalog/{x['slug']}/" class="post-card__link">
               <span class="post-card__img">{f'<img src="{thumb}" alt="" loading="lazy" decoding="async" width="1200" height="675">' if has_thumb else ''}<span class="demo-card__play"><i class="ph ph-hand-pointing" aria-hidden="true"></i><span data-i18n="demos.try">נסו בעצמכם</span></span></span>
-              <span class="post-card__meta"><span>{esc(x['discipline'])}</span><span class="ltr">{esc(x['tool'])}</span></span>
-              <span class="post-card__title">{esc(x['title'])}</span>
-              <span class="post-card__excerpt">{esc(x['tagline'])}</span>
+              <span class="post-card__meta"><span{en(x.get('discipline_en'))}>{esc(x['discipline'])}</span><span class="ltr">{esc(x['tool'])}</span></span>
+              <span class="post-card__title"{en(x.get('title_en'))}>{esc(x['title'])}</span>
+              <span class="post-card__excerpt"{en(x.get('tagline_en'))}>{esc(x['tagline'])}</span>
             </a>
           </article>"""
 
@@ -657,7 +674,7 @@ def demos_teaser():
       <div class="wrap">
         <div class="section__head reveal">
           <div>
-            <p class="live-badge"><span class="live-badge__dot" aria-hidden="true"></span><span data-i18n="demos.badge">{len(demos)} דוגמאות מפרויקטים</span></p>
+            <p class="live-badge"><span class="live-badge__dot" aria-hidden="true"></span><span{en(f"{len(demos)} examples from our projects")}>{len(demos)} דוגמאות מפרויקטים</span></p>
             <h2 class="h2" data-i18n="demos.title">מה אפשר לבנות? <span class="thin">תרגישו את זה בידיים.</span></h2>
           </div>
           <p data-i18n="demos.lead">כל דוגמה מבוססת על מערכת שפיתחנו לחברה בענף הבנייה ועובדת על שרטוט אמיתי. פתחו אחת ועבדו איתה כאן בדפדפן.</p>
@@ -727,11 +744,11 @@ UNITS = [
     ("code", "unit.rnd", "מחקר ופיתוח", "Research & Development",
      "צוותי Full-Stack ו-Backend שבונים מערכות ענן, SaaS ואפליקציות Web בסטנדרט ארגוני.",
      "Full-stack and backend teams building cloud, SaaS and web systems to enterprise standards.",
-     ["React", "Node.js", "Cloud", "DevOps"]),
+     ["React", "Node.js", "ענן", "DevOps"]),
     ("cpu", "unit.ai", "AI ומדעי הנתונים", "AI & Data Science",
      "חוקרים ומפתחים בתחומי רשתות נוירונים, GNN, NLP ולמידת מכונה, מהמחקר ועד מודל בייצור.",
      "Researchers and engineers in neural networks, GNN, NLP and machine learning, from research to production.",
-     ["GNN", "NLP", "ML", "Automation"]),
+     ["GNN", "NLP", "ML", "אוטומציה"]),
     ("buildings", "unit.bim", "BIM וטכנולוגיה לבנייה", "BIM & Construction Tech",
      "מומחי Revit, AutoCAD, Dynamo ו-Grasshopper שמפתחים תוספים, אוטומציות ומוצרים לענף התכנון.",
      "Revit, AutoCAD, Dynamo and Grasshopper specialists building add-ins, automation and products for planning.",
@@ -739,15 +756,15 @@ UNITS = [
     ("handshake", "unit.cs", "הצלחת לקוחות", "Customer Success",
      "ניהול קשרי לקוחות אסטרטגיים וליווי צמוד לאורך כל חיי הפרויקט, מהאפיון ועד התפעול השוטף.",
      "Strategic account management and close support across the project lifecycle, from specification to operations.",
-     ["Account management", "Delivery"]),
+     ["ניהול לקוחות", "מסירה"]),
     ("chart-line-up", "unit.sales", "מכירות ופיתוח עסקי", "Sales & Business Development",
      "בניית שותפויות עם ארגונים, רשויות וחברות בנייה, והתאמת הפתרון הנכון לכל לקוח.",
      "Building partnerships with enterprises, public bodies and construction firms, and matching the right solution to each.",
-     ["Enterprise", "Public sector"]),
+     ["ארגונים", "מגזר ציבורי"]),
     ("gear-six", "unit.ops", "תפעול וכספים", "Operations & Finance",
      "תיאום מערכי עבודה, תהליכי תפעול וניהול כספי מקצה לקצה, שמאפשרים לקבוצה לגדול בביטחון.",
      "Workflow coordination, operations and end-to-end financial management that let the group scale with confidence.",
-     ["Operations", "Finance"]),
+     ["תפעול", "כספים"]),
 ]
 
 LEADERS = ("noad", "tzach")
@@ -756,7 +773,7 @@ LEADERS = ("noad", "tzach")
 def leader_line(t, big=False):
     bio = f'<p{en(t["bio_en"])}>{esc(t["bio_he"])}</p>' if big else ""
     return f"""<article class="leader-t{' leader-t--big' if big else ''} reveal">
-            <img class="leader-t__img" src="{img(t['image'])}" alt="{esc(t['name_he'])}, {esc(t['role'])}" width="720" height="720" loading="lazy" decoding="async">
+            <img class="leader-t__img" src="{img(t['image'])}" alt="{esc(t['name_he'])}, {esc(t['role'])}"{en_attr("alt", f"{t['name_en']}, {t['role']}")} width="720" height="720" loading="lazy" decoding="async">
             <div class="leader-t__body">
               <div class="leader-t__role">{esc(t['role'])}</div>
               <h3{en(t['name_en'])}>{esc(t['name_he'])}</h3>
@@ -768,7 +785,7 @@ def leader_line(t, big=False):
 def units_grid():
     cells = []
     for icon, key, he, en_, p_he, p_en, tags in UNITS:
-        tg = "".join(f"<li>{esc(x)}</li>" for x in tags)
+        tg = "".join(f"<li{en(TAGS_EN.get(x))}>{esc(x)}</li>" for x in tags)
         cells.append(f"""<article class="unit reveal">
             <i class="ph ph-{icon}" aria-hidden="true"></i>
             <h3{en(en_)}>{esc(he)}</h3>
@@ -840,7 +857,7 @@ def page_hero(title_html, lead, i18n_title, i18n_lead, crumbs=None):
             k = f' data-i18n="{key}"' if key else ""
             parts.append(f'<a href="{href}"{k}>{esc(label)}</a>' if href else f'<span aria-current="page"{k}>{esc(label)}</span>')
         sep = '<i class="ph ph-caret-left" aria-hidden="true"></i>'
-        bc = f'<nav class="crumbs" aria-label="פירורי לחם">{sep.join(parts)}</nav>'
+        bc = f'<nav class="crumbs" aria-label="פירורי לחם" data-i18n-attr="aria-label:crumb.label">{sep.join(parts)}</nav>'
     return f"""<section class="phero">
       <div class="wrap">
         {bc}
@@ -1106,7 +1123,7 @@ def build_blog(d):
     body += f"""
     <section class="section section--tight">
       <div class="wrap">
-        <div class="chips" role="group" aria-label="סינון לפי קטגוריה">{btns}</div>
+        <div class="chips" role="group" aria-label="סינון לפי קטגוריה" data-i18n-attr="aria-label:blog.filter">{btns}</div>
         <div class="post-grid post-grid--all" data-posts>{''.join(post_card(p) for p in posts)}</div>
       </div>
     </section>"""
@@ -1134,17 +1151,17 @@ def build_posts(d):
         related = [x for x in posts if x["category"] == p["category"] and x["id"] != p["id"]][:3]
         if len(related) < 3:
             related += [x for x in posts if x["id"] != p["id"] and x not in related][: 3 - len(related)]
-        tags = "".join(f'<li>{esc(t)}</li>' for t in p.get("tags") or [])
+        tags = "".join(f'<li{en(TAGS_EN.get(t))}>{esc(t)}</li>' for t in p.get("tags") or [])
         url = SITE + post_url(p)
         body = f"""
     <article class="article">
       <header class="article__head wrap">
-        <nav class="crumbs" aria-label="פירורי לחם"><a href="/" data-i18n="crumb.home">בית</a><i class="ph ph-caret-left" aria-hidden="true"></i><a href="/Blog" data-i18n="nav.blog">בלוג</a><i class="ph ph-caret-left" aria-hidden="true"></i><span{en(cat_en)}>{esc(cat_he)}</span></nav>
+        <nav class="crumbs" aria-label="פירורי לחם" data-i18n-attr="aria-label:crumb.label"><a href="/" data-i18n="crumb.home">בית</a><i class="ph ph-caret-left" aria-hidden="true"></i><a href="/Blog" data-i18n="nav.blog">בלוג</a><i class="ph ph-caret-left" aria-hidden="true"></i><span{en(cat_en)}>{esc(cat_he)}</span></nav>
         <h1{en(p['title_en'])}>{esc(p['title_he'])}</h1>
         <p class="article__lead"{en(p['excerpt_en'])}>{esc(p['excerpt_he'])}</p>
         <div class="article__meta"><span data-i18n="blog.by">צוות Pro Algorithm</span><time datetime="{(p['created'] or '')[:10]}"{en(fmt_date(p['created'], 'en'))}>{fmt_date(p['created'])}</time><span>{read_minutes(p['content_he'])} <span data-i18n="blog.min">דק׳ קריאה</span></span></div>
       </header>
-      <figure class="article__img wrap"><img src="{img(p.get('image'))}" alt="{esc(p.get('image_alt_he') or p['title_he'])}" width="1200" height="675" fetchpriority="high"></figure>
+      <figure class="article__img wrap"><img src="{img(p.get('image'))}" alt="{esc(p.get('image_alt_he') or p['title_he'])}"{en_attr("alt", p.get('image_alt_en') or p['title_en'])} width="1200" height="675" fetchpriority="high"></figure>
       <div class="wrap article__grid">
         <div class="prose" data-prose>{content_he}</div>
         <aside class="article__aside">
@@ -1260,7 +1277,7 @@ def build_accessibility(d):
                      "acc.h1", "acc.h1lead", [("בית", "/", "crumb.home"), ("הצהרת נגישות", None, "foot.a11y")])
     body += f"""
     <section class="section section--tight">
-      <div class="wrap prose prose--page">
+      <div class="wrap prose prose--page" data-prose>
         <h2>ההתחייבות שלנו</h2>
         <p>Pro Algorithm מחויבת לספק אתר נגיש לקהל הרחב ביותר האפשרי, ללא קשר לנסיבות ויכולות. אנו שואפים לעמוד בתקן הישראלי 5568 ובהנחיות WCAG 2.1 ברמה AA של ארגון W3C.</p>
         <p>הנחיות אלו מסבירות כיצד להפוך תוכן אינטרנט לנגיש יותר לאנשים עם מוגבלויות, ואנו מאמינים שהן גם הופכות את האתר שלנו לידידותי יותר עבור כולם.</p>
@@ -1284,11 +1301,40 @@ def build_accessibility(d):
         <p>אם נתקלתם במחסום נגישות באתר, או אם אתם זקוקים לסיוע בגישה לתוכן כלשהו, פנו אלינו ונעבוד איתכם כדי לספק את המידע או השירות באמצעים חלופיים.</p>
         <ul>
           <li>אימייל: <a href="mailto:{ORG['email']}">{ORG['email']}</a></li>
-          <li>טלפון: <a href="tel:{ORG['phone_intl']}">{ORG['phone']}</a></li>
+          <li>טלפון: <a href="tel:{ORG['phone_intl']}" dir="ltr">{ORG['phone']}</a></li>
         </ul>
         <p>נגיב לפניות נגישות תוך 5 ימי עסקים.</p>
         <p class="muted">עדכון אחרון: {fmt_date(TODAY)}</p>
       </div>
+      <template data-prose-en>
+        <h2>Our commitment</h2>
+        <p>Pro Algorithm is committed to providing a website that is accessible to the widest possible audience, regardless of circumstances or abilities. We aim to meet Israeli Standard 5568 and the W3C's WCAG 2.1 guidelines at level AA.</p>
+        <p>These guidelines explain how to make web content more accessible to people with disabilities, and we believe they also make our site friendlier for everyone.</p>
+        <h2>Accessibility standards</h2>
+        <ul>
+          <li>Conformance with WCAG 2.1 level AA web accessibility guidelines</li>
+          <li>Keyboard navigation across the whole site, including a "Skip to content" link</li>
+          <li>Screen reader compatibility and semantic HTML structure</li>
+          <li>Color contrast of at least 4.5:1 for body text</li>
+          <li>Respect for the operating system's "reduce motion" setting</li>
+        </ul>
+        <h2>The site's accessibility menu</h2>
+        <ul>
+          <li>Increase and decrease text size</li>
+          <li>High contrast mode</li>
+          <li>Highlight links</li>
+          <li>Readable font</li>
+          <li>Stop animations</li>
+        </ul>
+        <h2>Accessibility arrangements and contact</h2>
+        <p>If you run into an accessibility barrier on the site, or need help accessing any content, contact us and we will work with you to provide the information or service through alternative means.</p>
+        <ul>
+          <li>Email: <a href="mailto:{ORG['email']}">{ORG['email']}</a></li>
+          <li>Phone: <a href="tel:{ORG['phone_intl']}" dir="ltr">{ORG['phone']}</a></li>
+        </ul>
+        <p>We respond to accessibility requests within 5 business days.</p>
+        <p class="muted">Last updated: {fmt_date(TODAY, 'en')}</p>
+      </template>
     </section>"""
     write("AccessibilityStatement.html", page(
         "/AccessibilityStatement", nav=None,
@@ -1494,10 +1540,10 @@ def live_demos():
 
 def build_catalog():
     demos = live_demos()
-    cats = list(dict.fromkeys(x["discipline"] for x in demos))
+    cats = list(dict.fromkeys((x["discipline"], x.get("discipline_en")) for x in demos))
     chips = "".join(
-        f'<button type="button" class="chip{" is-on" if k == "all" else ""}" data-filter="{esc(k)}" aria-pressed="{"true" if k == "all" else "false"}">{esc(h)}</button>'
-        for k, h in [("all", "הכל")] + [(c, c) for c in cats]
+        f'<button type="button" class="chip{" is-on" if k == "all" else ""}" data-filter="{esc(k)}" aria-pressed="{"true" if k == "all" else "false"}"{en(e)}>{esc(h)}</button>'
+        for k, h, e in [("all", "הכל", "All")] + [(c, c, e) for c, e in cats]
     )
 
     body = page_hero("קטלוג <span class=\"thin\">אינטראקטיבי.</span>",
@@ -1506,14 +1552,14 @@ def build_catalog():
     body += f"""
     <section class="section section--tight">
       <div class="wrap">
-        <div class="chips" role="group" aria-label="סינון לפי תחום">{chips}</div>
+        <div class="chips" role="group" aria-label="סינון לפי תחום" data-i18n-attr="aria-label:catalog.filter">{chips}</div>
         <div class="post-grid post-grid--all" data-posts>{''.join(demo_card(x) for x in demos)}</div>
       </div>
     </section>
     <section class="section" id="contact">
       <div class="wrap contact">
         <div class="reveal">
-          <h2 class="h2">רוצים לראות את זה <span class="thin">על השרטוטים שלכם?</span></h2>
+          <h2 class="h2" data-i18n="catalog.cta">רוצים לראות את זה <span class="thin">על השרטוטים שלכם?</span></h2>
           {contact_info()}
         </div>
         {contact_form("catalog")}
@@ -1539,7 +1585,7 @@ def build_conferences():
 
     def row(c):
         topics = "".join(f"<li{en(t_en)}>{esc(t)}</li>" for t, t_en in zip(c["topics"], c["topics_en"]))
-        links = "".join(f'<a class="chip" href="/catalog/{s}/">{esc(demos[s]["discipline"])}</a>' for s in c["demos"] if s in demos)
+        links = "".join(f'<a class="chip" href="/catalog/{s}/"{en(demos[s].get("discipline_en"))}>{esc(demos[s]["discipline"])}</a>' for s in c["demos"] if s in demos)
         speakers = "".join(
             f'<li><strong{en(sp["name_en"])}>{esc(sp["name"])}</strong><span{en(sp["role_en"])}>{esc(sp["role"])}</span></li>'
             for sp in c.get("speakers", []))

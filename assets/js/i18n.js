@@ -126,7 +126,6 @@ window.I18N_EN = {
   "foot.l2": "Enterprise systems",
   "foot.l3": "AI implementation",
   "foot.l4": "Development teams",
-  "foot.rights": "© 2026 Pro Algorithm. All rights reserved.",
   "foot.a11y": "Accessibility statement",
 
   "pp.title": "Six platforms. <span class=\"thin\">One core expertise.</span>",
@@ -239,14 +238,12 @@ Object.assign(window.I18N_EN, {
   "cta.band.t": "Let's build <span class=\"thin\">your next project.</span>",
 
   "press.title": "AI in architecture, <span class=\"thin\">in Israel's leading media.</span>",
-  "press.lead": "A feature about us in Bizportal, plus 8 articles in Globes, Calcalist, ynet, mako, Walla and Nadlan Center about the technology we build and the future of real estate.",
   "press.read": "Read the article",
-  "press.about": "About us",
+  "press.about": "Article about us",
 
   "nav.demos": "Live demos",
   "nav.events": "Conferences",
   "cta.demos": "Try a live demo",
-  "demos.badge": "Examples from our projects",
   "demos.title": "What can be built? <span class=\"thin\">Get your hands on it.</span>",
   "demos.lead": "Each example is based on a system we built for a construction company and works on a real drawing. Open one and use it here in the browser.",
   "demos.all": "All examples",
@@ -399,5 +396,17 @@ Object.assign(window.I18N_EN, {
   "org.lead": "Engineers, AI researchers, BIM specialists and operators, managed like an enterprise and moving at the speed of a special unit.",
   "org.more": "About the company",
   "about.lead.t": "Group <span class=\"thin\">leadership.</span>",
-  "about.lead.p": "Leadership that connects business strategy, technical depth and enterprise-grade service."
+  "about.lead.p": "Leadership that connects business strategy, technical depth and enterprise-grade service.",
+
+  "home.label": "Pro Algorithm, home",
+  "crumb.label": "Breadcrumb",
+  "fab.wa": "WhatsApp",
+  "a11y.close": "Close",
+  "a11y.smaller": "Decrease text size",
+  "a11y.larger": "Increase text size",
+  "blog.filter": "Filter by category",
+  "catalog.h1": "Interactive <span class=\"thin\">catalog.</span>",
+  "catalog.lead": "Working examples from systems we built for construction companies. Each one runs on a real drawing, and you can try it here in the browser.",
+  "catalog.filter": "Filter by field",
+  "catalog.cta": "Want to see this <span class=\"thin\">on your own drawings?</span>"
 });
