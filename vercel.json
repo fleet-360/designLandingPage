@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "pip3 install markdown pillow",
-  "buildCommand": "python3 tools/build.py",
+  "installCommand": "python3 -m venv .venv && .venv/bin/pip install markdown pillow",
+  "buildCommand": ".venv/bin/python tools/build.py",
   "outputDirectory": "dist",
   "cleanUrls": true,
   "headers": [
