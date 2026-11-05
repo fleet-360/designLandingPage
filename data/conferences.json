@@ -44,8 +44,10 @@
  },
  {
   "key": "architects-nov",
-  "date": "2026-11-05",
-  "time": "10:00",
+  "date": "2026-11-24",
+  "time": "11:30",
+  "place": "מלחמת ששת הימים 10, חדרה",
+  "place_en": "10 Milkhemet Sheshet HaYamim St., Hadera",
   "audience": "אדריכלים ומשרדי תכנון",
   "audience_en": "Architects and design offices",
   "icon": "compass-tool",
@@ -66,7 +68,37 @@
   "demos": [
    "facades",
    "compare"
-  ]
+  ],
+  "url": "https://conferences.buildalgo.co.il/"
+ },
+ {
+  "key": "architects-zoom",
+  "date": "2026-11-26",
+  "time": "10:00",
+  "place": "זום",
+  "place_en": "Zoom",
+  "audience": "אדריכלים ומשרדי תכנון",
+  "audience_en": "Architects and design offices",
+  "icon": "compass-tool",
+  "title": "הטמעת AI בעולם התכנון והאדריכלות: מפגש בזום",
+  "title_en": "Bringing AI into planning and architecture: a Zoom session",
+  "lead": "מפגש בזום לאדריכלים ולמשרדי תכנון, במתכונת הכנס שהתקיים באוקטובר.",
+  "lead_en": "A Zoom session for architects and design offices, in the format of the October conference.",
+  "topics": [
+   "פחות שעות על מפרטים, גיליונות מכר ורשימות אלומיניום, מסגרות ונגרות",
+   "בדיקת תוכניות לפני שהטעות מגיעה לשטח: בטיחות אש, ממדים ומדרגות",
+   "ניהול פרויקט בלי לטבוע במיילים: מעקב אחרי מה שפתוח מול היועצים"
+  ],
+  "topics_en": [
+   "Fewer hours on specifications, sales sheets and aluminium, metalwork and joinery schedules",
+   "Checking plans before the mistake reaches the site: fire safety, dimensions and stairs",
+   "Running a project without drowning in email: tracking what is open with consultants"
+  ],
+  "demos": [
+   "facades",
+   "compare"
+  ],
+  "url": "https://conferences.buildalgo.co.il/zoom"
  },
  {
   "key": "mep",
