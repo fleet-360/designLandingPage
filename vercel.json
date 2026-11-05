@@ -25,6 +25,18 @@
       "permanent": false
     }
   ],
+  "rewrites": [
+    { "source": "/pay", "destination": "https://landing-page-sooty-alpha-16.vercel.app/payment.html" },
+    { "source": "/payment", "destination": "https://landing-page-sooty-alpha-16.vercel.app/payment.html" },
+    { "source": "/תשלום", "destination": "https://landing-page-sooty-alpha-16.vercel.app/payment.html" },
+    { "source": "/pay-link", "destination": "https://landing-page-sooty-alpha-16.vercel.app/payment-link.html" },
+    { "source": "/create-payment-link", "destination": "https://landing-page-sooty-alpha-16.vercel.app/payment-link.html" },
+    { "source": "/payment-link", "destination": "https://landing-page-sooty-alpha-16.vercel.app/payment-link.html" },
+    { "source": "/js/:path*", "destination": "https://landing-page-sooty-alpha-16.vercel.app/js/:path*" },
+    { "source": "/images/:path*", "destination": "https://landing-page-sooty-alpha-16.vercel.app/images/:path*" },
+    { "source": "/style.css", "destination": "https://landing-page-sooty-alpha-16.vercel.app/style.css" },
+    { "source": "/favicon.png", "destination": "https://landing-page-sooty-alpha-16.vercel.app/favicon.png" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
