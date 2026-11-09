@@ -6,50 +6,193 @@
   "outputDirectory": "dist",
   "cleanUrls": true,
   "redirects": [
-    {
-      "source": "/(.*)",
-      "has": [{ "type": "host", "value": "agent.pro-algorithm.co.il" }],
-      "destination": "https://auth-cad-core.base44.app/$1",
-      "permanent": false
-    },
-    {
-      "source": "/(.*)",
-      "has": [{ "type": "host", "value": "cursor.pro-algorithm.co.il" }],
-      "destination": "https://cursor.buildalgo.co.il/$1",
-      "permanent": false
-    },
-    {
-      "source": "/(.*)",
-      "has": [{ "type": "host", "value": "superposition.pro-algorithm.co.il" }],
-      "destination": "https://superposition.buildalgo.co.il/$1",
-      "permanent": false
-    }
+    {"source": "/(.*)", "has": [{"type": "host", "value": "agent.pro-algorithm.co.il"}], "destination": "https://auth-cad-core.base44.app/$1", "permanent": false},
+    {"source": "/(.*)", "has": [{"type": "host", "value": "cursor.pro-algorithm.co.il"}], "destination": "https://cursor.buildalgo.co.il/$1", "permanent": false},
+    {"source": "/(.*)", "has": [{"type": "host", "value": "superposition.pro-algorithm.co.il"}], "destination": "https://superposition.buildalgo.co.il/$1", "permanent": false},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "machine-learning-business-practical-applications"}], "destination": "/blog/692359df55682b8f73938c87", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "ai-powered-automation-business-transformation"}], "destination": "/blog/691d76a3da435db82096d0b3", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "optimizing-react-performance-best-practices"}], "destination": "/blog/692359df55682b8f73938c86", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "principles-of-smart-algorithms-for-business"}], "destination": "/blog/6874c9de774e3d2345a73cca", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "software-app-development-costs-israel-2024"}], "destination": "/blog/6937a868f6dcf7ad8b173296", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "cybersecurity-best-practices-modern-apps"}], "destination": "/blog/691d76a3da435db82096d0b6", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "why-invest-in-algorithm-based-automation"}], "destination": "/blog/6874c9de774e3d2345a73ccd", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "algorithm-optimization-theory-practice"}], "destination": "/blog/691d76a3da435db82096d0b7", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "graph-neural-networks-architectural-ai"}], "destination": "/blog/692359df55682b8f73938c84", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "machine-learning-business-applications"}], "destination": "/blog/691d76a3da435db82096d0b5", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "microservices-vs-monolith-architecture"}], "destination": "/blog/692359df55682b8f73938c88", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "artificial-intelligence-business-2024"}], "destination": "/blog/6937adcdaa471603bad8eb47", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "buildalgo-ai-construction-real-estate"}], "destination": "/blog/6a4f9d565c059cd12c1e2fd6", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "building-scalable-realtime-websockets"}], "destination": "/blog/692359df55682b8f73938c85", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "microservices-מול-monolith-ארכיטקטורה"}], "destination": "/blog/692359df55682b8f73938c88", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "microservices-%D7%9E%D7%95%D7%9C-monolith-%D7%90%D7%A8%D7%9B%D7%99%D7%98%D7%A7%D7%98%D7%95%D7%A8%D7%94"}], "destination": "/blog/692359df55682b8f73938c88", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "pro-algorithm-boutique-software-house"}], "destination": "/blog/6a4f9d565c059cd12c1e2fd5", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "אופטימיזציית-אלגוריתמים-תיאוריה-מעשה"}], "destination": "/blog/691d76a3da435db82096d0b7", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%90%D7%95%D7%A4%D7%98%D7%99%D7%9E%D7%99%D7%96%D7%A6%D7%99%D7%99%D7%AA-%D7%90%D7%9C%D7%92%D7%95%D7%A8%D7%99%D7%AA%D7%9E%D7%99%D7%9D-%D7%AA%D7%99%D7%90%D7%95%D7%A8%D7%99%D7%94-%D7%9E%D7%A2%D7%A9%D7%94"}], "destination": "/blog/691d76a3da435db82096d0b7", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "integrating-ai-in-your-organization"}], "destination": "/blog/6874c9de774e3d2345a73ccb", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "building-scalable-web-applications"}], "destination": "/blog/691d76a3da435db82096d0b4", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "how-to-choose-the-right-web-system"}], "destination": "/blog/6874c9de774e3d2345a73cc9", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "israeli-tech-innovation-excellence"}], "destination": "/blog/691d76a3da435db82096d0b2", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "מחירון-פיתוח-תוכנה-ואפליקציות-2024"}], "destination": "/blog/6937a868f6dcf7ad8b173296", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%9E%D7%97%D7%99%D7%A8%D7%95%D7%9F-%D7%A4%D7%99%D7%AA%D7%95%D7%97-%D7%AA%D7%95%D7%9B%D7%A0%D7%94-%D7%95%D7%90%D7%A4%D7%9C%D7%99%D7%A7%D7%A6%D7%99%D7%95%D7%AA-2024"}], "destination": "/blog/6937a868f6dcf7ad8b173296", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "mobile-app-development-2024-guide"}], "destination": "/blog/6937aa2aaa471603bad8ea2d", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "למידת-מכונה-לעסקים-קטנים-בינוניים"}], "destination": "/blog/6874c9de774e3d2345a73ccf", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%9C%D7%9E%D7%99%D7%93%D7%AA-%D7%9E%D7%9B%D7%95%D7%A0%D7%94-%D7%9C%D7%A2%D7%A1%D7%A7%D7%99%D7%9D-%D7%A7%D7%98%D7%A0%D7%99%D7%9D-%D7%91%D7%99%D7%A0%D7%95%D7%A0%D7%99%D7%99%D7%9D"}], "destination": "/blog/6874c9de774e3d2345a73ccf", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "פיתוח-אפליקציות-מובייל-2024-מדריך"}], "destination": "/blog/6937aa2aaa471603bad8ea2d", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%A4%D7%99%D7%AA%D7%95%D7%97-%D7%90%D7%A4%D7%9C%D7%99%D7%A7%D7%A6%D7%99%D7%95%D7%AA-%D7%9E%D7%95%D7%91%D7%99%D7%99%D7%9C-2024-%D7%9E%D7%93%D7%A8%D7%99%D7%9A"}], "destination": "/blog/6937aa2aaa471603bad8ea2d", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "software-house-israel-2024-guide"}], "destination": "/blog/6937aa2aaa471603bad8ea2c", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "אלגוריתם-סטנדרטי-מול-מותאם-אישית"}], "destination": "/blog/6874c9de774e3d2345a73cd1", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%90%D7%9C%D7%92%D7%95%D7%A8%D7%99%D7%AA%D7%9D-%D7%A1%D7%98%D7%A0%D7%93%D7%A8%D7%98%D7%99-%D7%9E%D7%95%D7%9C-%D7%9E%D7%95%D7%AA%D7%90%D7%9D-%D7%90%D7%99%D7%A9%D7%99%D7%AA"}], "destination": "/blog/6874c9de774e3d2345a73cd1", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "real-time-data-analysis-with-ai"}], "destination": "/blog/6874c9de774e3d2345a73ccc", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "בניית-מערכות-זמן-אמת-websockets"}], "destination": "/blog/692359df55682b8f73938c85", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%91%D7%A0%D7%99%D7%99%D7%AA-%D7%9E%D7%A2%D7%A8%D7%9B%D7%95%D7%AA-%D7%96%D7%9E%D7%9F-%D7%90%D7%9E%D7%AA-websockets"}], "destination": "/blog/692359df55682b8f73938c85", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "למה-להשקיע-באוטומציה-אלגוריתמית"}], "destination": "/blog/6874c9de774e3d2345a73ccd", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%9C%D7%9E%D7%94-%D7%9C%D7%94%D7%A9%D7%A7%D7%99%D7%A2-%D7%91%D7%90%D7%95%D7%98%D7%95%D7%9E%D7%A6%D7%99%D7%94-%D7%90%D7%9C%D7%92%D7%95%D7%A8%D7%99%D7%AA%D7%9E%D7%99%D7%AA"}], "destination": "/blog/6874c9de774e3d2345a73ccd", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "website-development-2024-guide"}], "destination": "/blog/6937ab99aa471603bad8ea9f", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "website-development-2025-guide"}], "destination": "/blog/6937b019aa471603bad8ec04", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "אבטחת-סייבר-אפליקציות-מודרניות"}], "destination": "/blog/691d76a3da435db82096d0b6", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%90%D7%91%D7%98%D7%97%D7%AA-%D7%A1%D7%99%D7%99%D7%91%D7%A8-%D7%90%D7%A4%D7%9C%D7%99%D7%A7%D7%A6%D7%99%D7%95%D7%AA-%D7%9E%D7%95%D7%93%D7%A8%D7%A0%D7%99%D7%95%D7%AA"}], "destination": "/blog/691d76a3da435db82096d0b6", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "עקרונות-כתיבת-אלגוריתמים-חכמים"}], "destination": "/blog/6874c9de774e3d2345a73cca", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%A2%D7%A7%D7%A8%D7%95%D7%A0%D7%95%D7%AA-%D7%9B%D7%AA%D7%99%D7%91%D7%AA-%D7%90%D7%9C%D7%92%D7%95%D7%A8%D7%99%D7%AA%D7%9E%D7%99%D7%9D-%D7%97%D7%9B%D7%9E%D7%99%D7%9D"}], "destination": "/blog/6874c9de774e3d2345a73cca", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "רשתות-נוירונים-גרפיות-אדריכלות"}], "destination": "/blog/692359df55682b8f73938c84", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%A8%D7%A9%D7%AA%D7%95%D7%AA-%D7%A0%D7%95%D7%99%D7%A8%D7%95%D7%A0%D7%99%D7%9D-%D7%92%D7%A8%D7%A4%D7%99%D7%95%D7%AA-%D7%90%D7%93%D7%A8%D7%99%D7%9B%D7%9C%D7%95%D7%AA"}], "destination": "/blog/692359df55682b8f73938c84", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "kama-ole-lefateach-aplikatzia"}], "destination": "/blog/6927578231ee130ebf4a746e", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "pro-algorithm-בית-תוכנה-בוטיק"}], "destination": "/blog/6a4f9d565c059cd12c1e2fd5", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "pro-algorithm-%D7%91%D7%99%D7%AA-%D7%AA%D7%95%D7%9B%D7%A0%D7%94-%D7%91%D7%95%D7%98%D7%99%D7%A7"}], "destination": "/blog/6a4f9d565c059cd12c1e2fd5", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "standard-vs-custom-algorithms"}], "destination": "/blog/6874c9de774e3d2345a73cd1", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "data-security-in-ai-projects"}], "destination": "/blog/6874c9de774e3d2345a73cd0", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "guide-to-algorithm-based-mvp"}], "destination": "/blog/6874c9de774e3d2345a73cd2", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "how-to-choose-software-house"}], "destination": "/blog/6927578231ee130ebf4a746f", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "tzach-dabush-ai-nlp-research"}], "destination": "/blog/6a4f9d565c059cd12c1e2fd7", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "app-development-cost-israel"}], "destination": "/blog/6927578231ee130ebf4a746e", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "web-development-trends-2025"}], "destination": "/blog/6874c9de774e3d2345a73cce", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "בניית-אפליקציות-web-מדרגיות"}], "destination": "/blog/691d76a3da435db82096d0b4", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%91%D7%A0%D7%99%D7%99%D7%AA-%D7%90%D7%A4%D7%9C%D7%99%D7%A7%D7%A6%D7%99%D7%95%D7%AA-web-%D7%9E%D7%93%D7%A8%D7%92%D7%99%D7%95%D7%AA"}], "destination": "/blog/691d76a3da435db82096d0b4", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "הייטק-ישראלי-חדשנות-מצוינות"}], "destination": "/blog/691d76a3da435db82096d0b2", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%94%D7%99%D7%99%D7%98%D7%A7-%D7%99%D7%A9%D7%A8%D7%90%D7%9C%D7%99-%D7%97%D7%93%D7%A9%D7%A0%D7%95%D7%AA-%D7%9E%D7%A6%D7%95%D7%99%D7%A0%D7%95%D7%AA"}], "destination": "/blog/691d76a3da435db82096d0b2", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "ניתוח-נתונים-בזמן-אמת-עם-ai"}], "destination": "/blog/6874c9de774e3d2345a73ccc", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%A0%D7%99%D7%AA%D7%95%D7%97-%D7%A0%D7%AA%D7%95%D7%A0%D7%99%D7%9D-%D7%91%D7%96%D7%9E%D7%9F-%D7%90%D7%9E%D7%AA-%D7%A2%D7%9D-ai"}], "destination": "/blog/6874c9de774e3d2345a73ccc", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "פיתוח-אתרים-2024-מדריך-מקיף"}], "destination": "/blog/6937ab99aa471603bad8ea9f", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%A4%D7%99%D7%AA%D7%95%D7%97-%D7%90%D7%AA%D7%A8%D7%99%D7%9D-2024-%D7%9E%D7%93%D7%A8%D7%99%D7%9A-%D7%9E%D7%A7%D7%99%D7%A3"}], "destination": "/blog/6937ab99aa471603bad8ea9f", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "פיתוח-אתרים-2025-מדריך-מקיף"}], "destination": "/blog/6937b019aa471603bad8ec04", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%A4%D7%99%D7%AA%D7%95%D7%97-%D7%90%D7%AA%D7%A8%D7%99%D7%9D-2025-%D7%9E%D7%93%D7%A8%D7%99%D7%9A-%D7%9E%D7%A7%D7%99%D7%A3"}], "destination": "/blog/6937b019aa471603bad8ec04", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "בית-תוכנה-ישראל-2024-מדריך"}], "destination": "/blog/6937aa2aaa471603bad8ea2c", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%91%D7%99%D7%AA-%D7%AA%D7%95%D7%9B%D7%A0%D7%94-%D7%99%D7%A9%D7%A8%D7%90%D7%9C-2024-%D7%9E%D7%93%D7%A8%D7%99%D7%9A"}], "destination": "/blog/6937aa2aaa471603bad8ea2c", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "למידת-מכונה-יישומים-עסקיים"}], "destination": "/blog/691d76a3da435db82096d0b5", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%9C%D7%9E%D7%99%D7%93%D7%AA-%D7%9E%D7%9B%D7%95%D7%A0%D7%94-%D7%99%D7%99%D7%A9%D7%95%D7%9E%D7%99%D7%9D-%D7%A2%D7%A1%D7%A7%D7%99%D7%99%D7%9D"}], "destination": "/blog/691d76a3da435db82096d0b5", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "שילוב-בינה-מלאכותית-בארגון"}], "destination": "/blog/6874c9de774e3d2345a73ccb", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%A9%D7%99%D7%9C%D7%95%D7%91-%D7%91%D7%99%D7%A0%D7%94-%D7%9E%D7%9C%D7%90%D7%9B%D7%95%D7%AA%D7%99%D7%AA-%D7%91%D7%90%D7%A8%D7%92%D7%95%D7%9F"}], "destination": "/blog/6874c9de774e3d2345a73ccb", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "buildalgo-ai-לבנייה-ונדלן"}], "destination": "/blog/6a4f9d565c059cd12c1e2fd6", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "buildalgo-ai-%D7%9C%D7%91%D7%A0%D7%99%D7%99%D7%94-%D7%95%D7%A0%D7%93%D7%9C%D7%9F"}], "destination": "/blog/6a4f9d565c059cd12c1e2fd6", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "information-security-2025"}], "destination": "/blog/6937b03caa471603bad8ec12", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "אופטימיזציה-react-ביצועים"}], "destination": "/blog/692359df55682b8f73938c86", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%90%D7%95%D7%A4%D7%98%D7%99%D7%9E%D7%99%D7%96%D7%A6%D7%99%D7%94-react-%D7%91%D7%99%D7%A6%D7%95%D7%A2%D7%99%D7%9D"}], "destination": "/blog/692359df55682b8f73938c86", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "בינה-מלאכותית-לעסקים-2024"}], "destination": "/blog/6937adcdaa471603bad8eb47", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%91%D7%99%D7%A0%D7%94-%D7%9E%D7%9C%D7%90%D7%9B%D7%95%D7%AA%D7%99%D7%AA-%D7%9C%D7%A2%D7%A1%D7%A7%D7%99%D7%9D-2024"}], "destination": "/blog/6937adcdaa471603bad8eb47", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "למידת-מכונה-עסקים-יישומים"}], "destination": "/blog/692359df55682b8f73938c87", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%9C%D7%9E%D7%99%D7%93%D7%AA-%D7%9E%D7%9B%D7%95%D7%A0%D7%94-%D7%A2%D7%A1%D7%A7%D7%99%D7%9D-%D7%99%D7%99%D7%A9%D7%95%D7%9E%D7%99%D7%9D"}], "destination": "/blog/692359df55682b8f73938c87", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "מדריך-פיתוח-mvp-אלגוריתמי"}], "destination": "/blog/6874c9de774e3d2345a73cd2", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%9E%D7%93%D7%A8%D7%99%D7%9A-%D7%A4%D7%99%D7%AA%D7%95%D7%97-mvp-%D7%90%D7%9C%D7%92%D7%95%D7%A8%D7%99%D7%AA%D7%9E%D7%99"}], "destination": "/blog/6874c9de774e3d2345a73cd2", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "business-automation-2025"}], "destination": "/blog/6937b03caa471603bad8ec0f", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "machine-learning-for-smb"}], "destination": "/blog/6874c9de774e3d2345a73ccf", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "eich-livhor-beit-tochna"}], "destination": "/blog/6927578231ee130ebf4a746f", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "pituach-maarechet-saas"}], "destination": "/blog/6927578231ee130ebf4a7470", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "saas-development-guide"}], "destination": "/blog/6927578231ee130ebf4a7470", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "אבטחת-מידע-בפרויקטי-ai"}], "destination": "/blog/6874c9de774e3d2345a73cd0", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%90%D7%91%D7%98%D7%97%D7%AA-%D7%9E%D7%99%D7%93%D7%A2-%D7%91%D7%A4%D7%A8%D7%95%D7%99%D7%A7%D7%98%D7%99-ai"}], "destination": "/blog/6874c9de774e3d2345a73cd0", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "אוטומציה-ai-שינוי-עסקי"}], "destination": "/blog/691d76a3da435db82096d0b3", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%90%D7%95%D7%98%D7%95%D7%9E%D7%A6%D7%99%D7%94-ai-%D7%A9%D7%99%D7%A0%D7%95%D7%99-%D7%A2%D7%A1%D7%A7%D7%99"}], "destination": "/blog/691d76a3da435db82096d0b3", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "saas-development-2025"}], "destination": "/blog/6937b03caa471603bad8ec11", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "טרנדים-פיתוח-ווב-2025"}], "destination": "/blog/6874c9de774e3d2345a73cce", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%98%D7%A8%D7%A0%D7%93%D7%99%D7%9D-%D7%A4%D7%99%D7%AA%D7%95%D7%97-%D7%95%D7%95%D7%91-2025"}], "destination": "/blog/6874c9de774e3d2345a73cce", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "mvp-development-2025"}], "destination": "/blog/6937b03caa471603bad8ec13", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "אוטומציה-לעסקים-2025"}], "destination": "/blog/6937b03caa471603bad8ec0f", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%90%D7%95%D7%98%D7%95%D7%9E%D7%A6%D7%99%D7%94-%D7%9C%D7%A2%D7%A1%D7%A7%D7%99%D7%9D-2025"}], "destination": "/blog/6937b03caa471603bad8ec0f", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "צח-דבוש-ai-nlp-ומחקר"}], "destination": "/blog/6a4f9d565c059cd12c1e2fd7", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%A6%D7%97-%D7%93%D7%91%D7%95%D7%A9-ai-nlp-%D7%95%D7%9E%D7%97%D7%A7%D7%A8"}], "destination": "/blog/6a4f9d565c059cd12c1e2fd7", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "איך-לבחור-מערכת-ווב"}], "destination": "/blog/6874c9de774e3d2345a73cc9", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%90%D7%99%D7%9A-%D7%9C%D7%91%D7%97%D7%95%D7%A8-%D7%9E%D7%A2%D7%A8%D7%9B%D7%AA-%D7%95%D7%95%D7%91"}], "destination": "/blog/6874c9de774e3d2345a73cc9", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "crm-systems-2025"}], "destination": "/blog/6937b03caa471603bad8ec10", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "אבטחת-מידע-2025"}], "destination": "/blog/6937b03caa471603bad8ec12", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%90%D7%91%D7%98%D7%97%D7%AA-%D7%9E%D7%99%D7%93%D7%A2-2025"}], "destination": "/blog/6937b03caa471603bad8ec12", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "מערכות-crm-2025"}], "destination": "/blog/6937b03caa471603bad8ec10", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%9E%D7%A2%D7%A8%D7%9B%D7%95%D7%AA-crm-2025"}], "destination": "/blog/6937b03caa471603bad8ec10", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "פיתוח-saas-2025"}], "destination": "/blog/6937b03caa471603bad8ec11", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%A4%D7%99%D7%AA%D7%95%D7%97-saas-2025"}], "destination": "/blog/6937b03caa471603bad8ec11", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "פיתוח-mvp-2025"}], "destination": "/blog/6937b03caa471603bad8ec13", "permanent": true},
+    {"source": "/(BlogPostPage|blogpostpage|blog-post-page)", "has": [{"type": "query", "key": "slug", "value": "%D7%A4%D7%99%D7%AA%D7%95%D7%97-mvp-2025"}], "destination": "/blog/6937b03caa471603bad8ec13", "permanent": true}
   ],
   "rewrites": [
-    { "source": "/pay", "destination": "https://landing-page-sooty-alpha-16.vercel.app/payment.html" },
-    { "source": "/payment", "destination": "https://landing-page-sooty-alpha-16.vercel.app/payment.html" },
-    { "source": "/תשלום", "destination": "https://landing-page-sooty-alpha-16.vercel.app/payment.html" },
-    { "source": "/pay-link", "destination": "https://landing-page-sooty-alpha-16.vercel.app/payment-link.html" },
-    { "source": "/create-payment-link", "destination": "https://landing-page-sooty-alpha-16.vercel.app/payment-link.html" },
-    { "source": "/payment-link", "destination": "https://landing-page-sooty-alpha-16.vercel.app/payment-link.html" },
-    { "source": "/js/:path*", "destination": "https://landing-page-sooty-alpha-16.vercel.app/js/:path*" },
-    { "source": "/images/:path*", "destination": "https://landing-page-sooty-alpha-16.vercel.app/images/:path*" },
-    { "source": "/style.css", "destination": "https://landing-page-sooty-alpha-16.vercel.app/style.css" },
-    { "source": "/favicon.png", "destination": "https://landing-page-sooty-alpha-16.vercel.app/favicon.png" }
+    {
+      "source": "/pay",
+      "destination": "https://landing-page-sooty-alpha-16.vercel.app/payment.html"
+    },
+    {
+      "source": "/payment",
+      "destination": "https://landing-page-sooty-alpha-16.vercel.app/payment.html"
+    },
+    {
+      "source": "/תשלום",
+      "destination": "https://landing-page-sooty-alpha-16.vercel.app/payment.html"
+    },
+    {
+      "source": "/pay-link",
+      "destination": "https://landing-page-sooty-alpha-16.vercel.app/payment-link.html"
+    },
+    {
+      "source": "/create-payment-link",
+      "destination": "https://landing-page-sooty-alpha-16.vercel.app/payment-link.html"
+    },
+    {
+      "source": "/payment-link",
+      "destination": "https://landing-page-sooty-alpha-16.vercel.app/payment-link.html"
+    },
+    {
+      "source": "/js/:path*",
+      "destination": "https://landing-page-sooty-alpha-16.vercel.app/js/:path*"
+    },
+    {
+      "source": "/images/:path*",
+      "destination": "https://landing-page-sooty-alpha-16.vercel.app/images/:path*"
+    },
+    {
+      "source": "/style.css",
+      "destination": "https://landing-page-sooty-alpha-16.vercel.app/style.css"
+    },
+    {
+      "source": "/favicon.png",
+      "destination": "https://landing-page-sooty-alpha-16.vercel.app/favicon.png"
+    }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        }
       ]
     },
     {
       "source": "/assets/(.*)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
     }
   ]
 }

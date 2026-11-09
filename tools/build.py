@@ -22,7 +22,10 @@ DATA = os.path.join(ROOT, "data")
 DIST = os.path.join(ROOT, "dist")
 # "/<repo>" when served from a GitHub Pages project site, "" on a real domain (Netlify, custom domain)
 BASE = os.environ.get("BASE_PATH", "").rstrip("/")
-SITE = "https://www.buildalgo.co.il"
+DEFAULT_SITE = "https://www.buildalgo.co.il"
+# each domain is its own Vercel project on this repo: SITE_URL=https://www.pro-algorithm.co.il gives that
+# deployment its own canonical, sitemap, robots, og:url and schema
+SITE = os.environ.get("SITE_URL", DEFAULT_SITE).rstrip("/")
 TODAY = date.today().isoformat()
 
 # data/site.json: everything that appears in more than one place (contact, sister sites, nav, products, stats)
@@ -1399,6 +1402,22 @@ LEGACY = {
     "contact": "/Contact",
     "blog": "/Blog",
     "podcast": "/Podcast",
+    # lowercase variants of the routes: Vercel ignores _redirects and its own redirects match paths
+    # case-insensitively (/about -> /About would loop), so they get redirect pages like the rest
+    "about": "/About",
+    "expertise": "/Expertise",
+    "products": "/Products",
+    "conferences": "/Conferences",
+    "autocadmcp": "/AutoCADMCP",
+    "mcp": "/AutoCADMCP",
+    "accessibilitystatement": "/AccessibilityStatement",
+    "accessibility-statement": "/AccessibilityStatement",
+    "accessibility": "/AccessibilityStatement",
+    "home": "/",
+    "Home": "/",
+    "landingpage": "/",
+    "LandingPage": "/",
+    "landing-page": "/",
     "media": "/#press",
     "מגורים": "/",
     "blog/gnn-autonomous-planning": "post:graph-neural-networks-architectural-ai",
@@ -1473,6 +1492,22 @@ def build_meta_files(d):
               "/index.html / 301"]
     write("_redirects", "\n".join(lines) + "\n")
 
+    # Vercel ignores _redirects: the old /BlogPostPage?slug= addresses get real 308s in vercel.json (rewritten
+    # here, commit it). Each slug both decoded and percent-encoded, longest first, so the rule holds whether
+    # Vercel matches `value` exactly or as an unanchored regex.
+    src = "/(BlogPostPage|blogpostpage|blog-post-page)"
+    slugs = sorted(((s, post_file(p)) for p in posts for s in {p["slug_he"], p["slug_en"]} - {""}), key=lambda x: (-len(x[0]), x[0]))
+    gen = [{"source": src, "has": [{"type": "query", "key": "slug", "value": v}], "destination": dest, "permanent": True}
+           for s, dest in slugs for v in dict.fromkeys((s, urllib.parse.quote(s)))]
+    vercel = os.path.join(ROOT, "vercel.json")
+    with open(vercel, encoding="utf-8") as f:
+        cfg = json.load(f)
+    redirects = [r for r in cfg["redirects"] if r["source"] != src] + gen
+    body = json.dumps({**cfg, "redirects": []}, ensure_ascii=False, indent=2)  # one redirect per line
+    body = body.replace('"redirects": []', '"redirects": [\n    ' + ",\n    ".join(json.dumps(r, ensure_ascii=False) for r in redirects) + "\n  ]")
+    with open(vercel, "w", encoding="utf-8", newline="\n") as f:
+        f.write(body + "\n")
+
     write("_headers", """/*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
@@ -1525,11 +1560,13 @@ def copy_catalog():
                 continue
             p = os.path.join(base, n)
             with open(p, encoding="utf-8") as f:
-                t = f.read()
-            if "<!--tracking-->" not in t:
+                t = orig = f.read()
+            t = t.replace(DEFAULT_SITE + "/", SITE + "/")  # demo pages hard-code their canonical and og:image
+            if "<!--tracking-->" in t:
+                t = t.replace("<!--tracking-->", tracking_head(), 1)
+                t = re.sub(r"<body([^>]*)>", lambda m: m.group(0) + "\n" + tracking_body(), t, count=1)
+            if t == orig:
                 continue
-            t = t.replace("<!--tracking-->", tracking_head(), 1)
-            t = re.sub(r"<body([^>]*)>", lambda m: m.group(0) + "\n" + tracking_body(), t, count=1)
             with open(p, "w", encoding="utf-8", newline="\n") as f:
                 f.write(t)
 
