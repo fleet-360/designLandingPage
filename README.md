@@ -27,10 +27,13 @@ python tools/build.py
 
 ## SEO
 
-- Canonical host, sitemap and robots: `www.buildalgo.co.il`. Blog posts live at `/blog/<id>`.
+- Canonical host, sitemap and robots: `SITE_URL` (default `https://www.buildalgo.co.il`). Each domain is its own Vercel
+  project on this repo with its own `SITE_URL`, e.g. `https://www.pro-algorithm.co.il`. Blog posts live at `/blog/<id>`.
 - Addresses of the previous buildalgo site (`/blog/<slug>`, `/ai`, `/bim`, `/contact`, ...) get redirect pages
   (`LEGACY` in `tools/build.py`); GitHub Pages has no server-side redirects.
 - `/BlogPostPage?slug=<slug>` (the Base44 address) falls back to a JS redirect to `/blog/<id>`.
+- On Vercel (which ignores `_redirects`), `build.py` rewrites the `/BlogPostPage?slug=` 308s in `vercel.json`: commit it after a build.
+  Lowercase routes (`/about`, `/home`, ...) are `LEGACY` redirect pages, since Vercel redirects match paths case-insensitively.
 - Schema: Organization, ProfessionalService, WebSite, FAQPage, BlogPosting, BreadcrumbList, VideoObject, AboutPage, ContactPage.
 
 ## Tracking (same IDs as the previous buildalgo site)
