@@ -542,7 +542,7 @@ def stats_cells():
         for s in S["stats"])
 
 
-PRODUCT_ICONS = {"agent": "robot", "mcp": "plugs-connected", "superposition": "stack-simple", "cursor": "cursor-click",
+PRODUCT_ICONS = {"agent": "robot", "superposition": "stack-simple", "cursor": "cursor-click",
                  "sign": "signature", "time": "clock-countdown"}
 
 
@@ -927,30 +927,31 @@ def build_products(d):
     }
     write("Products.html", page(
         "/Products", nav="/Products",
-        title="מוצרים | Pro Algorithm - סוכן AI ל-AutoCAD, MCP והשוואת שרטוטים",
+        title="מוצרים | Pro Algorithm - סוכן AI ל-AutoCAD והשוואת שרטוטים",
         title_en="Products | Pro Algorithm",
-        desc="ששת המוצרים של Pro Algorithm: סוכן AI בתוך AutoCAD, MCP ל-AutoCAD ו-Claude, השוואת שרטוטים וסופרפוזיציה, סימון חדרים ב-AutoCAD ו-Revit, החתמה דיגיטלית וניהול שעות.",
+        desc="חמשת המוצרים של Pro Algorithm: Pro Agent, סוכן AI בתוך AutoCAD שעובד גם מתוך Claude, השוואת שרטוטים וסופרפוזיציה, סימון חדרים ב-AutoCAD ו-Revit, החתמה דיגיטלית וניהול שעות.",
         body=body, schemas=[schema, breadcrumb([("בית", "/"), ("מוצרים", "/Products")])],
     ))
 
 
 def build_mcp(d):
-    """/AutoCADMCP: step-by-step guide for connecting the AutoCAD MCP server to Claude."""
-    mcp = next(p for p in PRODUCTS if p["key"] == "mcp")
+    """/AutoCADMCP: guide for connecting Pro Agent to Claude (the connector is a way to use Pro Agent, not a product)."""
+    agent = next(p for p in PRODUCTS if p["key"] == "agent")
     body = fill_products(read_src("mcp.html"))
     howto = {
-        "@context": "https://schema.org", "@type": "HowTo", "name": f"חיבור {mcp['name']} ל-Claude",
+        "@context": "https://schema.org", "@type": "HowTo", "name": f"חיבור {agent['name']} ל-Claude",
         "step": [{"@type": "HowToStep", "position": i + 1, "name": n} for i, n in enumerate([
+            "מתקינים את Pro Agent, מריצים PROALGO ב-AutoCAD ונכנסים עם חשבון החברה",
             "פותחים Settings ואז Connectors ב-Claude", "לוחצים Add custom connector",
-            f"מדביקים את כתובת השרת {mcp['server']}", "לוחצים Connect ומאשרים את הגישה בחלון של Pro Algorithm",
+            f"מדביקים את כתובת השרת {agent['mcp_server']}", "לוחצים Connect ונכנסים עם אותו חשבון חברה",
             "מפעילים את המחבר בשיחה חדשה"])],
     }
     write("AutoCADMCP.html", page(
         "/AutoCADMCP", nav="/Products",
-        title=f"חיבור {mcp['name']} ל-Claude | מדריך התקנה | Pro Algorithm",
-        title_en=f"Connect {mcp['name']} to Claude | Setup guide | Pro Algorithm",
-        desc="מדריך צעד אחר צעד לחיבור שרת AutoCAD MCP של Pro Algorithm ל-Claude ול-Claude Code: הוספת מחבר מותאם, אישור OAuth, הפעלה בשיחה ופתרון בעיות.",
-        body=body, schemas=[howto, breadcrumb([("בית", "/"), ("מוצרים", "/Products"), (mcp["name"], "/AutoCADMCP")])],
+        title=f"חיבור {agent['name']} ל-Claude | מדריך התקנה | Pro Algorithm",
+        title_en=f"Connect {agent['name']} to Claude | Setup guide | Pro Algorithm",
+        desc="מדריך צעד אחר צעד לחיבור Pro Agent ל-Claude ול-Claude Code: התקנת התוסף ב-AutoCAD, הוספת מחבר מותאם, אישור הגישה, הפעלה בשיחה ופתרון בעיות.",
+        body=body, schemas=[howto, breadcrumb([("בית", "/"), ("מוצרים", "/Products"), (agent["name"], "/Products#agent"), ("חיבור ל-Claude", "/AutoCADMCP")])],
     ))
 
 
