@@ -1,7 +1,7 @@
     <section class="phero">
       <div class="wrap">
-        <h1 class="reveal" data-i18n="pp.title">שש פלטפורמות. <span class="thin">מומחיות אחת בבסיס.</span></h1>
-        <p class="reveal" data-i18n="pp.lead">ארבעה מוצרים לעולמות התכנון והשרטוט, ושניים לתפעול העסקי. כולם פותחו על ידי הצוותים שבונים מערכות לארגונים המובילים בישראל.</p>
+        <h1 class="reveal" data-i18n="pp.title">חמש פלטפורמות. <span class="thin">מומחיות אחת בבסיס.</span></h1>
+        <p class="reveal" data-i18n="pp.lead">שלושה מוצרים לעולמות התכנון והשרטוט, ושניים לתפעול העסקי. כולם פותחו על ידי הצוותים שבונים מערכות לארגונים המובילים בישראל.</p>
       </div>
     </section>
 
@@ -10,7 +10,6 @@
         <h2 data-i18n="prod.g1">{{prod.g1}}</h2>
         <ul>
           <li><a href="#agent">{{agent.name}}</a></li>
-          <li><a href="#mcp">{{mcp.name}}</a></li>
           <li><a href="#superposition">{{superposition.name}}</a></li>
           <li><a href="#cursor">{{cursor.name}}</a></li>
         </ul>
@@ -38,47 +37,31 @@
             </div>
           </div>
           <div>
-            <p class="product__desc" data-i18n="p.agent.d1">עוזר חכם שיושב בתוך AutoCAD ומבצע עבודה אמיתית על השרטוט. מתארים במילים מה צריך, והסוכן מתכנן את הצעדים ומבצע אותם.</p>
-            <p class="product__desc" data-i18n="p.agent.d2">משימות שלוקחות לשרטט שעות, כמו סידור שכבות, עדכון בלוקים, ניקוי קבצים ובדיקות תקינות, מתבצעות בדקות ובאופן עקבי.</p>
+            <p class="product__desc" data-i18n="p.agent.d1">סוכן AI שיושב בתוך AutoCAD ומבצע עבודה אמיתית על השרטוט. מתארים במילים מה צריך, בעברית או באנגלית, והסוכן מתכנן את הצעדים ומבצע אותם לפי תקני המשרד.</p>
+            <p class="product__desc" data-i18n="p.agent.d2">במצב סקירה כל שינוי מוצג כהצעה לפני שהוא מבוצע, וכל שלב מתבטל ב-UNDO אחד. עובדים מתוך AutoCAD, או מתוך Claude דרך המחבר של Pro Agent.</p>
           </div>
           <dl class="spec">
-            <div><dt data-i18n="spec.env">סביבה</dt><dd>AutoCAD</dd></div>
+            <div><dt data-i18n="spec.env">סביבה</dt><dd data-i18n="p.agent.env">AutoCAD 2022–2027 (לא כולל LT)</dd></div>
+            <div><dt data-i18n="spec.ui">ממשק</dt><dd data-i18n="p.agent.ui">לוח בתוך AutoCAD, או Claude</dd></div>
             <div><dt data-i18n="spec.for">למי</dt><dd data-i18n="p.agent.for">משרדי אדריכלות, הנדסה וקבלנים</dd></div>
             <div><dt data-i18n="spec.url">כתובת</dt><dd class="mono" dir="ltr">{{agent.domain}}</dd></div>
           </dl>
           <ul class="feats">
             <li><i class="ph ph-chat-text"></i><span><strong data-i18n="p.agent.f1t">פקודות בשפה טבעית</strong><span data-i18n="p.agent.f1p">בעברית או באנגלית, בלי לזכור תחביר.</span></span></li>
-            <li><i class="ph ph-stack"></i><span><strong data-i18n="p.agent.f2t">עבודה על שכבות ובלוקים</strong><span data-i18n="p.agent.f2p">יצירה, שינוי וסידור לפי תקני המשרד.</span></span></li>
-            <li><i class="ph ph-check-square"></i><span><strong data-i18n="p.agent.f3t">בדיקות תקינות</strong><span data-i18n="p.agent.f3p">איתור חריגות וחוסרים לפני הגשה.</span></span></li>
-            <li><i class="ph ph-repeat"></i><span><strong data-i18n="p.agent.f4t">אוטומציה של משימות חוזרות</strong><span data-i18n="p.agent.f4p">תהליך שהוגדר פעם אחת רץ על כל הקבצים.</span></span></li>
+            <li><i class="ph ph-stack"></i><span><strong data-i18n="p.agent.f2t">שכבות, בלוקים ומידות</strong><span data-i18n="p.agent.f2p">יצירה, עריכה וסידור לפי תקני המשרד.</span></span></li>
+            <li><i class="ph ph-books"></i><span><strong data-i18n="p.agent.f3t">הידע של המשרד</strong><span data-i18n="p.agent.f3p">תקנים, מסמכי פרויקט וכלים ייעודיים שהוגדרו לחברה.</span></span></li>
+            <li><i class="ph ph-translate"></i><span><strong data-i18n="p.agent.f4t">עברית גם בתוך השרטוט</strong><span data-i18n="p.agent.f4p">טקסט מימין לשמאל בשרטוט ודוחות PDF בעברית.</span></span></li>
+            <li><i class="ph ph-microsoft-excel-logo"></i><span><strong data-i18n="p.agent.f5t">תוצרים מוכנים</strong><span data-i18n="p.agent.f5p">כתבי כמויות לאקסל, דוחות PDF והדפסה ל-PDF.</span></span></li>
+            <li><i class="ph ph-check-square"></i><span><strong data-i18n="p.agent.f6t">בדיקות תקינות</strong><span data-i18n="p.agent.f6p">איתור חריגות וחוסרים לפני הגשה.</span></span></li>
+            <li><i class="ph ph-frame-corners"></i><span><strong data-i18n="p.agent.f7t">חלונות ודלתות אלומיניום</strong><span data-i18n="p.agent.f7p">רשימות חיתוך קליל וטבלאות חלקים מתוך השרטוט.</span></span></li>
+            <li><i class="ph ph-shield-check"></i><span><strong data-i18n="p.agent.f8t">השליטה אצלכם</strong><span data-i18n="p.agent.f8p">שינויים מוצגים כהצעה, UNDO אחד לכל שלב, והפרדה מלאה בין חברות.</span></span></li>
           </ul>
-        </article>
-
-        <!-- MCP -->
-        <article class="product reveal" id="mcp">
-          <div class="product__head">
-            <div>
-              <h3>{{mcp.name}}</h3>
-              <p class="product__tag" data-i18n="prod.mcp">{{mcp.tagline}}</p>
-            </div>
-            <div class="product__actions">
-              <a class="btn btn--primary btn--sm" href="/AutoCADMCP"><span data-i18n="p.mcp.guide">מדריך חיבור ל-Claude</span><i class="ph ph-arrow-left"></i></a>
-            </div>
-          </div>
-          <div>
-            <p class="product__desc" data-i18n="p.mcp.d1">שרת Model Context Protocol שמחבר את Claude לשרטוטים שלכם. Claude יכול לקרוא את הקובץ, להבין את המבנה שלו ולבצע בו פעולות מתוך שיחה רגילה.</p>
-            <p class="product__desc" data-i18n="p.mcp.d2">זה הגשר שמאפשר לצוותים לשלב מודלי שפה מתקדמים בתהליכי התכנון, בלי לפתח אינטגרציה מאפס.</p>
-          </div>
-          <dl class="spec">
-            <div><dt data-i18n="spec.env">סביבה</dt><dd>AutoCAD + Claude</dd></div>
-            <div><dt data-i18n="spec.for">למי</dt><dd data-i18n="p.mcp.for">צוותי תכנון, BIM ופיתוח</dd></div>
-          </dl>
+          <h4 class="product__sub" data-i18n="p.agent.ways">שתי דרכים לעבוד</h4>
           <ul class="feats">
-            <li><i class="ph ph-plugs-connected"></i><span><strong data-i18n="p.mcp.f1t">התקנה והתחברות מהירה</strong><span data-i18n="p.mcp.f1p">מתחברים ל-Claude ומתחילים לעבוד.</span></span></li>
-            <li><i class="ph ph-magnifying-glass"></i><span><strong data-i18n="p.mcp.f2t">קריאה וניתוח של שרטוטים</strong><span data-i18n="p.mcp.f2p">שאלות על הקובץ מקבלות תשובות מתוך הנתונים עצמם.</span></span></li>
-            <li><i class="ph ph-pencil-simple-line"></i><span><strong data-i18n="p.mcp.f3t">עריכה מתוך שיחה</strong><span data-i18n="p.mcp.f3p">Claude מבצע שינויים ישירות בשרטוט.</span></span></li>
-            <li><i class="ph ph-shield-check"></i><span><strong data-i18n="p.mcp.f4t">שליטה מלאה בהרשאות</strong><span data-i18n="p.mcp.f4p">אתם מחליטים למה המודל ניגש ומה הוא רשאי לשנות.</span></span></li>
+            <li><i class="ph ph-app-window"></i><span><strong data-i18n="p.agent.w1t">בתוך AutoCAD</strong><span data-i18n="p.agent.w1p">פותחים את לוח Pro Agent (פקודת PROALGO) וכותבים בקשה. הסוכן עובד עם מודל ה-AI שהחברה בחרה, ועם המפתח של החברה.</span></span></li>
+            <li><i class="ph ph-plugs-connected"></i><span><strong data-i18n="p.agent.w2t">מתוך Claude</strong><span data-i18n="p.agent.w2p">מחברים את Pro Agent ל-Claude (אתר, אפליקציה או Claude Code), ו-Claude עובד על השרטוט הפתוח במנוי Claude שלכם. אותם כלים, אותו מצב סקירה. <a href="/AutoCADMCP">מדריך החיבור</a></span></span></li>
           </ul>
+          <p class="product__note" data-i18n="p.agent.note">Pro Agent אינו קשור ל-Autodesk ואינו מאושר על ידה. AutoCAD הוא סימן מסחרי רשום של Autodesk, Inc.</p>
         </article>
 
         <!-- Superposition -->

@@ -1,8 +1,8 @@
     <section class="phero">
       <div class="wrap">
-        <nav class="crumbs" aria-label="פירורי לחם" data-i18n-attr="aria-label:crumb.label"><a href="/" data-i18n="crumb.home">בית</a><i class="ph ph-caret-left" aria-hidden="true"></i><a href="/Products" data-i18n="nav.products">מוצרים</a><i class="ph ph-caret-left" aria-hidden="true"></i><span aria-current="page">{{mcp.name}}</span></nav>
-        <h1 class="reveal" data-i18n="mcp.h1">חיבור {{mcp.name}} <span class="thin">ל-Claude.</span></h1>
-        <p class="reveal" data-i18n="mcp.h1lead">חמישה צעדים, בלי התקנה מקומית. מוסיפים את השרת כמחבר ב-Claude, מאשרים את הגישה בחלון שנפתח, ומתחילים לעבוד על השרטוט מתוך שיחה.</p>
+        <nav class="crumbs" aria-label="פירורי לחם" data-i18n-attr="aria-label:crumb.label"><a href="/" data-i18n="crumb.home">בית</a><i class="ph ph-caret-left" aria-hidden="true"></i><a href="/Products" data-i18n="nav.products">מוצרים</a><i class="ph ph-caret-left" aria-hidden="true"></i><a href="/Products#agent">{{agent.name}}</a><i class="ph ph-caret-left" aria-hidden="true"></i><span aria-current="page" data-i18n="mcp.crumb">חיבור ל-Claude</span></nav>
+        <h1 class="reveal" data-i18n="mcp.h1">חיבור {{agent.name}} <span class="thin">ל-Claude.</span></h1>
+        <p class="reveal" data-i18n="mcp.h1lead">עובדים על השרטוט הפתוח ב-AutoCAD מתוך שיחה ב-Claude. Pro Agent הוא תוסף שרץ בתוך AutoCAD, והמחבר נותן ל-Claude להשתמש בכלים שלו: לקרוא, לשרטט, לערוך ולייצא. לכן Pro Agent צריך להיות מותקן ומחובר במחשב שלכם.</p>
       </div>
     </section>
 
@@ -11,49 +11,70 @@
       <div class="prose prose--page" data-prose>
         <h2>מה צריך לפני שמתחילים</h2>
         <ul>
+          <li>AutoCAD 2022–2027 ב-Windows, עם <strong>Pro Agent מותקן</strong>. <a href="{{agent.download}}" target="_blank" rel="noopener">להורדת Pro Agent</a>. AutoCAD LT לא נתמך.</li>
+          <li>חשבון Pro Algorithm של החברה.</li>
           <li>חשבון Claude בתוכנית שתומכת במחברים מותאמים (Pro, Max, Team או Enterprise), או Claude Code במסוף.</li>
-          <li>חשבון Pro Algorithm. איתו נכנסים בחלון האישור בשלב 4.</li>
-          <li>AutoCAD פתוח עם השרטוט שרוצים לעבוד עליו.</li>
         </ul>
+
+        <h2>שלב 0: פותחים את Pro Agent ב-AutoCAD</h2>
+        <ol>
+          <li>פותחים את AutoCAD ואת השרטוט שרוצים לעבוד עליו.</li>
+          <li>מקלידים <code>PROALGO</code> כדי לפתוח את לוח Pro Agent.</li>
+          <li>נכנסים עם חשבון החברה.</li>
+        </ol>
+        <p>משאירים את הלוח פתוח כל עוד Claude עובד. כש-AutoCAD סגור או שלא נכנסתם, ל-Claude אין חיבור לשרטוט.</p>
 
         <h2>חיבור ב-Claude (אתר או אפליקציה)</h2>
         <ol>
           <li><strong>פותחים את ההגדרות.</strong> לוחצים על שם המשתמש בפינה, בוחרים <strong>Settings</strong> ואז <strong>Connectors</strong>.</li>
           <li><strong>מוסיפים מחבר.</strong> גוללים לתחתית הרשימה ולוחצים <strong>Add custom connector</strong>.</li>
-          <li><strong>ממלאים את הפרטים.</strong> בשדה השם כותבים <code>AutoCAD MCP</code>, ובשדה הכתובת מדביקים:
-            <pre><code>{{mcp.server}}</code></pre>
+          <li><strong>ממלאים את הפרטים.</strong> בשדה השם כותבים <code>Pro Agent</code>, ובשדה הכתובת מדביקים:
+            <pre><code>{{agent.mcp_server}}</code></pre>
             לוחצים <strong>Add</strong>. אין צורך למלא Client ID או Client Secret, השרת רושם את Claude בעצמו.</li>
-          <li><strong>מאשרים את הגישה.</strong> ליד המחבר החדש לוחצים <strong>Connect</strong>. נפתח חלון של Pro Algorithm בכתובת <code>{{mcp.authorize}}</code>. נכנסים עם חשבון Pro Algorithm ומאשרים את ההרשאה <code>autocad</code>. בסיום החלון נסגר והמחבר מסומן כמחובר.</li>
-          <li><strong>מפעילים בשיחה.</strong> פותחים שיחה חדשה, לוחצים על כפתור הכלים (<strong>+</strong> או <strong>Search and tools</strong>) ומוודאים ש-AutoCAD MCP מסומן. עכשיו אפשר לשאול, למשל: "אילו שכבות יש בשרטוט הפתוח?"</li>
+          <li><strong>מאשרים את הגישה.</strong> ליד המחבר החדש לוחצים <strong>Connect</strong>. נפתח חלון של Pro Algorithm בכתובת <code>{{agent.mcp_authorize}}</code>. נכנסים <strong>עם אותו חשבון חברה</strong> שאיתו נכנסתם ב-AutoCAD ומאשרים. Claude מתחבר רק לחיבורי AutoCAD של החברה שלכם.</li>
+          <li><strong>מפעילים בשיחה.</strong> פותחים שיחה חדשה, לוחצים על כפתור הכלים (<strong>+</strong> או <strong>Search and tools</strong>) ומוודאים ש-Pro Agent מסומן. עכשיו אפשר לשאול, למשל: "אילו שכבות בשרטוט הפתוח לא עומדות בתקן שלנו?"</li>
         </ol>
 
         <h2>חיבור ב-Claude Code</h2>
         <p>במסוף, מתוך תיקיית הפרויקט:</p>
-        <pre><code>claude mcp add --transport http autocad {{mcp.server}}</code></pre>
-        <p>מריצים <code>claude</code>, מקלידים <code>/mcp</code>, בוחרים <code>autocad</code> ואז <strong>Authenticate</strong>. הדפדפן נפתח לאותו חלון אישור, ואחרי האישור הכלים זמינים בשיחה.</p>
+        <pre><code>claude mcp add --transport http pro-agent {{agent.mcp_server}}</code></pre>
+        <p>מריצים <code>claude</code>, מקלידים <code>/mcp</code>, בוחרים <code>pro-agent</code> ואז <strong>Authenticate</strong>. הדפדפן נפתח לאותו חלון אישור, ואחרי האישור הכלים זמינים בשיחה.</p>
 
-        <h2>מה Claude יכול לעשות אחרי החיבור</h2>
+        <h2>מה Claude יכול לעשות דרך Pro Agent</h2>
         <ul>
-          <li>לקרוא את השרטוט: שכבות, בלוקים, ישויות ומאפיינים, ולענות על שאלות מתוך הנתונים עצמם.</li>
-          <li>לבצע שינויים: יצירה ועריכה של ישויות, סידור שכבות, עדכון בלוקים.</li>
-          <li>לבקש אישור לפני פעולות. ב-Claude אפשר לקבוע לכל כלי אם הוא רץ אוטומטית או מבקש אישור בכל פעם.</li>
+          <li>לקרוא את השרטוט: שכבות, בלוקים, ישויות ואזורים שבחרתם.</li>
+          <li>לשרטט ולערוך, ולהריץ פקודות AutoCAD.</li>
+          <li>לחפש בתקני החברה ובמסמכי הפרויקט.</li>
+          <li>לזהות אלמנטים בשרטוט ולמצוא אלמנטים דומים.</li>
+          <li>לייצא לאקסל או CSV, להפיק דוחות PDF ולהדפיס ל-PDF.</li>
+          <li>לייבא בלוקים מהספריות שלכם.</li>
+        </ul>
+
+        <h2>השליטה נשארת אצלכם</h2>
+        <ul>
+          <li><strong>ב-AutoCAD:</strong> במצב סקירה כל שינוי מופיע כהצעה בלוח Pro Agent, ואתם מאשרים או דוחים. שינוי שבוצע מתבטל ב-UNDO אחד.</li>
+          <li><strong>ב-Claude:</strong> אפשר לקבוע לכל כלי אם הוא רץ אוטומטית או מבקש אישור בכל פעם.</li>
+          <li><strong>סוכן אחד בכל רגע:</strong> כשהסוכן בלוח מטפל בבקשה, Claude לא יכול לבצע פעולות עד שהיא מסתיימת. כך שניהם לא עורכים את השרטוט בו-זמנית.</li>
         </ul>
 
         <h2>פתרון בעיות</h2>
         <ul>
+          <li><strong>"No AutoCAD session is connected".</strong> פותחים AutoCAD, מריצים <code>PROALGO</code>, נכנסים ומנסים שוב.</li>
+          <li><strong>"No AutoCAD session signed in under your company".</strong> ב-Claude וב-AutoCAD נכנסים עם אותו חשבון חברה.</li>
+          <li><strong>"The AutoCAD palette is running its own request".</strong> בקשה רצה עכשיו בלוח. מחכים שתסתיים ומנסים שוב.</li>
+          <li><strong>Claude ממתין זמן רב.</strong> הצעה מחכה לאישור שלכם בלוח Pro Agent.</li>
           <li><strong>חלון האישור לא נפתח.</strong> הדפדפן חסם חלון קופץ. מאשרים חלונות קופצים ל-claude.ai ולוחצים Connect שוב.</li>
-          <li><strong>המחבר מחובר אבל Claude לא רואה כלים.</strong> בודקים ש-AutoCAD פתוח ושיש בו שרטוט פעיל, ואז פותחים שיחה חדשה.</li>
           <li><strong>שגיאת invalid_token או 401.</strong> ההרשאה פגה. ב-Settings, Connectors לוחצים על המחבר, <strong>Disconnect</strong>, ואז <strong>Connect</strong> מחדש.</li>
           <li><strong>הכלים לא מופיעים בשיחה קיימת.</strong> מחברים חדשים נטענים רק בשיחות שנפתחו אחרי החיבור.</li>
         </ul>
 
         <h2>פרטים טכניים</h2>
         <table>
-          <tr><th>נקודת קצה</th><td dir="ltr"><code>{{mcp.server}}</code></td></tr>
-          <tr><th>תעבורה</th><td>Streamable HTTP (תקן MCP)</td></tr>
+          <tr><th>נקודת קצה</th><td dir="ltr"><code>{{agent.mcp_server}}</code></td></tr>
+          <tr><th>פרוטוקול</th><td>Model Context Protocol, תעבורת Streamable HTTP</td></tr>
           <tr><th>אימות</th><td>OAuth 2.1 עם PKCE (S256) ורישום לקוח דינמי</td></tr>
           <tr><th>הרשאה</th><td><code>autocad</code></td></tr>
-          <tr><th>מטא-דאטה</th><td dir="ltr"><code>{{mcp.origin}}/.well-known/oauth-authorization-server</code></td></tr>
+          <tr><th>מטא-דאטה</th><td dir="ltr"><code>{{agent.mcp_origin}}/.well-known/oauth-authorization-server</code></td></tr>
         </table>
 
         <p>נתקעתם? <a href="/Contact">כתבו לנו</a> ונחבר אתכם ביחד.</p>
@@ -61,49 +82,70 @@
       <template data-prose-en>
         <h2>Before you start</h2>
         <ul>
+          <li>AutoCAD 2022–2027 on Windows, with <strong>Pro Agent installed</strong>. <a href="{{agent.download}}" target="_blank" rel="noopener">Download Pro Agent</a>. AutoCAD LT is not supported.</li>
+          <li>Your company's Pro Algorithm account.</li>
           <li>A Claude account on a plan that supports custom connectors (Pro, Max, Team or Enterprise), or Claude Code in the terminal.</li>
-          <li>A Pro Algorithm account. You sign in with it in the approval window in step 4.</li>
-          <li>AutoCAD open with the drawing you want to work on.</li>
         </ul>
+
+        <h2>Step 0: Open Pro Agent in AutoCAD</h2>
+        <ol>
+          <li>Open AutoCAD and the drawing you want to work on.</li>
+          <li>Type <code>PROALGO</code> to open the Pro Agent palette.</li>
+          <li>Sign in with your company account.</li>
+        </ol>
+        <p>Keep the palette open while Claude is working. If AutoCAD is closed or you are not signed in, Claude has no connection to your drawing.</p>
 
         <h2>Connect in Claude (web or desktop app)</h2>
         <ol>
           <li><strong>Open settings.</strong> Click your name in the corner, choose <strong>Settings</strong>, then <strong>Connectors</strong>.</li>
           <li><strong>Add a connector.</strong> Scroll to the bottom of the list and click <strong>Add custom connector</strong>.</li>
-          <li><strong>Fill in the details.</strong> Name it <code>AutoCAD MCP</code> and paste this as the URL:
-            <pre><code>{{mcp.server}}</code></pre>
+          <li><strong>Fill in the details.</strong> Name it <code>Pro Agent</code> and paste this as the URL:
+            <pre><code>{{agent.mcp_server}}</code></pre>
             Click <strong>Add</strong>. Leave Client ID and Client Secret empty. The server registers Claude on its own.</li>
-          <li><strong>Approve access.</strong> Click <strong>Connect</strong> next to the new connector. A Pro Algorithm window opens at <code>{{mcp.authorize}}</code>. Sign in with your Pro Algorithm account and approve the <code>autocad</code> permission. The window closes and the connector shows as connected.</li>
-          <li><strong>Enable it in a chat.</strong> Start a new chat, open the tools button (<strong>+</strong> or <strong>Search and tools</strong>) and make sure AutoCAD MCP is checked. Now ask, for example: "Which layers are in the open drawing?"</li>
+          <li><strong>Approve access.</strong> Click <strong>Connect</strong> next to the new connector. A Pro Algorithm window opens at <code>{{agent.mcp_authorize}}</code>. Sign in <strong>with the same company account</strong> you used in AutoCAD and approve. Claude only connects to your company's AutoCAD sessions.</li>
+          <li><strong>Enable it in a chat.</strong> Start a new chat, open the tools button (<strong>+</strong> or <strong>Search and tools</strong>) and make sure Pro Agent is checked. Now ask, for example: "Which layers in the open drawing don't follow our standard?"</li>
         </ol>
 
         <h2>Connect in Claude Code</h2>
         <p>In the terminal, inside your project folder:</p>
-        <pre><code>claude mcp add --transport http autocad {{mcp.server}}</code></pre>
-        <p>Run <code>claude</code>, type <code>/mcp</code>, pick <code>autocad</code> and choose <strong>Authenticate</strong>. Your browser opens the same approval window, and after approving, the tools are available in the session.</p>
+        <pre><code>claude mcp add --transport http pro-agent {{agent.mcp_server}}</code></pre>
+        <p>Run <code>claude</code>, type <code>/mcp</code>, pick <code>pro-agent</code> and choose <strong>Authenticate</strong>. Your browser opens the same approval window, and after approving, the tools are available in the session.</p>
 
-        <h2>What Claude can do once connected</h2>
+        <h2>What Claude can do through Pro Agent</h2>
         <ul>
-          <li>Read the drawing: layers, blocks, entities and properties, and answer questions from the data itself.</li>
-          <li>Make changes: create and edit entities, organize layers, update blocks.</li>
-          <li>Ask before acting. In Claude you can set each tool to run automatically or to ask for approval every time.</li>
+          <li>Read the drawing: layers, blocks, entities and the areas you select.</li>
+          <li>Draw and edit, and run AutoCAD commands.</li>
+          <li>Search your company's standards and project documents.</li>
+          <li>Detect elements in the drawing and find similar ones.</li>
+          <li>Export to Excel or CSV, create PDF reports and plot to PDF.</li>
+          <li>Import blocks from your libraries.</li>
+        </ul>
+
+        <h2>You stay in control</h2>
+        <ul>
+          <li><strong>In AutoCAD:</strong> in review mode each change appears as a proposal in the Pro Agent palette, and you accept or reject it. An applied change undoes in one UNDO.</li>
+          <li><strong>In Claude:</strong> you can set each tool to run automatically or to ask for approval every time.</li>
+          <li><strong>One agent at a time:</strong> while the palette agent is handling a request, Claude can't act until it finishes, so the two never edit the drawing at the same time.</li>
         </ul>
 
         <h2>Troubleshooting</h2>
         <ul>
+          <li><strong>"No AutoCAD session is connected".</strong> Open AutoCAD, run <code>PROALGO</code>, sign in and try again.</li>
+          <li><strong>"No AutoCAD session signed in under your company".</strong> Sign in with the same company account in Claude and in AutoCAD.</li>
+          <li><strong>"The AutoCAD palette is running its own request".</strong> A request is running in the palette. Wait for it to finish and try again.</li>
+          <li><strong>Claude is waiting a long time.</strong> A proposal is waiting for your approval in the Pro Agent palette.</li>
           <li><strong>The approval window did not open.</strong> Your browser blocked a popup. Allow popups for claude.ai and click Connect again.</li>
-          <li><strong>Connected, but Claude sees no tools.</strong> Check that AutoCAD is open with an active drawing, then start a new chat.</li>
           <li><strong>invalid_token or 401 error.</strong> The authorization expired. In Settings, Connectors click the connector, <strong>Disconnect</strong>, then <strong>Connect</strong> again.</li>
           <li><strong>Tools are missing in an existing chat.</strong> New connectors only load in chats started after connecting.</li>
         </ul>
 
         <h2>Technical details</h2>
         <table>
-          <tr><th>Endpoint</th><td dir="ltr"><code>{{mcp.server}}</code></td></tr>
-          <tr><th>Transport</th><td>Streamable HTTP (MCP standard)</td></tr>
+          <tr><th>Endpoint</th><td dir="ltr"><code>{{agent.mcp_server}}</code></td></tr>
+          <tr><th>Protocol</th><td>Model Context Protocol, Streamable HTTP transport</td></tr>
           <tr><th>Auth</th><td>OAuth 2.1 with PKCE (S256) and dynamic client registration</td></tr>
           <tr><th>Scope</th><td><code>autocad</code></td></tr>
-          <tr><th>Metadata</th><td dir="ltr"><code>{{mcp.origin}}/.well-known/oauth-authorization-server</code></td></tr>
+          <tr><th>Metadata</th><td dir="ltr"><code>{{agent.mcp_origin}}/.well-known/oauth-authorization-server</code></td></tr>
         </table>
 
         <p>Stuck? <a href="/Contact">Write to us</a> and we'll get you connected.</p>
