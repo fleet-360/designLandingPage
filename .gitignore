@@ -1,3 +1,7 @@
 ﻿dist/
 __pycache__/
 
+
+# payment pages: local config, see .env.example
+.env
+.env.local

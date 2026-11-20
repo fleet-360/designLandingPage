@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>יצירת קישור תשלום | Pro Algorithm</title>
+    <meta name="description" content="יצירת קישור תשלום ללקוח - Pro Algorithm">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/brand/icon-32.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@700;900&family=Rubik:wght@800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/pay-assets/pay.css">
+</head>
+
+<body class="payment-body">
+    <nav class="navbar scrolled" id="navbar">
+        <div class="container navbar-content">
+            <a href="/" class="logo">
+                <img src="/pay-assets/all-blue-logo.png" alt="Pro Algorithm" class="proAlgo-logo-img">
+            </a>
+            <div class="nav-actions">
+                <button class="lang-toggle" id="langToggle" title="Switch Language">
+                    <span class="lang-he">EN</span>
+                    <span class="lang-en" style="display:none;">HE</span>
+                </button>
+                <a href="/pay" class="btn btn-primary nav-cta" data-he="עמוד התשלום"
+                    data-en="Payment page">עמוד התשלום</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="payment-page">
+        <div class="container payment-container payment-container-wide">
+
+            <div class="payment-card">
+                <div class="pay-head">
+                    <div class="pay-lock"><i class="fas fa-link"></i></div>
+                    <h1 class="pay-title" data-he="יצירת קישור תשלום" data-en="Create a payment link">יצירת קישור תשלום
+                    </h1>
+                    <p class="pay-subtitle" data-he="הזינו סכום, צרו קישור ושלחו ללקוח בוואטסאפ או במייל"
+                        data-en="Enter an amount, generate a link and send it to your customer by WhatsApp or email">
+                        הזינו סכום, צרו קישור ושלחו ללקוח בוואטסאפ או במייל</p>
+                </div>
+
+                <!-- Login gate -->
+                <form class="pay-gate" id="linkGate" hidden>
+                    <p class="pay-gate-note" data-he="העמוד מוגן. יש להזדהות כדי ליצור קישורי תשלום."
+                        data-en="This page is protected. Sign in to create payment links.">
+                        העמוד מוגן. יש להזדהות כדי ליצור קישורי תשלום.</p>
+
+                    <div class="pay-field">
+                        <label for="gateUser" data-he="שם משתמש" data-en="Username">שם משתמש</label>
+                        <input type="text" id="gateUser" autocomplete="username" dir="ltr">
+                    </div>
+
+                    <div class="pay-field">
+                        <label for="gatePassword" data-he="סיסמה" data-en="Password">סיסמה</label>
+                        <input type="password" id="gatePassword" autocomplete="current-password" dir="ltr">
+                    </div>
+
+                    <div class="pay-error" id="gateError" hidden></div>
+
+                    <button type="submit" class="btn btn-submit btn-lg btn-full" id="gateSubmit"
+                        data-he="<i class='fas fa-right-to-bracket'></i> כניסה"
+                        data-en="<i class='fas fa-right-to-bracket'></i> Sign in"><i
+                            class="fas fa-right-to-bracket"></i> כניסה</button>
+                </form>
+
+                <!-- Generator (revealed after sign-in) -->
+                <div id="linkContent" hidden>
+                    <div class="pay-session">
+                        <span><i class="fas fa-user-shield"></i> <span id="sessionUser"></span></span>
+                        <button type="button" class="pay-logout" id="logoutBtn" data-he="יציאה"
+                            data-en="Sign out">יציאה</button>
+                    </div>
+
+                    <form class="pay-form" id="linkForm" novalidate>
+                        <div class="pay-field pay-field-full">
+                            <label for="linkAmount" data-he="סכום לתשלום (₪) *"
+                                data-en="Amount to pay (ILS) *">סכום לתשלום (₪) *</label>
+                            <input type="text" id="linkAmount" inputmode="decimal" autocomplete="off" dir="ltr"
+                                placeholder="0">
+                        </div>
+
+                        <div class="pay-field">
+                            <label for="linkPayments" data-he="מספר תשלומים" data-en="Number of installments">מספר
+                                תשלומים</label>
+                            <select id="linkPayments"></select>
+                        </div>
+
+                        <div class="pay-field">
+                            <label for="linkExpiry" data-he="תוקף הקישור" data-en="Link validity">תוקף הקישור</label>
+                            <select id="linkExpiry">
+                                <option value="1" data-he="24 שעות" data-en="24 hours">24 שעות</option>
+                                <option value="7" selected data-he="7 ימים" data-en="7 days">7 ימים</option>
+                                <option value="30" data-he="30 ימים" data-en="30 days">30 ימים</option>
+                                <option value="0" data-he="ללא הגבלה" data-en="No expiry">ללא הגבלה</option>
+                            </select>
+                        </div>
+
+                        <div class="pay-field pay-field-full">
+                            <label for="linkDescription" data-he="עבור מה התשלום? *"
+                                data-en="What is the payment for? *">עבור מה התשלום? *</label>
+                            <input type="text" id="linkDescription" maxlength="120" autocomplete="off">
+                        </div>
+
+                        <div class="pay-divider">
+                            <span data-he="פרטי הלקוח (אופציונלי - ימולאו מראש עבורו)"
+                                data-en="Customer details (optional - prefilled for them)">פרטי הלקוח (אופציונלי -
+                                ימולאו מראש עבורו)</span>
+                        </div>
+
+                        <div class="pay-field">
+                            <label for="linkName" data-he="שם מלא" data-en="Full name">שם מלא</label>
+                            <input type="text" id="linkName" autocomplete="off">
+                        </div>
+
+                        <div class="pay-field">
+                            <label for="linkPhone" data-he="טלפון נייד" data-en="Mobile phone">טלפון נייד</label>
+                            <input type="tel" id="linkPhone" autocomplete="off" dir="ltr">
+                        </div>
+
+                        <div class="pay-field">
+                            <label for="linkEmail" data-he="אימייל" data-en="Email">אימייל</label>
+                            <input type="email" id="linkEmail" autocomplete="off" dir="ltr">
+                        </div>
+
+                        <div class="pay-field">
+                            <label for="linkTaxId" data-he="ח.פ / ע.מ" data-en="Business tax ID">ח.פ / ע.מ</label>
+                            <input type="text" id="linkTaxId" inputmode="numeric" autocomplete="off" dir="ltr">
+                        </div>
+
+                        <div class="pay-options pay-field-full">
+                            <label class="pay-check">
+                                <input type="checkbox" id="linkLock" checked>
+                                <span data-he="נעילת הסכום (הלקוח לא יוכל לשנות)"
+                                    data-en="Lock the amount (the customer cannot change it)">נעילת הסכום (הלקוח לא
+                                    יוכל לשנות)</span>
+                            </label>
+                            <label class="pay-check">
+                                <input type="checkbox" id="linkEnglish">
+                                <span data-he="פתיחת העמוד באנגלית" data-en="Open the page in English">פתיחת העמוד
+                                    באנגלית</span>
+                            </label>
+                        </div>
+
+                        <div class="pay-error" id="linkError" hidden></div>
+
+                        <button type="submit" class="btn btn-submit btn-lg btn-full" id="linkSubmit"
+                            data-he="<i class='fas fa-link'></i> צור קישור תשלום"
+                            data-en="<i class='fas fa-link'></i> Create payment link"><i class="fas fa-link"></i> צור
+                            קישור תשלום</button>
+                    </form>
+
+                    <!-- Result -->
+                    <div class="pay-result" id="linkResult" hidden>
+                        <div class="pay-result-head">
+                            <i class="fas fa-circle-check"></i>
+                            <span id="linkResultTitle" data-he="הקישור מוכן" data-en="Your link is ready">הקישור
+                                מוכן</span>
+                        </div>
+
+                        <div class="pay-result-url">
+                            <input type="text" id="linkOutput" readonly dir="ltr">
+                            <button type="button" class="btn btn-primary" id="copyLink" data-he="העתק"
+                                data-en="Copy">העתק</button>
+                        </div>
+
+                        <p class="pay-result-meta" id="linkMeta"></p>
+
+                        <div class="pay-share">
+                            <a href="#" id="shareWhatsapp" class="pay-share-btn" target="_blank"
+                                rel="noopener noreferrer">
+                                <i class="fab fa-whatsapp"></i>
+                                <span data-he="שליחה בוואטסאפ" data-en="Send on WhatsApp">שליחה בוואטסאפ</span>
+                            </a>
+                            <a href="#" id="shareEmail" class="pay-share-btn">
+                                <i class="fas fa-envelope"></i>
+                                <span data-he="שליחה במייל" data-en="Send by email">שליחה במייל</span>
+                            </a>
+                            <a href="#" id="openLink" class="pay-share-btn" target="_blank" rel="noopener noreferrer">
+                                <i class="fas fa-arrow-up-right-from-square"></i>
+                                <span data-he="פתיחה בכרטיסייה חדשה" data-en="Open in a new tab">פתיחה בכרטיסייה
+                                    חדשה</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shown when the build had no PAY_ADMIN_* / PAY_LINK_SECRET -->
+                <div class="pay-state pay-state-error" id="linkNotConfigured" hidden>
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <p id="linkNotConfiguredText"></p>
+                </div>
+            </div>
+
+            <a href="/" class="pay-back-link" data-he="&#8592; חזרה לאתר" data-en="&#8592; Back to site">&#8592; חזרה
+                לאתר</a>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-simple">
+                <a href="/" class="logo">
+                    <img src="/pay-assets/all-blue-logo.png" alt="Pro Algorithm" class="proAlgo-logo-img"
+                        style="max-height:40px;">
+                </a>
+                <p class="footer-copyright" data-he="&copy; 2026 Pro Algorithm. כל הזכויות שמורות."
+                    data-en="&copy; 2026 Pro Algorithm. All rights reserved.">&copy; 2026 Pro Algorithm. כל הזכויות
+                    שמורות.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/pay-assets/pay-config.js"></script>
+    <script src="/pay-assets/pay-crypto.js"></script>
+    <script src="/pay-assets/pay-shared.js"></script>
+    <script src="/pay-assets/payment-link.js"></script>
+</body>
+
+</html>

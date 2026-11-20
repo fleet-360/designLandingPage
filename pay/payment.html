@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Google tag (gtag.js) - for google analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WNYH9370R7"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-WNYH9370R7');
+    </script>
+    <!-- End Google tag (gtag.js) -->
+
+    <!-- Meta Pixel Code -->
+    <script>
+        !function (f, b, e, v, n, t, s) {
+            if (f.fbq) return; n = f.fbq = function () {
+                n.callMethod ?
+                    n.callMethod.apply(n, arguments) : n.queue.push(arguments)
+            };
+            if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = '2.0';
+            n.queue = []; t = b.createElement(e); t.async = !0;
+            t.src = v; s = b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t, s)
+        }(window, document, 'script',
+            'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', '1211673381044842');
+        fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+            src="https://www.facebook.com/tr?id=1211673381044842&ev=PageView&noscript=1" /></noscript>
+    <!-- End Meta Pixel Code -->
+
+    <title>תשלום מאובטח | Pro Algorithm</title>
+    <meta name="description" content="עמוד תשלום מאובטח של Pro Algorithm - סליקת אשראי מאובטחת באמצעות Grow.">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/brand/icon-32.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@700;900&family=Rubik:wght@800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/pay-assets/pay.css">
+
+    <!-- Grow (Meshulam) checkout SDK - renders the payment options in-page -->
+    <script src="https://cdn.meshulam.co.il/sdk/gs.min.js"></script>
+</head>
+
+<!-- Standalone checkout: no site navbar, no outbound links. -->
+
+<body class="payment-body payment-standalone">
+    <main class="payment-page">
+        <div class="container payment-container">
+
+            <div class="payment-card">
+                <div class="pay-head">
+                    <picture>
+                        <source srcset="/pay-assets/all-dark-logo.webp" type="image/webp">
+                        <img src="/pay-assets/all-dark-logo.png" alt="Pro Algorithm" class="pay-brand" width="2000"
+                            height="177">
+                    </picture>
+                    <h1 class="pay-title" data-he="<i class='fas fa-lock'></i> תשלום מאובטח"
+                        data-en="<i class='fas fa-lock'></i> Secure Payment"><i class="fas fa-lock"></i> תשלום מאובטח
+                    </h1>
+                    <p class="pay-subtitle" data-he="אשרו את הפרטים והשלימו את התשלום כאן בעמוד"
+                        data-en="Confirm your details and complete the payment right here">
+                        אשרו את הפרטים והשלימו את התשלום כאן בעמוד</p>
+                </div>
+
+                <!-- Shown while the encrypted link (?d=...) is being decoded -->
+                <div class="pay-state" id="payLoading" hidden>
+                    <div class="pay-spinner"></div>
+                    <p data-he="טוען את פרטי התשלום..." data-en="Loading payment details...">טוען את פרטי התשלום...</p>
+                </div>
+
+                <!-- Shown when the link is missing, invalid, tampered with or expired -->
+                <div class="pay-state pay-state-error" id="payInvalid" hidden>
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <p id="payInvalidText"></p>
+                </div>
+
+                <!-- Shown after Grow reports a successful payment -->
+                <div class="pay-state pay-state-success" id="paySuccess" hidden>
+                    <i class="fas fa-circle-check"></i>
+                    <h2 data-he="התשלום התקבל, תודה!" data-en="Payment received, thank you!">התשלום התקבל, תודה!</h2>
+                    <p class="pay-success-amount" id="paySuccessAmount"></p>
+                    <p data-he="חשבונית מס קבלה תישלח אליכם למייל בדקות הקרובות."
+                        data-en="A tax invoice will be emailed to you within a few minutes.">
+                        חשבונית מס קבלה תישלח אליכם למייל בדקות הקרובות.</p>
+                </div>
+
+                <div id="payContent">
+                    <!-- Amount -->
+                    <div class="pay-amount-box">
+                        <span class="pay-amount-label" data-he="סכום לתשלום" data-en="Amount to pay">סכום לתשלום</span>
+
+                        <div class="pay-amount-input" id="amountEditable">
+                            <span class="pay-currency">&#8362;</span>
+                            <input type="text" id="amount" inputmode="decimal" autocomplete="off" placeholder="0"
+                                aria-label="Amount to pay">
+                        </div>
+
+                        <div class="pay-amount-static" id="amountStatic" hidden>
+                            <span class="pay-currency">&#8362;</span>
+                            <span id="amountStaticValue">0</span>
+                        </div>
+
+                        <p class="pay-vat" data-he="הסכום כולל מע&quot;מ" data-en="VAT included">הסכום כולל מע"מ</p>
+                    </div>
+
+                    <!-- Form -->
+                    <form class="pay-form" id="paymentForm" novalidate>
+                        <div class="pay-field pay-field-full">
+                            <label for="description" data-he="עבור" data-en="For">עבור</label>
+                            <input type="text" id="description" maxlength="120" autocomplete="off">
+                        </div>
+
+                        <div class="pay-field">
+                            <label for="fullName" data-he="שם מלא *" data-en="Full name *">שם מלא *</label>
+                            <input type="text" id="fullName" autocomplete="name">
+                        </div>
+
+                        <div class="pay-field">
+                            <label for="phone" data-he="טלפון נייד *" data-en="Mobile phone *">טלפון נייד *</label>
+                            <input type="tel" id="phone" autocomplete="tel" dir="ltr">
+                        </div>
+
+                        <div class="pay-field">
+                            <label for="email" data-he="אימייל * (לקבלת החשבונית)"
+                                data-en="Email * (for the invoice)">אימייל * (לקבלת החשבונית)</label>
+                            <input type="email" id="email" autocomplete="email" dir="ltr">
+                        </div>
+
+                        <div class="pay-field">
+                            <label for="businessTaxId" data-he="ח.פ / ע.מ *"
+                                data-en="Business tax ID *">ח.פ / ע.מ *</label>
+                            <input type="text" id="businessTaxId" inputmode="numeric" autocomplete="off" dir="ltr">
+                        </div>
+
+                        <div class="pay-field pay-field-full" id="paymentsField">
+                            <label for="paymentsCount" data-he="מספר תשלומים" data-en="Number of installments">מספר
+                                תשלומים</label>
+                            <select id="paymentsCount"></select>
+                        </div>
+
+                        <div class="pay-error" id="payError" hidden></div>
+
+                        <button type="submit" class="btn btn-submit btn-lg btn-full" id="paySubmit"
+                            data-he="<i class='fas fa-credit-card'></i> לתשלום"
+                            data-en="<i class='fas fa-credit-card'></i> Pay now"><i class="fas fa-credit-card"></i>
+                            לתשלום</button>
+
+                        <p class="pay-note"
+                            data-he="הסליקה מתבצעת בחלון מאובטח של Grow (משולם). פרטי האשראי אינם נשמרים אצלנו."
+                            data-en="Checkout runs in a secure Grow (Meshulam) window. We never store your card details.">
+                            הסליקה מתבצעת בחלון מאובטח של Grow (משולם). פרטי האשראי אינם נשמרים אצלנו.</p>
+                    </form>
+                </div><!-- /#payContent -->
+
+                <div class="pay-badges">
+                    <span><i class="fas fa-shield-halved"></i> <span data-he="תקן PCI DSS"
+                            data-en="PCI DSS compliant">תקן PCI DSS</span></span>
+                    <span><i class="fas fa-file-invoice"></i> <span data-he="חשבונית מס קבלה במייל"
+                            data-en="Tax invoice by email">חשבונית מס קבלה במייל</span></span>
+                    <span class="pay-cards"><i class="fab fa-cc-visa"></i><i class="fab fa-cc-mastercard"></i><i
+                            class="fab fa-cc-amex"></i></span>
+                </div>
+            </div>
+
+            <p class="pay-legal" data-he="&copy; 2026 Pro Algorithm" data-en="&copy; 2026 Pro Algorithm">&copy; 2026 Pro
+                Algorithm</p>
+        </div>
+    </main>
+
+    <script src="/pay-assets/pay-config.js"></script>
+    <script src="/pay-assets/pay-crypto.js"></script>
+    <script src="/pay-assets/pay-shared.js"></script>
+    <script src="/pay-assets/payment.js"></script>
+</body>
+
+</html>

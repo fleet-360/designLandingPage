@@ -1491,6 +1491,8 @@ def build_meta_files(d):
               "/blog-post-page /BlogPostPage 301", "/blogpostpage /BlogPostPage 301",
               "/LandingPage / 301", "/landingpage / 301", "/landing-page / 301", "/home / 301", "/Home / 301",
               "/index.html / 301"]
+    lines += ["", "# payment pages (same rewrites as vercel.json)",
+              "/pay /payment 200", "/תשלום /payment 200", "/pay-link /payment-link 200", "/create-payment-link /payment-link 200"]
     write("_redirects", "\n".join(lines) + "\n")
 
     # Vercel ignores _redirects: the old /BlogPostPage?slug= addresses get real 308s in vercel.json (rewritten
@@ -1570,6 +1572,19 @@ def copy_catalog():
                 continue
             with open(p, "w", encoding="utf-8", newline="\n") as f:
                 f.write(t)
+
+
+def build_payment():
+    """Payment pages from pay/: /pay (payment.html, customer checkout) and /pay-link (payment-link.html, internal
+    link generator). Their files go under /pay-assets/, not /assets/, which is cached as immutable: pay-config.js
+    changes on every build. /pay and /pay-link are rewrites in vercel.json and _redirects. See pay/README.md."""
+    import pay_config
+    src = os.path.join(ROOT, "pay")
+    for n in ("payment.html", "payment-link.html"):
+        with open(os.path.join(src, n), encoding="utf-8") as f:
+            write(n, f.read())
+    shutil.copytree(os.path.join(src, "assets"), os.path.join(DIST, "pay-assets"), dirs_exist_ok=True)
+    pay_config.write(os.path.join(DIST, "pay-assets", "pay-config.js"))
 
 
 def live_demos():
@@ -1718,6 +1733,7 @@ def main():
     d = {k: load(k) for k in ("team", "clients", "press", "posts", "podcasts")}
     copy_assets()
     copy_catalog()
+    build_payment()
     build_home(d)
     build_products(d)
     build_mcp(d)
