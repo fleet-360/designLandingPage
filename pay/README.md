@@ -33,8 +33,8 @@ is unreachable when Toro reports a payment, that payment is missing from the das
 | Endpoint | Who | What |
 | --- | --- | --- |
 | `GET /api/pay/session` | admin page | 200 `{ user }`, 401 signed out, 503 not configured |
-| `POST /api/pay/login` | admin page | checks `PAY_ADMIN_USER` / `PAY_ADMIN_PASSWORD`, sets an HttpOnly cookie for 12 h. 10 failures from one IP in 15 minutes lock that IP out |
-| `POST /api/pay/logout` | admin page | clears the cookie |
+| `POST /api/pay/login` | admin page | the site admin sign-in (`api/auth/login.js`, shared with `/contracts`): checks `PAY_ADMIN_USER` / `PAY_ADMIN_PASSWORD`, sets an HttpOnly cookie for all of `/api` for 12 h. 10 failures from one IP in 15 minutes lock that IP out |
+| `POST /api/pay/logout` | admin page | clears the cookie (`api/auth/logout.js`) |
 | `GET /api/pay/links` | admin page | latest 500 links (with paid count and sum) and latest 500 payments |
 | `POST /api/pay/links` | admin page | validates, stores the link and returns it with its `/pay?d=...` address |
 | `POST /api/pay/paid` | Toro | records a payment; a repeated `transactionId` only fills what was missing (invoice number, link). Accepted only from Toro's IP (see below) |
@@ -75,7 +75,7 @@ the page waits 10 s and then tells the customer to refresh. `PAY_GROW_ENVIRONMEN
 
 ## Configuration
 
-Vercel → the project that serves www.pro-algo.com (`pro-algorithm-site`) → Settings → Environment Variables, and a
+Vercel → the project that serves www.pro-algo.com (`landing-page-build`) → Settings → Environment Variables, and a
 local `.env` for development (see `.env.example`):
 
 | Variable | Purpose |

@@ -1,10 +1,10 @@
-// Signed session cookie for the /pay-link admin. No session table: the cookie carries the
-// user and an expiry, signed with HMAC. Changing PAY_ADMIN_PASSWORD or PAY_LINK_SECRET
+// Signed session cookie for the site admin (/pay-link, /contracts). No session table: the cookie
+// carries the user and an expiry, signed with HMAC. Changing PAY_ADMIN_PASSWORD or PAY_LINK_SECRET
 // (or setting PAY_SESSION_SECRET) signs everyone out.
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { cookies, HttpError } from "./http.js";
 
-const COOKIE = "pa_pay_admin";
+const COOKIE = "pa_admin";
 const TTL_SECONDS = 12 * 60 * 60;
 
 function key() {
@@ -20,11 +20,11 @@ function sign(body) {
 export function setSession(res, user) {
   const body = Buffer.from(JSON.stringify({ u: user, exp: Date.now() + TTL_SECONDS * 1000 })).toString("base64url");
   res.setHeader("Set-Cookie",
-    `${COOKIE}=${body}.${sign(body)}; Path=/api/pay; Max-Age=${TTL_SECONDS}; HttpOnly; Secure; SameSite=Strict`);
+    `${COOKIE}=${body}.${sign(body)}; Path=/api; Max-Age=${TTL_SECONDS}; HttpOnly; Secure; SameSite=Strict`);
 }
 
 export function clearSession(res) {
-  res.setHeader("Set-Cookie", `${COOKIE}=; Path=/api/pay; Max-Age=0; HttpOnly; Secure; SameSite=Strict`);
+  res.setHeader("Set-Cookie", `${COOKIE}=; Path=/api; Max-Age=0; HttpOnly; Secure; SameSite=Strict`);
 }
 
 // The signed-in user, or null

@@ -1464,7 +1464,7 @@ def build_meta_files(d):
         xml.append(f"  <url><loc>{esc(SITE + (u if u != '/' else '/'))}</loc><lastmod>{lm}</lastmod><priority>{pr}</priority></url>")
     xml.append("</urlset>")
     write("sitemap.xml", "\n".join(xml) + "\n")
-    write("robots.txt", f"User-agent: *\nAllow: /\n\nSitemap: {SITE}/sitemap.xml\n")
+    write("robots.txt", f"User-agent: *\nAllow: /\nDisallow: /contracts/\nDisallow: /api/\n\nSitemap: {SITE}/sitemap.xml\n")
 
     write("manifest.json", json.dumps({
         "name": "Pro Algorithm", "short_name": "Pro Algorithm", "lang": "he", "dir": "rtl",
@@ -1572,6 +1572,12 @@ def copy_catalog():
                 continue
             with open(p, "w", encoding="utf-8", newline="\n") as f:
                 f.write(t)
+
+
+def copy_static():
+    """static/ goes to the root of dist/ as is: files other systems link to by a fixed address
+    (see static/README.md)."""
+    shutil.copytree(os.path.join(ROOT, "static"), DIST, dirs_exist_ok=True, ignore=shutil.ignore_patterns("*.md"))
 
 
 def build_payment():
@@ -1733,6 +1739,7 @@ def main():
     d = {k: load(k) for k in ("team", "clients", "press", "posts", "podcasts")}
     copy_assets()
     copy_catalog()
+    copy_static()
     build_payment()
     build_home(d)
     build_products(d)

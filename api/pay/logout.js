@@ -1,8 +1,2 @@
-// POST /api/pay/logout -> 200, session cookie cleared
-import { json, route } from "../_lib/http.js";
-import { clearSession } from "../_lib/session.js";
-
-export default route(["POST"], async (req, res) => {
-  clearSession(res);
-  json(res, 200, { ok: true });
-});
+// POST /api/pay/logout: kept at this address for /pay-link
+export { default } from "../auth/logout.js";

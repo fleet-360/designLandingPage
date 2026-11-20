@@ -26,3 +26,19 @@ function pool() {
 export async function query(text, params = []) {
   return pool().query(text, params);
 }
+
+// Runs fn(client) in one transaction: everything it wrote is kept, or nothing is.
+export async function transaction(fn) {
+  const client = await pool().connect();
+  try {
+    await client.query("BEGIN");
+    const result = await fn(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (err) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
+}
