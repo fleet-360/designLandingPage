@@ -112,12 +112,14 @@ export async function mailsFor(entity, entityId) {
 
 // ---- Spec request payment (reported by Toro through /api/pay/paid, or marked by hand) ----
 
-export async function markDiscoveryPaid(id, { via, ref }) {
+// payer: what the client typed in the payment form; fills the request's contact details when sales left them empty
+export async function markDiscoveryPaid(id, { via, ref, payer = {} }) {
+  const email = isEmail(payer.email) ? str(payer.email, 160).toLowerCase() : null;
   const { rows } = await query(
     `UPDATE sales.discovery SET status = CASE WHEN status IN ('sent','viewed') THEN 'paid' ELSE status END,
             paid_at = COALESCE(paid_at, now()), paid_via = COALESCE(paid_via, $2), payment_ref = COALESCE(payment_ref, $3),
-            updated_at = now()
-      WHERE id = $1 AND canceled_at IS NULL AND paid_at IS NULL RETURNING *`, [id, via, ref || null]);
+            email = COALESCE(email, $4), phone = COALESCE(phone, $5), updated_at = now()
+      WHERE id = $1 AND canceled_at IS NULL AND paid_at IS NULL RETURNING *`, [id, via, ref || null, email, str(payer.phone, 30) || null]);
   if (!rows[0]) return null;
   await logEvent("discovery", id, "paid", { via, ref: ref || null });
   const { discoveryPaidMail } = await import("./sales-mail.js");

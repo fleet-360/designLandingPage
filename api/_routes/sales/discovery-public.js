@@ -33,6 +33,7 @@ function view(d, settings) {
     status: d.status,
     paid: Boolean(d.paid_at),
     booked: Boolean(d.meeting_start),
+    email: d.email || "",   // where the meeting invite goes
     meeting: d.meeting_start ? { start: iso(d.meeting_start), end: iso(d.meeting_end), meetUrl: d.meet_url, attendees: d.attendees, invited: d.booking_status } : null,
     // for the payment widget (Toro createPaymentLink, the same as /pay): the request's id is the link id
     payment: d.paid_at ? null : {

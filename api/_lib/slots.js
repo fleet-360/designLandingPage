@@ -66,7 +66,7 @@ export async function availableSlots(settings, minutes, { now = new Date(), excl
   for (const [, list] of byDay) {
     const noon = israelTime(list[0].day, "12:30").getTime();
     const am = list.find((s) => s.start < noon);
-    const pm = list.find((s) => s.start >= noon);
+    const pm = list.find((s) => s.start >= noon && (!am || s.start >= am.end + 3600e3));   // an afternoon option, at least an hour after the morning one
     for (const s of [am, pm]) if (s) picked.push(s);
     if (picked.length >= Number(cal.slotsToOffer || 8)) break;
   }

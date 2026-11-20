@@ -18,6 +18,7 @@ export default route(["GET", "POST"], async (req, res) => {
       description: s.description,
       status: s.status,
       card: s.card,
+      cardSetAt: s.card_set_at ? new Date(s.card_set_at).toISOString() : null,
       firstCharge: firstCharge(s),
       schedule: s.schedule,
       vatRate: Number(s.vat_rate),

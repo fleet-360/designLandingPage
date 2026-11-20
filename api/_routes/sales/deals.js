@@ -128,7 +128,11 @@ export default route(["GET", "POST", "PATCH"], async (req, res) => {
       // the included months run from the start of work; the first service charge follows them
       if (d.subscription_id) {
         const months = Number(d.data.service?.includedMonths ?? 3);
-        const first = addMonths(date, months, d.data.standingOrder?.dayOfMonth || 1);
+        // the first billing day on or after the end of the included months
+        const dom = d.data.standingOrder?.dayOfMonth || 1;
+        const end = addMonths(date, months);
+        const sameMonth = addMonths(end, 0, dom);
+        const first = sameMonth >= end ? sameMonth : addMonths(end, 1, dom);
         const u = await query(
           `UPDATE billing.subscriptions SET start_date = $2, next_charge_date = $2, updated_at = now()
             WHERE id = $1 AND start_date IS NULL AND charges_done = 0 RETURNING *`, [d.subscription_id, first]);

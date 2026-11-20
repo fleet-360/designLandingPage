@@ -1404,6 +1404,18 @@
     {
       "source": "/contracts/:path*",
       "destination": "/contracts"
+    },
+    {
+      "source": "/discovery/:token",
+      "destination": "/contracts/client"
+    },
+    {
+      "source": "/deal/:token",
+      "destination": "/contracts/client"
+    },
+    {
+      "source": "/card/:token",
+      "destination": "/contracts/client"
     }
   ],
   "headers": [
