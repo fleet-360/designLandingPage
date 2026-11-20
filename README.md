@@ -1,6 +1,7 @@
 # buildalgo.co.il
 
-Static rebuild of the Pro Algorithm site, live at https://www.buildalgo.co.il (GitHub Pages). Hebrew by default, English toggle.
+Static rebuild of the Pro Algorithm site, live on Vercel at https://www.buildalgo.co.il, https://www.pro-algo.com and
+https://www.pro-algorithm.co.il. Hebrew by default, English toggle.
 
 ## Layout
 
@@ -12,6 +13,8 @@ Static rebuild of the Pro Algorithm site, live at https://www.buildalgo.co.il (G
 | `data/posts_index.json` | Posts without the article bodies, rewritten by `fetch_content.py` |
 | `assets/` | CSS, JS (`i18n.js` holds the English strings), images |
 | `catalog/` | The flipbook catalog from the previous buildalgo site, copied as-is to `/catalog/` |
+| `pay/` | Payment pages `/pay` and `/pay-link` (Grow checkout and the link generator). See `pay/README.md` |
+| `tools/pay_config.py` | Builds the payment pages' config from the `PAY_*` environment variables (`.env.example`) |
 | `tools/fetch_content.py` | Re-pulls posts and podcasts from the Base44 API and downloads images |
 | `tools/optimize_images.py` | Converts images to WebP, trims logo margins, builds the OG card and favicons |
 | `tools/build.py` | Generates `dist/`: all pages, 38 blog posts, sitemap, robots, redirect pages, `_redirects`, schema |
