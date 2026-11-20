@@ -22,7 +22,7 @@ with the environment. `pay/assets/pay.css` holds only the rules these pages use,
 /pay-link ──POST /api/pay/links──▶ pay.links (Postgres)        link id inside the ?d= token
 /pay ───────POST createPaymentLink { ..., linkId }──▶ Toro ──▶ Grow (linkId as cField2)
 Grow ──notifyProAlgorithm──▶ Toro: approve, Caspit invoice, then
-Toro ──POST /api/pay/paid (Bearer PAY_WEBHOOK_SECRET)──▶ pay.payments        → "paid" on /pay-link
+Toro ──POST /api/pay/paid (from Toro's IP)──▶ pay.payments                   → "paid" on /pay-link
 ```
 
 Grow is the source of truth for money and Caspit for invoices. The tables are the dashboard's record: if the site
@@ -37,7 +37,7 @@ is unreachable when Toro reports a payment, that payment is missing from the das
 | `POST /api/pay/logout` | admin page | clears the cookie |
 | `GET /api/pay/links` | admin page | latest 500 links (with paid count and sum) and latest 500 payments |
 | `POST /api/pay/links` | admin page | validates, stores the link and returns it with its `/pay?d=...` address |
-| `POST /api/pay/paid` | Toro | records a payment; a repeated `transactionId` only fills what was missing (invoice number, link) |
+| `POST /api/pay/paid` | Toro | records a payment; a repeated `transactionId` only fills what was missing (invoice number, link). Accepted only from Toro's IP (see below) |
 
 ### Database
 
@@ -50,9 +50,17 @@ migration; add the next number.
 - `POST /grow/proAlgorithm/createPaymentLink` takes an optional `linkId` (a UUID, anything else is dropped) and
   sends it to Grow as `cField2`.
 - `POST /grow/payment/notifyProAlgorithm`, after `approveTransaction` and the invoice, calls
-  `grow/services/proAlgoSiteService.js`, which posts to `PRO_ALGO_PAY_WEBHOOK_URL`
-  (default `https://www.pro-algo.com/api/pay/paid`) with `PRO_ALGO_PAY_WEBHOOK_SECRET`. It never throws, and
-  without the secret it does nothing. A failed invoice is still reported, then raised as before.
+  `grow/services/proAlgoSiteService.js`, which posts to `https://www.pro-algo.com/api/pay/paid`. It never throws.
+  A failed invoice is still reported, then raised as before. Development and staging (Grow sandbox) report only
+  when `PRO_ALGO_PAY_WEBHOOK_URL` is set.
+
+### Who may report a payment
+
+`/api/pay/paid` accepts a report only when it comes from Toro's server, `213.165.85.39` (`api.fleet360.co.il`),
+listed in `api/pay/paid.js`. On Vercel the caller's IP is set by Vercel and cannot be forged by the caller.
+If Toro moves to another server, reports are refused (each refusal is logged in Vercel with the caller's IP)
+until the new address is put in `PAY_WEBHOOK_IPS` (comma separated) or in the code. For a second check, set the
+same random string as `PAY_WEBHOOK_SECRET` on Vercel and `PRO_ALGO_PAY_WEBHOOK_SECRET` in Toro's `back.env`.
 
 `createPaymentLink` returns `authCode` only (Meshulam `createPaymentProcess`), valid for 4 minutes. The API only
 accepts browser requests from origins in `cars-server/middlewares/cors.js` (pro-algo.com, www.pro-algo.com and
@@ -75,7 +83,8 @@ local `.env` for development (see `.env.example`):
 | `DATABASE_URL` | Set by the Neon integration (Storage tab). `POSTGRES_URL` also works |
 | `PAY_ADMIN_USER`, `PAY_ADMIN_PASSWORD` | Sign-in for `/pay-link` |
 | `PAY_LINK_SECRET` | Encrypts the link parameters. Changing it breaks every link already sent |
-| `PAY_WEBHOOK_SECRET` | Same value as `PRO_ALGO_PAY_WEBHOOK_SECRET` in Toro's `back.env` |
+| `PAY_WEBHOOK_IPS` | Optional. Replaces the Toro IP that `/api/pay/paid` accepts |
+| `PAY_WEBHOOK_SECRET` | Optional. If set, Toro must send the same value (`PRO_ALGO_PAY_WEBHOOK_SECRET`) |
 | `PAY_SESSION_SECRET` | Optional, signs the session cookie |
 | `PAY_ALLOW_PLAIN_PARAMS` | `1` to also accept readable params on `/pay` (default `0`) |
 | `PAY_GROW_ENVIRONMENT` | `PRODUCTION` (default) or `DEV` |
@@ -106,5 +115,5 @@ python tools/build.py
 npm run dev                 # site + /api on http://localhost:5173 (PORT=... to change)
 ```
 
-To see a payment arrive without paying, POST to `/api/pay/paid` with `Authorization: Bearer $PAY_WEBHOOK_SECRET`
-and `{ "transactionId": "T-1", "linkId": "<id from the list>", "sum": 100 }`.
+To see a payment arrive without paying, POST `{ "transactionId": "T-1", "linkId": "<id from the list>", "sum": 100 }`
+to `http://localhost:5173/api/pay/paid` (locally, requests from this machine are accepted).

@@ -53,9 +53,12 @@ export function cookies(req) {
   return out;
 }
 
+// On Vercel, x-real-ip and x-forwarded-for are set by Vercel itself (a client's own values are
+// overwritten), so they can be trusted there. Locally they are whatever the request says.
 export function clientIp(req) {
+  const real = String(req.headers["x-real-ip"] || "").trim();
   const fwd = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
-  return fwd || req.socket?.remoteAddress || "unknown";
+  return (real || fwd || req.socket?.remoteAddress || "unknown").replace(/^::ffff:/, "");
 }
 
 // "https://www.pro-algo.com" for the host the request came in on

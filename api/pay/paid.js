@@ -1,16 +1,35 @@
-// POST /api/pay/paid   Authorization: Bearer <PAY_WEBHOOK_SECRET>
+// POST /api/pay/paid
 // Called by Toro (cars-server, grow/routes/growController.js notifyProAlgorithm) after Grow
 // confirms a Pro Algorithm payment. Grow may notify more than once, so a transaction id
 // already recorded only fills in what was missing (for example the invoice number).
-import { HttpError, json, readJson, route, sameSecret } from "../_lib/http.js";
+//
+// Accepted only from Toro's server address: TORO_IPS, or PAY_WEBHOOK_IPS (comma separated)
+// to override it. On Vercel the caller's IP comes from Vercel and cannot be forged. If
+// PAY_WEBHOOK_SECRET is set, the request must also carry it as a Bearer token.
+// A refused call is logged with its IP, so a Toro move shows up in the Vercel logs.
+import { clientIp, HttpError, json, readJson, route, sameSecret } from "../_lib/http.js";
 import { connectionString, query } from "../_lib/db.js";
 import { text, UUID_RE } from "../_lib/pay.js";
 
+const TORO_IPS = ["213.165.85.39"]; // api.fleet360.co.il (the VPS)
+const LOCAL_IPS = ["127.0.0.1", "::1"];
+
+function allowedIps() {
+  const fromEnv = String(process.env.PAY_WEBHOOK_IPS || "").split(",").map(s => s.trim()).filter(Boolean);
+  const list = fromEnv.length ? fromEnv : TORO_IPS;
+  return process.env.VERCEL ? list : [...list, ...LOCAL_IPS]; // local development: tools/dev.mjs
+}
+
 export default route(["POST"], async (req, res) => {
+  if (!connectionString()) throw new HttpError(503, "not_configured");
+  const ip = clientIp(req);
   const secret = process.env.PAY_WEBHOOK_SECRET;
-  if (!secret || !connectionString()) throw new HttpError(503, "not_configured");
   const auth = String(req.headers.authorization || "");
-  if (!auth.startsWith("Bearer ") || !sameSecret(auth.slice(7), secret)) throw new HttpError(401, "unauthorized");
+  const secretOk = !secret || (auth.startsWith("Bearer ") && sameSecret(auth.slice(7), secret));
+  if (!allowedIps().includes(ip) || !secretOk) {
+    console.warn(`[pay/paid] refused a report from ${ip}${secretOk ? "" : " (bad secret)"}`);
+    throw new HttpError(403, "forbidden");
+  }
 
   const b = await readJson(req);
   const transactionId = text(b.transactionId, 64);
