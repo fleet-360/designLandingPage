@@ -9,11 +9,11 @@
 //     charge_now          due today, and asks Toro to run the charges now
 //     send_card_link      emails the customer the link to set or replace the card
 import { HttpError, json, origin, readJson, route } from "../../_lib/http.js";
-import { query } from "../../_lib/db.js";
+import { query, transaction } from "../../_lib/db.js";
 import { requireAdmin } from "../../_lib/auth.js";
 import { uuidParam } from "../../_lib/sign.js";
 import { events, getSettings, isEmail, logEvent, mailsFor, sendMail, str } from "../../_lib/sales.js";
-import { chargeRow, createSubscription, subscriptionRow, today } from "../../_lib/billing.js";
+import { advanceAfterPaid, chargeRow, createSubscription, subscriptionRow, today } from "../../_lib/billing.js";
 import { cardReminderMail } from "../../_lib/sales-mail.js";
 import { callToro } from "../../_lib/toro.js";
 
@@ -114,6 +114,29 @@ export default route(["GET", "POST", "PATCH"], async (req, res) => {
   let runNow = false;
 
   switch (b.action) {
+    // a charge Toro took but never reported (it stays "processing" and blocks the standing order):
+    // "paid" after checking it in Grow, or "not_charged" to release it for the next run
+    case "settle_charge": {
+      const c = (await query("SELECT * FROM billing.charges WHERE uid = $1 AND subscription_id = $2", [uuidParam(b.chargeId), id])).rows[0];
+      if (!c || c.status !== "processing") throw new HttpError(409, "bad_status");
+      const ref = str(b.ref, 60) || null;
+      if (b.outcome === "paid") {
+        await transaction(async (db) => {
+          const u = await db.query(
+            "UPDATE billing.charges SET status = 'paid', processed_at = now(), transaction_id = COALESCE($2, transaction_id) WHERE id = $1 AND status = 'processing' RETURNING id",
+            [c.id, ref]);
+          if (!u.rows[0]) throw new HttpError(409, "bad_status");
+          const locked = (await db.query("SELECT * FROM billing.subscriptions WHERE id = $1 FOR UPDATE", [id])).rows[0];
+          await advanceAfterPaid(db, locked, c.due_date);
+        });
+      } else if (b.outcome === "not_charged") {
+        await query("UPDATE billing.charges SET status = 'failed', processed_at = now(), error = 'סומן ידנית: לא חויב' WHERE id = $1 AND status = 'processing'", [c.id]);
+      } else {
+        throw new HttpError(400, "bad_outcome");
+      }
+      await logEvent("subscription", id, "charge_settled", { by: user, outcome: b.outcome, ref });
+      break;
+    }
     case "pause":
       if (!["active", "pending_card", "failed"].includes(s.status)) throw new HttpError(409, "bad_status");
       await query("UPDATE billing.subscriptions SET status = 'paused', paused_at = now(), updated_at = now() WHERE id = $1", [id]);
@@ -167,7 +190,7 @@ export default route(["GET", "POST", "PATCH"], async (req, res) => {
     default:
       throw new HttpError(400, "bad_action");
   }
-  if (b.action !== "send_card_link") await logEvent("subscription", id, b.action, { by: user, ...(b.action === "update" ? { fields: Object.keys(b).filter((k) => k !== "action") } : {}) });
+  if (!["send_card_link", "settle_charge"].includes(b.action)) await logEvent("subscription", id, b.action, { by: user, ...(b.action === "update" ? { fields: Object.keys(b).filter((k) => k !== "action") } : {}) });
 
   let run = null;
   if (runNow) {

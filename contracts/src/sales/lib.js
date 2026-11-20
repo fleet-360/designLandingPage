@@ -28,7 +28,7 @@ export async function api(path, { method = "GET", body } = {}) {
 
 export const nis = (n, { decimals } = {}) =>
   n == null || n === "" ? "" :
-    `₪ ${Number(n).toLocaleString("en-US", { minimumFractionDigits: decimals ?? (Number(n) % 1 ? 2 : 0), maximumFractionDigits: 2 })}`;
+    `₪\u00a0${Number(n).toLocaleString("en-US", { minimumFractionDigits: decimals ?? (Number(n) % 1 ? 2 : 0), maximumFractionDigits: 2 })}`;
 
 export const dmy = (iso) => (iso ? String(iso).slice(0, 10).split("-").reverse().join("/") : "");
 

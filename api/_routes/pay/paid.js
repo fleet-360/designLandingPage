@@ -43,6 +43,6 @@ export default route(["POST"], async (req, res) => {
       text(b.fullName, 120), text(b.payerPhone, 30), text(b.payerEmail, 160), text(b.asmachta, 40),
       text(b.cardSuffix, 8), text(b.processId, 64), text(b.invoiceNumber, 40)]);
   // a spec request paid on its page (its id travels as the link id)
-  if (linkId) await markDiscoveryPaid(linkId, { via: "grow", ref: transactionId, payer: { email: b.payerEmail, phone: b.payerPhone } });
+  if (linkId) await markDiscoveryPaid(linkId, { via: "grow", ref: transactionId, payer: { email: b.payerEmail, phone: b.payerPhone }, amount: sum });
   json(res, 200, { ok: true });
 });

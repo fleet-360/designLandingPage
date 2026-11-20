@@ -53,6 +53,12 @@ export function previousBusinessDay(iso) {
 }
 
 // the same day-of-month `months` months after iso, clamped to the month's length
+// the first billing day (day of month) on or after iso
+export const billingDayOnOrAfter = (iso, day) => {
+  const same = addMonths(iso, 0, day);
+  return same >= iso ? same : addMonths(iso, 1, day);
+};
+
 export function addMonths(iso, months, day) {
   const [y, m] = iso.split("-").map(Number);
   const target = new Date(Date.UTC(y, m - 1 + months, 1, 12));

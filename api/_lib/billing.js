@@ -1,7 +1,7 @@
 // Standing orders (billing.subscriptions) and their charges. The site decides what is due and when;
 // Toro charges the saved card token, issues the invoice and reports back (api/_routes/billing/*).
 import { query } from "./db.js";
-import { addMonths, chargeAmountAt, israelDate, withVat } from "./sales-calc.js";
+import { addDays, addMonths, billingDayOnOrAfter, chargeAmountAt, israelDate, withVat } from "./sales-calc.js";
 import { newToken } from "./sales.js";
 
 const iso = (d) => (d ? new Date(d).toISOString() : null);
@@ -61,6 +61,23 @@ export function chargeRow(r) {
 // the date of the k-th charge for a subscription that starts on startDate
 export const chargeDate = (startDate, dayOfMonth, k) => (k === 0 ? startDate : addMonths(startDate, k, dayOfMonth));
 
+// After a paid charge (s locked FOR UPDATE): count it and move to the next billing day, or end with the
+// schedule. After a pause or failed attempts the month grid can already be past: then the next charge
+// is the next billing day after today, so missed months are not charged one a day.
+export async function advanceAfterPaid(db, s, dueDate, cardSuffix = null) {
+  const done = s.charges_done + 1;
+  const ended = chargeAmountAt(s.schedule, done) == null;
+  let next = ended ? null : chargeDate(s.start_date || dueDate, s.day_of_month, done);
+  if (next && next <= today()) next = billingDayOnOrAfter(addDays(today(), 1), s.day_of_month);
+  await db.query(
+    `UPDATE billing.subscriptions SET charges_done = $2, failed_attempts = 0, retry_on = NULL, next_charge_date = $3,
+            status = CASE WHEN $4 THEN 'ended' ELSE status END,
+            card = CASE WHEN $5::text IS NOT NULL THEN jsonb_set(coalesce(card, '{}'), '{suffix}', to_jsonb($5::text)) ELSE card END,
+            updated_at = now() WHERE id = $1`,
+    [s.id, done, next, ended, cardSuffix || null]);
+  return next;
+}
+
 /**
  * s: { dealId, customer, description, vatRate, schedule, startDate|null, dayOfMonth, createdBy }
  * Starts as pending_card; becomes active when the card token arrives (api/_routes/billing/card.js).
@@ -71,7 +88,7 @@ export async function createSubscription(s, db = { query }) {
                                        start_date, day_of_month, next_charge_date)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$8) RETURNING *`,
     [s.createdBy || null, s.dealId || null, newToken(), JSON.stringify(s.customer), s.description, s.vatRate,
-      JSON.stringify(s.schedule), s.startDate || null, s.dayOfMonth || 1]);
+      JSON.stringify(s.schedule), s.startDate ? billingDayOnOrAfter(s.startDate, s.dayOfMonth || 1) : null, s.dayOfMonth || 1]);
   return rows[0];
 }
 

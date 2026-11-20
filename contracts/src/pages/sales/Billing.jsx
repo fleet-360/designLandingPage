@@ -221,7 +221,15 @@ export function BillingDetail() {
                   <tr key={c.id} className="border-b border-border/60">
                     <td className="py-2 tabular-nums">{dmy(c.dueDate)}{c.attempt > 1 && <span className="ms-1 text-xs text-muted-foreground">ניסיון {c.attempt}</span>}{c.manual && <span className="ms-1 text-xs text-muted-foreground">ידני</span>}</td>
                     <td className="py-2 tabular-nums">{nis(c.amount)}</td>
-                    <td className="py-2"><Pill tone={CHARGE[c.status]?.[0]}>{CHARGE[c.status]?.[1] || c.status}</Pill>{c.error && <div className="text-xs text-destructive">{c.error}</div>}</td>
+                    <td className="py-2"><Pill tone={CHARGE[c.status]?.[0]}>{CHARGE[c.status]?.[1] || c.status}</Pill>{c.error && <div className="text-xs text-destructive">{c.error}</div>}
+                      {c.status === "processing" && Date.now() - new Date(c.createdAt) > 30 * 60000 && (
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          שרת החיובים לא דיווח על התוצאה. בדקו ב-Grow:{" "}
+                          <button type="button" className="text-primary underline" onClick={() => setConfirm({ title: "לסמן את החיוב כנגבה?", description: "רק אם החיוב מופיע ב-Grow. הוראת הקבע תעבור לחודש הבא. חשבונית לא תופק אוטומטית.", onConfirm: () => act({ action: "settle_charge", chargeId: c.id, outcome: "paid" }, "סומן כנגבה") })}>נגבה</button>
+                          {" · "}
+                          <button type="button" className="text-primary underline" onClick={() => setConfirm({ title: "לסמן שהחיוב לא בוצע?", description: "החיוב ינוסה שוב בריצה היומית הקרובה.", onConfirm: () => act({ action: "settle_charge", chargeId: c.id, outcome: "not_charged" }, "שוחרר לחיוב חוזר") })}>לא נגבה</button>
+                        </div>
+                      )}</td>
                     <td className="py-2 text-xs tabular-nums" dir="ltr">{c.asmachta || c.transactionId || "—"}</td>
                     <td className="py-2">{c.hasInvoice ? <a href={`/api/billing/invoice?charge=${c.id}`} className="text-primary underline">{c.invoiceNumber || "הורדה"}</a> : c.invoiceError ? <span className="text-xs text-destructive">{c.invoiceError}</span> : c.invoiceNumber || "—"}</td>
                   </tr>

@@ -4,7 +4,7 @@
 // part is frozen; when they sign, the whole thing is frozen with its hash (deal.snapshot).
 import { createHash } from "node:crypto";
 import { AGREEMENT as AGREEMENT_V1 } from "./agreement-v1.js";
-import { israelDate, paymentSchedule, servicePeriods, withVat } from "./sales-calc.js";
+import { billingDayOnOrAfter, israelDate, paymentSchedule, servicePeriods, withVat } from "./sales-calc.js";
 import { HttpError } from "./http.js";
 import { str } from "./sales.js";
 
@@ -46,11 +46,12 @@ export function cleanDealData(b, settings) {
       periods: (sv.periods || []).slice(0, 4).map((x) => ({ months: x.months ? Math.trunc(num(x.months)) : null, price: Math.round(num(x.price) * 100) / 100 }))
         .filter((x) => x.price > 0),
     },
-    standingOrder: {
-      enabled: Boolean(so.enabled),
-      startDate: /^\d{4}-\d{2}-\d{2}$/.test(String(so.startDate || "")) ? so.startDate : "",
-      dayOfMonth: Math.min(28, Math.max(1, Math.trunc(num(so.dayOfMonth, 1)))),
-    },
+    standingOrder: (() => {
+      // a start date moves forward to the billing day, so the first two charges are a month apart
+      const dayOfMonth = Math.min(28, Math.max(1, Math.trunc(num(so.dayOfMonth, 1))));
+      const start = /^\d{4}-\d{2}-\d{2}$/.test(String(so.startDate || "")) ? billingDayOnOrAfter(so.startDate, dayOfMonth) : "";
+      return { enabled: Boolean(so.enabled), startDate: start, dayOfMonth };
+    })(),
     appendix: {
       authorizedContact: contact(a.authorizedContact),
       accountingContact: contact(a.accountingContact),

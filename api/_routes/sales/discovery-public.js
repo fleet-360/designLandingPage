@@ -3,7 +3,7 @@
 //   GET &slots=1 -> meeting slots (once paid)
 //   POST { action: "book", start, attendees: [email] }  -> books the meeting
 import { HttpError, json, readJson, route } from "../../_lib/http.js";
-import { query } from "../../_lib/db.js";
+import { query, transaction } from "../../_lib/db.js";
 import { getSettings, isEmail, logEvent, sendMail } from "../../_lib/sales.js";
 import { withVat } from "../../_lib/sales-calc.js";
 import { availableSlots } from "../../_lib/slots.js";
@@ -82,11 +82,19 @@ export default route(["GET", "POST"], async (req, res) => {
   const end = new Date(start.getTime() + d.meeting_minutes * 60000);
 
   try {
-    const u = await query(
-      `UPDATE sales.discovery SET meeting_start = $2, meeting_end = $3, attendees = $4, booking_status = 'pending',
-              booked_at = now(), status = 'booked', updated_at = now()
-        WHERE id = $1 AND meeting_start IS NULL RETURNING id`, [d.id, start, end, JSON.stringify(attendees)]);
-    if (!u.rows[0]) throw new HttpError(409, "already_booked");
+    // one booking at a time, so two clients cannot take overlapping times in the same moment
+    await transaction(async (db) => {
+      await db.query("SELECT pg_advisory_xact_lock(hashtext('sales.discovery.booking'))");
+      const clash = await db.query(
+        `SELECT 1 FROM sales.discovery WHERE id <> $1 AND canceled_at IS NULL AND meeting_start IS NOT NULL
+            AND meeting_start < $3 AND meeting_end > $2 LIMIT 1`, [d.id, start, end]);
+      if (clash.rows[0]) throw new HttpError(409, "slot_taken");
+      const u = await db.query(
+        `UPDATE sales.discovery SET meeting_start = $2, meeting_end = $3, attendees = $4, booking_status = 'pending',
+                booked_at = now(), status = 'booked', updated_at = now()
+          WHERE id = $1 AND meeting_start IS NULL RETURNING id`, [d.id, start, end, JSON.stringify(attendees)]);
+      if (!u.rows[0]) throw new HttpError(409, "already_booked");
+    });
   } catch (err) {
     if (err.code === "23505") throw new HttpError(409, "slot_taken"); // the unique slot index
     throw err;
