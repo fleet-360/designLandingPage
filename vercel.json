@@ -1402,12 +1402,20 @@
       "destination": "/payment-link"
     },
     {
-      "source": "/contracts",
-      "destination": "/contracts/index.html"
+      "source": "/contracts/:path*",
+      "destination": "/contracts"
     },
     {
-      "source": "/contracts/:path*",
-      "destination": "/contracts/index.html"
+      "source": "/discovery/:token",
+      "destination": "/contracts/client"
+    },
+    {
+      "source": "/deal/:token",
+      "destination": "/contracts/client"
+    },
+    {
+      "source": "/card/:token",
+      "destination": "/contracts/client"
     }
   ],
   "headers": [
@@ -1440,6 +1448,12 @@
           "value": "public, max-age=31536000, immutable"
         }
       ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/daily",
+      "schedule": "0 5 * * *"
     }
   ]
 }

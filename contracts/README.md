@@ -13,7 +13,7 @@ React + Vite + Tailwind, the same pages and components. Data was not copied; it 
 
 - `src/api/base44Client.js` is a small stand-in for the Base44 SDK client: the pages still call
   `base44.entities.Form.get(...)`, `base44.functions.invoke("submitSignature", ...)` and so on, and it sends them
-  to this site's API (`api/contracts/*.js`, `api/auth/*.js`). Only the calls the app makes exist.
+  to this site's API (`api/_routes/contracts/*.js`, `api/_routes/auth/*.js`, all served by `api/router.js`). Only the calls the app makes exist.
 - Login is the site admin (`PAY_ADMIN_USER` / `PAY_ADMIN_PASSWORD`). Sign-up, Google, password reset and
   two-step pages were removed (`src/lib/AuthContext.jsx`, `src/pages/Login.jsx`).
 - The app is served under `/contracts/` (`vite.config.js` `base`, router `basename`, `signLink` in
@@ -31,7 +31,7 @@ React + Vite + Tailwind, the same pages and components. Data was not copied; it 
   with the signed PDF attached: the site sends only the signature's guid, Toro reads the details and the PDF from
   `/api/contracts/notice` (answers once, within 30 minutes) and sends the mail.
 
-## API (`api/contracts/*.js`)
+## API (`api/_routes/contracts/*.js`)
 
 | Endpoint | Who | What |
 | --- | --- | --- |
@@ -55,3 +55,8 @@ npm run dev                         # site + API on http://localhost:5173, then 
 ```
 
 For work on the app itself, `npm run dev --prefix contracts` runs Vite with `/api` proxied to the site server.
+
+## Sales screens and client pages
+
+The spec requests, deals, standing orders and their settings live in this app too (`src/pages/sales`,
+`src/client`). See [SALES.md](SALES.md).

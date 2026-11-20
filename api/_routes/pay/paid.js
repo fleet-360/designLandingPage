@@ -7,18 +7,12 @@
 // to override it. On Vercel the caller's IP comes from Vercel and cannot be forged. If
 // PAY_WEBHOOK_SECRET is set, the request must also carry it as a Bearer token.
 // A refused call is logged with its IP, so a Toro move shows up in the Vercel logs.
-import { clientIp, HttpError, json, readJson, route, sameSecret } from "../../_lib/http.js";
+import { HttpError, json, readJson, route, sameSecret } from "../../_lib/http.js";
+import { toroIps } from "../../_lib/toro.js";
+import { clientIp } from "../../_lib/http.js";
+import { markDiscoveryPaid } from "../../_lib/sales.js";
 import { connectionString, query } from "../../_lib/db.js";
 import { text, UUID_RE } from "../../_lib/pay.js";
-
-const TORO_IPS = ["213.165.85.39"]; // api.fleet360.co.il (the VPS)
-const LOCAL_IPS = ["127.0.0.1", "::1"];
-
-function allowedIps() {
-  const fromEnv = String(process.env.PAY_WEBHOOK_IPS || "").split(",").map(s => s.trim()).filter(Boolean);
-  const list = fromEnv.length ? fromEnv : TORO_IPS;
-  return process.env.VERCEL ? list : [...list, ...LOCAL_IPS]; // local development: tools/dev.mjs
-}
 
 export default route(["POST"], async (req, res) => {
   if (!connectionString()) throw new HttpError(503, "not_configured");
@@ -26,7 +20,7 @@ export default route(["POST"], async (req, res) => {
   const secret = process.env.PAY_WEBHOOK_SECRET;
   const auth = String(req.headers.authorization || "");
   const secretOk = !secret || (auth.startsWith("Bearer ") && sameSecret(auth.slice(7), secret));
-  if (!allowedIps().includes(ip) || !secretOk) {
+  if (!toroIps().includes(ip) || !secretOk) {
     console.warn(`[pay/paid] refused a report from ${ip}${secretOk ? "" : " (bad secret)"}`);
     throw new HttpError(403, "forbidden");
   }
@@ -48,5 +42,7 @@ export default route(["POST"], async (req, res) => {
     [transactionId, linkId, text(b.paymentDate, 40), sum, paymentsNum, text(b.description, 200),
       text(b.fullName, 120), text(b.payerPhone, 30), text(b.payerEmail, 160), text(b.asmachta, 40),
       text(b.cardSuffix, 8), text(b.processId, 64), text(b.invoiceNumber, 40)]);
+  // a spec request paid on its page (its id travels as the link id)
+  if (linkId) await markDiscoveryPaid(linkId, { via: "grow", ref: transactionId, payer: { email: b.payerEmail, phone: b.payerPhone } });
   json(res, 200, { ok: true });
 });

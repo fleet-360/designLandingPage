@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "node tools/dev.mjs",
     "migrate": "node tools/migrate.mjs",
-    "check": "node tools/check-api-routes.mjs"
+    "check": "node tools/check-api-routes.mjs",
+    "test": "node --test tests/"
   },
   "dependencies": {
+    "@hebcal/core": "5.10.1",
     "jspdf": "4.2.1",
     "pg": "8.16.3"
   }

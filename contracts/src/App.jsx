@@ -13,6 +13,10 @@ import Sign from './pages/Sign';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider } from '@/lib/AuthContext';
 import ScrollToTop from './components/ScrollToTop';
+import { DiscoveryDetail, DiscoveryList, DiscoveryNew } from './pages/sales/Discovery';
+import { DealDetail, DealForm, DealsList } from './pages/sales/Deals';
+import { BillingDetail, BillingList, BillingNew } from './pages/sales/Billing';
+import SalesSettings from './pages/sales/Settings';
 
 // Served at /contracts/ (vite base). /sign is the public page the customer opens; everything
 // under Layout needs the site admin sign-in (api/auth/*).
@@ -26,6 +30,17 @@ const AppRoutes = () => (
         <Route path="/editor" element={<FormEditor />} />
         <Route path="/share" element={<Share />} />
         <Route path="/submissions" element={<Submissions />} />
+        <Route path="/sales/discovery" element={<DiscoveryList />} />
+        <Route path="/sales/discovery/new" element={<DiscoveryNew />} />
+        <Route path="/sales/discovery/:id" element={<DiscoveryDetail />} />
+        <Route path="/sales/deals" element={<DealsList />} />
+        <Route path="/sales/deals/new" element={<DealForm />} />
+        <Route path="/sales/deals/:id" element={<DealDetail />} />
+        <Route path="/sales/deals/:id/edit" element={<DealForm />} />
+        <Route path="/sales/billing" element={<BillingList />} />
+        <Route path="/sales/billing/new" element={<BillingNew />} />
+        <Route path="/sales/billing/:id" element={<BillingDetail />} />
+        <Route path="/sales/settings" element={<SalesSettings />} />
       </Route>
     </Route>
     <Route path="*" element={<PageNotFound />} />
