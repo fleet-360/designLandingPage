@@ -113,7 +113,21 @@ export async function mailsFor(entity, entityId) {
 // ---- Spec request payment (reported by Toro through /api/pay/paid, or marked by hand) ----
 
 // payer: what the client typed in the payment form; fills the request's contact details when sales left them empty
-export async function markDiscoveryPaid(id, { via, ref, payer = {} }) {
+// amount: what the client actually paid (VAT included), when the payment came through Grow. The browser
+// sends the sum to Grow, so a payment below the price is reported to the office and not marked paid.
+export async function markDiscoveryPaid(id, { via, ref, payer = {}, amount = null }) {
+  if (amount !== null) {
+    const cur = (await query("SELECT * FROM sales.discovery WHERE id = $1", [id])).rows[0];
+    if (!cur) return null;
+    const { withVat } = await import("./sales-calc.js");
+    const due = withVat(cur.price, cur.vat_rate);
+    if (!(Number(amount) + 0.01 >= due)) {
+      await logEvent("discovery", id, "underpaid", { via, ref: ref || null, amount: Number(amount), due });
+      const { discoveryUnderpaidMail } = await import("./sales-mail.js");
+      await sendMail({ ...discoveryUnderpaidMail(cur, await getSettings(), Number(amount), due), entity: "discovery", entityId: id, kind: "discovery_underpaid_office" });
+      return null;
+    }
+  }
   const email = isEmail(payer.email) ? str(payer.email, 160).toLowerCase() : null;
   const { rows } = await query(
     `UPDATE sales.discovery SET status = CASE WHEN status IN ('sent','viewed') THEN 'paid' ELSE status END,
@@ -124,7 +138,7 @@ export async function markDiscoveryPaid(id, { via, ref, payer = {} }) {
   await logEvent("discovery", id, "paid", { via, ref: ref || null });
   const { discoveryPaidMail } = await import("./sales-mail.js");
   const settings = await getSettings();
-  await sendMail({ ...discoveryPaidMail(rows[0], settings), entity: "discovery", entityId: id, kind: "discovery_paid_office" });
+  await sendMail({ ...discoveryPaidMail(rows[0], settings, amount), entity: "discovery", entityId: id, kind: "discovery_paid_office" });
   return rows[0];
 }
 

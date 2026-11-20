@@ -85,7 +85,7 @@ export function LinkBox({ url, phone, message }) {
   const [copied, setCopied] = useState(false);
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <code className="min-w-0 flex-1 truncate rounded-lg bg-secondary px-3 py-2 text-xs" dir="ltr">{url}</code>
+      <code className="w-full min-w-0 truncate sm:w-auto sm:flex-1 rounded-lg bg-secondary px-3 py-2 text-xs" dir="ltr">{url}</code>
       <Button size="sm" variant="outline" onClick={async () => { if (await copyText(url)) { setCopied(true); setTimeout(() => setCopied(false), 1500); } }}>
         {copied ? <Check className="ms-1 h-4 w-4" /> : <Copy className="ms-1 h-4 w-4" />}{copied ? "הועתק" : "העתקה"}
       </Button>
@@ -102,7 +102,7 @@ const EVENT_LABELS = {
   card_set: "נשמר כרטיס", card_page_opened: "הלקוח פתח את דף הכרטיס", card_page_failed: "פתיחת דף הכרטיס נכשלה",
   start_date_set: "נקבע מועד החיוב הראשון", charge_paid: "חיוב הצליח", charge_failed: "חיוב נכשל", pause: "הושהה", resume: "חודש",
   cancel: "בוטל", update: "עודכן", charge_now: "חיוב יזום", charge_requested: "נשלחה בקשת חיוב", invoice_failed: "הפקת החשבונית נכשלה",
-  reminder_sent: "נשלחה תזכורת",
+  reminder_sent: "נשלחה תזכורת", underpaid: "התקבל תשלום נמוך מהמחיר", charge_settled: "חיוב סומן ידנית",
 };
 const MAIL_STATUS = { sent: ["green", "נשלח"], queued: ["amber", "בתור"], fetched: ["amber", "בשליחה"], failed: ["red", "נכשל"] };
 

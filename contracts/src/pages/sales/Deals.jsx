@@ -154,8 +154,8 @@ export function DealForm() {
     <div>
       <Link to={id ? `/sales/deals/${id}` : "/sales/deals"} className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowRight className="h-4 w-4" />{id ? "חזרה לעסקה" : "עסקאות"}</Link>
       <PageHeader title={id ? `עריכת עסקה ${existing.data?.item.number || ""}` : "עסקה חדשה"} subtitle="הלקוח יקבל קישור: סיכום ההזמנה, ההסכם לחתימה, ואז כרטיס להוראת קבע" />
-      <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
-        <div className="space-y-5">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="min-w-0 space-y-5">
           <Card title="הלקוח">
             <div className="grid gap-3 sm:grid-cols-2">
               <FieldRow label="שם החברה"><Input {...bind("client.companyName")} /></FieldRow>
@@ -303,7 +303,7 @@ export function DealForm() {
           </Card>
         </div>
 
-        <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
+        <aside className="min-w-0 space-y-4 lg:sticky lg:top-20 lg:self-start">
           <Card title="תצוגה מקדימה">
             {!preview || preview.error ? <p className="text-sm text-muted-foreground">{preview?.error || "הזינו שם פרויקט ומחיר כדי לראות את לוח התשלומים."}</p> : (
               <div className="space-y-3 text-sm">
@@ -411,9 +411,9 @@ export function DealDetail() {
             {o.schedule.rows.map((r) => (
               <tr key={r.n} className="border-b border-border/60">
                 <td className="py-2">{r.kind === "deposit" ? `מקדמה ${o.price.depositPercent}%` : `תשלום ${r.n - 1}`}</td>
-                <td className="py-2">{dmy(r.date)}{r.dateNote && <span className="ms-2 text-xs text-muted-foreground">{r.dateNote}</span>}</td>
-                <td className="py-2 tabular-nums">{nis(r.before)}</td>
-                <td className="py-2 font-medium tabular-nums">{nis(r.total)}</td>
+                <td className="py-2">{dmy(r.date)}{r.dateNote && <span className="block text-xs text-muted-foreground sm:ms-2 sm:inline">{r.dateNote}</span>}</td>
+                <td className="hidden whitespace-nowrap py-2 tabular-nums sm:table-cell">{nis(r.before)}</td>
+                <td className="whitespace-nowrap py-2 text-end font-medium tabular-nums">{nis(r.total)}</td>
               </tr>
             ))}
           </tbody>

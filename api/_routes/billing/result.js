@@ -8,8 +8,8 @@ import { query, transaction } from "../../_lib/db.js";
 import { requireToro } from "../../_lib/toro.js";
 import { uuidParam } from "../../_lib/sign.js";
 import { getSettings, logEvent, sendMail, str } from "../../_lib/sales.js";
-import { chargeDate, subscriptionRow, today } from "../../_lib/billing.js";
-import { addDays, chargeAmountAt } from "../../_lib/sales-calc.js";
+import { advanceAfterPaid, subscriptionRow, today } from "../../_lib/billing.js";
+import { addDays } from "../../_lib/sales-calc.js";
 import { chargeFailedMail } from "../../_lib/sales-mail.js";
 
 const MAX_ATTEMPTS = 3;
@@ -37,15 +37,7 @@ export default route(["POST"], async (req, res) => {
         `UPDATE billing.charges SET status = 'paid', processed_at = now(), transaction_id = $2, asmachta = $3,
                 invoice_number = $4, invoice_file_id = $5, invoice_error = $6 WHERE id = $1`,
         [c.id, str(b.transactionId, 60) || null, str(b.asmachta, 40) || null, str(b.invoiceNumber, 40) || null, fileId, str(b.invoiceError, 300) || null]);
-      const done = s.charges_done + 1;
-      const ended = chargeAmountAt(s.schedule, done) == null;
-      const next = ended ? null : chargeDate(s.start_date || c.due_date, s.day_of_month, done);
-      await db.query(
-        `UPDATE billing.subscriptions SET charges_done = $2, failed_attempts = 0, retry_on = NULL, next_charge_date = $3,
-                status = CASE WHEN $4 THEN 'ended' ELSE status END,
-                card = CASE WHEN $5::text IS NOT NULL THEN jsonb_set(coalesce(card, '{}'), '{suffix}', to_jsonb($5::text)) ELSE card END,
-                updated_at = now() WHERE id = $1`,
-        [s.id, done, next, ended, str(b.cardSuffix, 8) || null]);
+      const next = await advanceAfterPaid(db, s, c.due_date, str(b.cardSuffix, 8) || null);
       await logEvent("subscription", s.id, "charged", { amount: Number(c.amount), invoice: b.invoiceNumber || null, next }, db);
       return { paid: true };
     }

@@ -5,7 +5,7 @@ const BRAND = "#2B2A8C";
 const ACCENT = "#4A6FD8";
 
 export const esc = (v) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-export const nis = (n) => `₪ ${Number(n).toLocaleString("en-US", { minimumFractionDigits: Number(n) % 1 ? 2 : 0, maximumFractionDigits: 2 })}`;
+export const nis = (n) => `₪\u00a0${Number(n).toLocaleString("en-US", { minimumFractionDigits: Number(n) % 1 ? 2 : 0, maximumFractionDigits: 2 })}`;
 export const ddmmyyyy = (iso) => (iso ? String(iso).slice(0, 10).split("-").reverse().join("/") : "");
 export const israelDateTime = (d) =>
   new Date(d).toLocaleString("he-IL", { timeZone: "Asia/Jerusalem", weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
@@ -111,6 +111,25 @@ export function cardSetMail(sub, settings, firstCharge) {
   };
 }
 
+// sent when the project starts and fixes the first charge date; the card may or may not be saved yet
+export function firstChargeDateMail(sub, settings, fc, cardUrl) {
+  const hasCard = sub.status !== "pending_card";
+  return {
+    to: [sub.customer.email],
+    cc: [settings.officeEmail],
+    replyTo: settings.officeEmail,
+    subject: "מועד החיוב הראשון לשירות החודשי נקבע",
+    html: layout({
+      title: "מועד החיוב הראשון נקבע",
+      body: `<p>העבודה על הפרויקט התחילה, ולכן נקבע מועד החיוב הראשון של ${esc(sub.description)}: <strong>${ddmmyyyy(fc.date)}</strong>, ${nis(fc.amount)} כולל מע"מ.</p>
+<p>${hasCard
+        ? `החיוב יתבצע מהכרטיס${sub.card?.suffix ? ` המסתיים ב-${esc(sub.card.suffix)}` : ""} שהגדרתם. על כל חיוב תישלח אליכם חשבונית מס קבלה.`
+        : "עדיין לא הוגדר כרטיס אשראי לשירות. אפשר להגדיר אותו עכשיו בקישור. הכרטיס לא יחויב לפני המועד."}</p>`,
+      button: hasCard ? undefined : { href: cardUrl, label: "להגדרת כרטיס" },
+    }),
+  };
+}
+
 export function cardReminderMail(sub, settings, url, firstDate) {
   return {
     to: [sub.customer.email],
@@ -155,14 +174,26 @@ export function discoveryInviteMail(d, settings, url) {
   };
 }
 
-export function discoveryPaidMail(d, settings) {
+export function discoveryPaidMail(d, settings, paid = null) {
   return {
     to: [settings.officeEmail],
     subject: `שולם: ${settings.discovery.title} · ${d.company_name || d.client_name}`,
     html: layout({
       title: "התקבל תשלום על ספרינט האיפיון",
-      body: table([["לקוח", esc(d.client_name)], ["חברה", esc(d.company_name || "")], ["סכום לפני מע\"מ", nis(d.price)], ["אימייל", esc(d.email || "")], ["טלפון", esc(d.phone || "")]])
+      body: table([["לקוח", esc(d.client_name)], ["חברה", esc(d.company_name || "")], ["סכום לפני מע\"מ", nis(d.price)], ...(paid !== null ? [["שולם (כולל מע\"מ)", nis(paid)]] : []), ["אימייל", esc(d.email || "")], ["טלפון", esc(d.phone || "")]])
         + "<p>הלקוח מועבר עכשיו לקביעת פגישת הפתיחה ביומן.</p>",
+    }),
+  };
+}
+
+export function discoveryUnderpaidMail(d, settings, paid, due) {
+  return {
+    to: [settings.officeEmail],
+    subject: `תשלום חלקי: ${settings.discovery.title} · ${d.company_name || d.client_name}`,
+    html: layout({
+      title: "התקבל תשלום נמוך מהמחיר",
+      body: table([["לקוח", esc(d.client_name)], ["חברה", esc(d.company_name || "")], ["לתשלום (כולל מע\"מ)", nis(due)], ["שולם בפועל", nis(paid)]])
+        + "<p>הבקשה לא סומנה כשולמה והלקוח לא יכול לקבוע פגישה. אם הסכום מוסכם, אפשר לסמן אותה כשולמה ידנית במסך הבקשה.</p>",
     }),
   };
 }

@@ -17,8 +17,10 @@ Clients get personal links, with no sign-in (the token in the link is the key):
 **Spec request.** Sales enters the client and the price → link (email / WhatsApp / copy). The client pays in
 the page through Toro's existing `grow/proAlgorithm/createPaymentLink`, with the request's id as the link
 id. Toro's existing payment report (`/api/pay/paid`) marks it paid, and the existing Caspit invoice goes
-out as for any payment. The page then offers free slots. These are the configured hours, minus busy
-times in the `developers@` calendar (when connected) and booked meetings, at most two per day. Booking
+out as for any payment. The amount comes from the browser, so a payment below the price (VAT included)
+is not marked paid: the office gets a "תשלום חלקי" email and can mark it paid by hand. The page then offers free slots. These are the configured hours, minus busy
+times in the `developers@` calendar (when connected) and booked meetings, at most two per day. Bookings are taken one at a time, so two clients cannot book
+overlapping times. Booking
 creates the event with a Meet link and invitations through Toro. When the calendar is not connected, the
 confirmation email carries an `.ics` invite instead.
 
@@ -32,7 +34,11 @@ and emails the client.
 
 **Standing orders.** Toro charges due orders every morning at 08:00 (Israel time): the token charge goes
 through Grow, then the existing Caspit invoice is emailed to the client. A failed charge is retried after
-2 days, three times, then the order stops as "failed" and the office is emailed. The admin can pause,
+2 days, three times, then the order stops as "failed" and the office is emailed. Charges fall on the
+billing day: a start date moves forward to it, and after a pause or failed attempts the next charge is
+the next billing day (missed months are not charged one after another). A charge Toro took but never
+reported stays "בתהליך" and blocks the order; after 30 minutes the admin can mark it "נגבה" (after
+checking Grow) or "לא נגבה" (charged again in the next run). The admin can pause,
 resume, cancel, edit the amounts or dates, charge now, and send the card link.
 
 ## Toro (cars-server, `proAlgoSales/`, new code only)
@@ -67,4 +73,5 @@ The site trusts Toro's calls by its IP (`api/_lib/toro.js`), the same as `/api/p
 ## Tests
 
 `npm test` (dates, business days, amounts); `node tests/e2e-sales.mjs http://localhost:5175` (the whole
-flow against a local server and database); `tests/e2e-toro.mjs` (site + Toro module together).
+flow against a local server and database); `node tests/e2e-sales-edge.mjs http://localhost:5175`
+(underpayment, overlapping bookings, billing dates, a stuck charge); `tests/e2e-toro.mjs` (site + Toro module together).

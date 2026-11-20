@@ -15,8 +15,8 @@ import { requireAdmin } from "../../_lib/auth.js";
 import { uuidParam } from "../../_lib/sign.js";
 import { events, getSettings, logEvent, mailsFor, newToken, sendMail, str } from "../../_lib/sales.js";
 import { buildOrder, cleanClient, cleanDealData } from "../../_lib/deal.js";
-import { dealInviteMail, cardSetMail } from "../../_lib/sales-mail.js";
-import { addMonths, israelDate } from "../../_lib/sales-calc.js";
+import { dealInviteMail, firstChargeDateMail } from "../../_lib/sales-mail.js";
+import { addMonths, billingDayOnOrAfter, israelDate } from "../../_lib/sales-calc.js";
 import { firstCharge, subscriptionRow } from "../../_lib/billing.js";
 
 const iso = (d) => (d ? new Date(d).toISOString() : null);
@@ -130,16 +130,14 @@ export default route(["GET", "POST", "PATCH"], async (req, res) => {
         const months = Number(d.data.service?.includedMonths ?? 3);
         // the first billing day on or after the end of the included months
         const dom = d.data.standingOrder?.dayOfMonth || 1;
-        const end = addMonths(date, months);
-        const sameMonth = addMonths(end, 0, dom);
-        const first = sameMonth >= end ? sameMonth : addMonths(end, 1, dom);
+        const first = billingDayOnOrAfter(addMonths(date, months), dom);
         const u = await query(
           `UPDATE billing.subscriptions SET start_date = $2, next_charge_date = $2, updated_at = now()
             WHERE id = $1 AND start_date IS NULL AND charges_done = 0 RETURNING *`, [d.subscription_id, first]);
         if (u.rows[0]) {
           await logEvent("subscription", d.subscription_id, "start_date_set", { date: first, from: "project_started" });
           const fc = firstCharge(u.rows[0]);
-          await sendMail({ ...cardSetMail(subscriptionRow(u.rows[0]), settings, fc), subject: "מועד החיוב הראשון לשירות החודשי נקבע",
+          await sendMail({ ...firstChargeDateMail(subscriptionRow(u.rows[0]), settings, fc, `${base}/deal/${d.token}`),
             entity: "deal", entityId: id, kind: "first_charge_date" });
         }
       }
