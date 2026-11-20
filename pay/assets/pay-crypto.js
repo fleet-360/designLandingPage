@@ -5,6 +5,8 @@
    cannot edit the amount without the token failing to decrypt.
 
    The key is derived from PAY_LINK_SECRET (see tools/pay_config.py).
+   Links are made on the server (api/_lib/pay-token.js, same format); this
+   file decodes them in the customer's browser on /pay.
    Note that this is obfuscation, not secrecy: the payment page has to
    decrypt in the visitor's browser, so the secret ships with the page.
    ============================================ */
@@ -108,31 +110,5 @@ window.ProAlgoPayCrypto = (function () {
         return JSON.parse(dec.decode(plain));
     }
 
-    /* ---------- Login hashes (must match tools/pay_config.py) ---------- */
-
-    async function hashUser(user, saltBase64) {
-        const salt = base64ToBytes(saltBase64);
-        const name = enc.encode(String(user || '').trim().toLowerCase());
-        const input = new Uint8Array(salt.length + name.length);
-        input.set(salt, 0);
-        input.set(name, salt.length);
-        return bytesToBase64(new Uint8Array(await subtle().digest('SHA-256', input)));
-    }
-
-    async function hashPassword(password, saltBase64, iterations) {
-        const material = await importPassword(password);
-        const bits = await subtle().deriveBits(
-            {
-                name: 'PBKDF2',
-                salt: base64ToBytes(saltBase64),
-                iterations: Number(iterations) || 210000,
-                hash: 'SHA-256'
-            },
-            material,
-            256
-        );
-        return bytesToBase64(new Uint8Array(bits));
-    }
-
-    return { encodeToken, decodeToken, hashUser, hashPassword };
+    return { encodeToken, decodeToken };
 })();

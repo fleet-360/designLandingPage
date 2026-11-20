@@ -142,7 +142,7 @@ window.ProAlgoPay = (function () {
     /* ---------- API ---------- */
 
     /* Creates a Grow payment process and returns the hosted checkout URL. */
-    async function createPaymentLink({ fullName, email, phone, sum, description, paymentNumber, businessTaxId }) {
+    async function createPaymentLink({ fullName, email, phone, sum, description, paymentNumber, businessTaxId, linkId }) {
         const res = await fetch(PAYMENT_API.url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -153,7 +153,9 @@ window.ProAlgoPay = (function () {
                 sum: Number(sum),
                 description: String(description || '').trim(),
                 paymentNumber: Number(paymentNumber) || 1,
-                businessTaxId: String(businessTaxId || '').trim()
+                businessTaxId: String(businessTaxId || '').trim(),
+                /* Toro passes it to Grow (cField2) and back to /api/pay/paid */
+                linkId: linkId || undefined
             })
         });
 

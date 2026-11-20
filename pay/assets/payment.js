@@ -24,6 +24,7 @@
     let lockedAmount = null;
     let lockedDescription = null;
     let maxPayments = 1;
+    let linkId = null;
     let growInitialised = false;
     let submitOriginalHtml = '';
 
@@ -111,7 +112,9 @@
             taxId: payload.t,
             lang: payload.l,
             expiresAt: payload.x,
-            editable: payload.f === 1
+            editable: payload.f === 1,
+            /* Links made since links are stored carry their id; Toro hands it back with the payment */
+            linkId: payload.k || null
         };
     }
 
@@ -260,7 +263,8 @@
                     sum: amount,
                     description: currentDescription(),
                     paymentNumber: els.paymentsCount.value,
-                    businessTaxId: els.businessTaxId.value
+                    businessTaxId: els.businessTaxId.value,
+                    linkId
                 })
             ]);
 
@@ -307,6 +311,7 @@
         if (params.email) els.email.value = params.email;
         if (params.phone) els.phone.value = params.phone;
         if (params.taxId) els.businessTaxId.value = params.taxId;
+        linkId = params.linkId || null;
 
         const amount = Pay.parseAmount(params.amount);
         if (Pay.isValidAmount(amount)) {

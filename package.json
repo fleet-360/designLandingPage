@@ -1,0 +1,13 @@
+{
+  "name": "pro-algorithm-site",
+  "private": true,
+  "type": "module",
+  "description": "Static site (tools/build.py) plus the API under api/ (Vercel functions). See README.md.",
+  "scripts": {
+    "dev": "node tools/dev.mjs",
+    "migrate": "node tools/migrate.mjs"
+  },
+  "dependencies": {
+    "pg": "8.16.3"
+  }
+}
