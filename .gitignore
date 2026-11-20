@@ -5,3 +5,4 @@ __pycache__/
 # payment pages: local config, see .env.example
 .env
 .env.local
+node_modules/
