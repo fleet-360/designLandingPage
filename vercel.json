@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "python3 -m venv .venv && .venv/bin/pip install markdown pillow && npm ci",
-  "buildCommand": ".venv/bin/python tools/build.py && node tools/migrate.mjs",
+  "installCommand": "python3 -m venv .venv && .venv/bin/pip install markdown pillow && npm ci && npm ci --prefix contracts",
+  "buildCommand": ".venv/bin/python tools/build.py && npm run build --prefix contracts && node tools/migrate.mjs",
   "outputDirectory": "dist",
   "cleanUrls": true,
   "regions": [
@@ -140,6 +140,14 @@
     {
       "source": "/create-payment-link",
       "destination": "/payment-link"
+    },
+    {
+      "source": "/contracts",
+      "destination": "/contracts/index.html"
+    },
+    {
+      "source": "/contracts/:path*",
+      "destination": "/contracts/index.html"
     }
   ],
   "headers": [

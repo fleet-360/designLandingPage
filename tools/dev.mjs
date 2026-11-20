@@ -70,6 +70,11 @@ http.createServer(async (req, res) => {
 
   let file = path.join(DIST, pathname);
   if (!file.startsWith(DIST)) return res.writeHead(400).end();
+  // the contracts app routes in the browser: any /contracts/... that is not a file gets its index.html
+  // (vercel.json does the same with a rewrite)
+  if ((pathname === "/contracts" || pathname.startsWith("/contracts/")) && !(fs.existsSync(file) && fs.statSync(file).isFile())) {
+    file = path.join(DIST, "contracts", "index.html");
+  }
   if (pathname.endsWith("/") && fs.existsSync(path.join(file, "index.html"))) file = path.join(file, "index.html");
   else if (!path.extname(pathname) && fs.existsSync(`${file}.html`)) file += ".html";
   if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) return serveFile(res, path.join(DIST, "404.html"), 404);
