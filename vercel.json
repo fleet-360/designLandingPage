@@ -2,14 +2,14 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "installCommand": "python3 -m venv .venv && .venv/bin/pip install markdown pillow && npm ci && npm ci --prefix contracts",
-  "buildCommand": ".venv/bin/python tools/build.py && npm run build --prefix contracts && node tools/migrate.mjs",
+  "buildCommand": "node tools/check-api-routes.mjs && .venv/bin/python tools/build.py && npm run build --prefix contracts && node tools/migrate.mjs",
   "outputDirectory": "dist",
   "cleanUrls": true,
   "regions": [
     "fra1"
   ],
   "functions": {
-    "api/contracts/*.js": {
+    "api/*.js": {
       "includeFiles": "api/_lib/fonts/**"
     }
   },
@@ -1381,6 +1381,10 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/api/:route*",
+      "destination": "/api/router?__route=:route*"
+    },
     {
       "source": "/pay",
       "destination": "/payment"

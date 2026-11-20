@@ -1,10 +1,10 @@
 // GET /api/contracts/signature-urls?submission_id=<uuid>   (Base44 function getSignatureUrl), admin
 // -> { signed_url, signed_urls: { [signature block id]: url } }
 // The addresses are /api/contracts/files?id=..., readable with the admin's session cookie.
-import { HttpError, json, route } from "../_lib/http.js";
-import { query } from "../_lib/db.js";
-import { requireAdmin } from "../_lib/auth.js";
-import { fileUrl, uuidParam } from "../_lib/sign.js";
+import { HttpError, json, route } from "../../_lib/http.js";
+import { query } from "../../_lib/db.js";
+import { requireAdmin } from "../../_lib/auth.js";
+import { fileUrl, uuidParam } from "../../_lib/sign.js";
 
 export default route(["GET"], async (req, res) => {
   requireAdmin(req);

@@ -5,11 +5,11 @@
 // The link's id travels inside the token, /pay sends it to Toro, Toro returns it with the
 // payment (api/pay/paid.js), and that is how a payment finds its link.
 import { randomUUID } from "node:crypto";
-import { HttpError, json, origin, readJson, route } from "../_lib/http.js";
-import { query } from "../_lib/db.js";
-import { encodeToken } from "../_lib/pay-token.js";
-import { linkRow, MAX_PAYMENTS, MAX_SUM, MIN_SUM, paymentRow, requireConfigured, text } from "../_lib/pay.js";
-import { requireUser } from "../_lib/session.js";
+import { HttpError, json, origin, readJson, route } from "../../_lib/http.js";
+import { query } from "../../_lib/db.js";
+import { encodeToken } from "../../_lib/pay-token.js";
+import { linkRow, MAX_PAYMENTS, MAX_SUM, MIN_SUM, paymentRow, requireConfigured, text } from "../../_lib/pay.js";
+import { requireUser } from "../../_lib/session.js";
 
 const LIST_LIMIT = 500;
 

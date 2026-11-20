@@ -2,10 +2,10 @@
 //   GET    ?form_id=<uuid>&limit=  a form's signed submissions, newest first
 //   GET    ?id=<uuid>              one submission
 //   DELETE ?id=<uuid>              delete it and its signature images (the audit log keeps its entry)
-import { json, route, HttpError } from "../_lib/http.js";
-import { query } from "../_lib/db.js";
-import { requireAdmin } from "../_lib/auth.js";
-import { submissionRow, uuidParam } from "../_lib/sign.js";
+import { json, route, HttpError } from "../../_lib/http.js";
+import { query } from "../../_lib/db.js";
+import { requireAdmin } from "../../_lib/auth.js";
+import { submissionRow, uuidParam } from "../../_lib/sign.js";
 
 export default route(["GET", "DELETE"], async (req, res) => {
   requireAdmin(req);

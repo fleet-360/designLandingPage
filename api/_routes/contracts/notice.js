@@ -3,9 +3,9 @@
 //      pdf: { name, sha256, base64 } | null }   (the stored signed PDF, for the email attachment)
 // Answers once per signature and only within 30 minutes of it, then 404. Toro builds the office
 // email from this, so a call to Toro with a guid can only ever announce a real, new signature.
-import { HttpError, json, origin, route } from "../_lib/http.js";
-import { connectionString, query } from "../_lib/db.js";
-import { uuidParam } from "../_lib/sign.js";
+import { HttpError, json, origin, route } from "../../_lib/http.js";
+import { connectionString, query } from "../../_lib/db.js";
+import { uuidParam } from "../../_lib/sign.js";
 
 export default route(["GET"], async (req, res) => {
   if (!connectionString()) throw new HttpError(503, "not_configured");

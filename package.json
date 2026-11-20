@@ -5,7 +5,8 @@
   "description": "Static site (tools/build.py) plus the API under api/ (Vercel functions). See README.md.",
   "scripts": {
     "dev": "node tools/dev.mjs",
-    "migrate": "node tools/migrate.mjs"
+    "migrate": "node tools/migrate.mjs",
+    "check": "node tools/check-api-routes.mjs"
   },
   "dependencies": {
     "jspdf": "4.2.1",

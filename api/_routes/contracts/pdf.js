@@ -1,10 +1,10 @@
 // GET /api/contracts/pdf?submission_id=<uuid>   admin
 // The signed PDF stored when the customer signed (made now if that failed), as a download.
-import { HttpError, route } from "../_lib/http.js";
-import { query } from "../_lib/db.js";
-import { requireAdmin } from "../_lib/auth.js";
-import { ensureSignedPdf } from "../_lib/sign-pdf.js";
-import { uuidParam } from "../_lib/sign.js";
+import { HttpError, route } from "../../_lib/http.js";
+import { query } from "../../_lib/db.js";
+import { requireAdmin } from "../../_lib/auth.js";
+import { ensureSignedPdf } from "../../_lib/sign-pdf.js";
+import { uuidParam } from "../../_lib/sign.js";
 
 export default route(["GET"], async (req, res) => {
   requireAdmin(req);

@@ -7,10 +7,10 @@
 // The submission, its signature images, the audit log entry and the form's counter are written
 // in one transaction. Then the signed PDF is made and stored (api/_lib/sign-pdf.js; if that fails it is
 // made on first download), and Toro is asked to email the office with it (see notifyOffice).
-import { clientIp, HttpError, json, readJson, route } from "../_lib/http.js";
-import { connectionString, query, transaction } from "../_lib/db.js";
-import { extractSignerInfo, formVersion, parseDataUrl, sha256, uuidParam } from "../_lib/sign.js";
-import { ensureSignedPdf } from "../_lib/sign-pdf.js";
+import { clientIp, HttpError, json, readJson, route } from "../../_lib/http.js";
+import { connectionString, query, transaction } from "../../_lib/db.js";
+import { extractSignerInfo, formVersion, parseDataUrl, sha256, uuidParam } from "../../_lib/sign.js";
+import { ensureSignedPdf } from "../../_lib/sign-pdf.js";
 
 const RATE_LIMIT_MAX = 30;
 const RATE_LIMIT_WINDOW = "10 minutes";
