@@ -22,11 +22,14 @@ React + Vite + Tailwind, the same pages and components. Data was not copied; it 
   signature images, as bytea) and an append-only audit log.
 - A signature image is not uploaded on its own any more: the sign page sends it with the submission, so an
   anonymous visitor has no upload endpoint.
-- Base44's server-side PDF (`getPdfUrl`, `pdfGenerator.ts`) was not carried over: the app never used it; the PDF
-  is made in the browser (`src/lib/exportPdf.js`).
-- A new signature emails sales@pro-algorithm.co.il through Toro (cars-server `contracts/routes/contractsController.js`):
-  the site sends only the signature's guid, Toro reads the details from `/api/contracts/notice` (answers once,
-  within 30 minutes) and sends the mail.
+- The signed PDF is made on the server when the customer signs (`api/_lib/sign-pdf.js`, ported from Base44's
+  `pdfGenerator.ts`, Heebo font in `api/_lib/fonts`) and stored in `sign.files` with its SHA-256: that file is the
+  record and is never replaced. Its last section lists the signature details (time, signer, IP, guid, document
+  hash). It is downloaded from the signed document window ("הורדת המסמך החתום") and attached to the sales@ email.
+  The browser export (`src/lib/exportPdf.js`) stays as the second button, a picture of the on-screen view.
+- A new signature emails sales@pro-algorithm.co.il through Toro (cars-server `contracts/routes/contractsController.js`)
+  with the signed PDF attached: the site sends only the signature's guid, Toro reads the details and the PDF from
+  `/api/contracts/notice` (answers once, within 30 minutes) and sends the mail.
 
 ## API (`api/contracts/*.js`)
 
@@ -36,6 +39,7 @@ React + Vite + Tailwind, the same pages and components. Data was not copied; it 
 | `GET/DELETE /api/contracts/submissions` | admin | Base44 entity Submission |
 | `POST /api/contracts/submit` | public | Base44 function submitSignature: form version check, 30 per form per 10 minutes, one transaction |
 | `GET /api/contracts/signature-urls` | admin | Base44 function getSignatureUrl |
+| `GET /api/contracts/pdf?submission_id=` | admin | The stored signed PDF (made now if storing it at signing failed) |
 | `GET/POST /api/contracts/files` | GET public for form images, admin for signatures; POST admin | Uploaded images (PNG, JPEG, GIF, WebP, 3 MB) |
 | `GET /api/contracts/notice` | Toro | The details of a new signature, once |
 

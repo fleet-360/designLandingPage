@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, Loader2 } from "lucide-react";
+import { Download, FileCheck2, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import SignedDocument from "@/components/submissions/SignedDocument";
 import { fmtDate } from "@/lib/formUtils";
@@ -65,8 +65,14 @@ export default function SubmissionDialog({ form, submission, onClose }) {
                 <SignedDocument form={displayForm} values={submission.field_values || {}} signatureUrl={sigUrl} signatureUrls={sigUrls} />
               </div>
             </div>
-            <Button onClick={download} disabled={exporting} className="w-full gap-2">
-              {exporting ? <><Loader2 className="h-4 w-4 animate-spin" />מכין PDF...</> : <><Download className="h-4 w-4" />הורדת PDF</>}
+            {/* המסמך החתום שנשמר בשרת ברגע החתימה (api/contracts/pdf) — התיעוד הרשמי */}
+            <Button asChild className="w-full gap-2">
+              <a href={`/api/contracts/pdf?submission_id=${submission.id}`} download>
+                <FileCheck2 className="h-4 w-4" />הורדת המסמך החתום (PDF שמור)
+              </a>
+            </Button>
+            <Button onClick={download} disabled={exporting} variant="outline" className="w-full gap-2">
+              {exporting ? <><Loader2 className="h-4 w-4 animate-spin" />מכין PDF...</> : <><Download className="h-4 w-4" />הורדת התצוגה כ-PDF</>}
             </Button>
             {exportError && <p className="text-center text-sm text-destructive">{exportError}</p>}
             {/* עותק של המסמך לייצוא — מחוץ לחלון הדיאלוג (שנגלל ונחתך) ובגודל מלא, מאחורי תוכן העמוד */}
