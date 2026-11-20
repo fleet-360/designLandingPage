@@ -1,10 +1,10 @@
 // POST /api/auth/login { user, password } -> 200 { user } + session cookie for all of /api
 // 401 bad_credentials, 429 too_many_attempts (10 failures from one IP in 15 minutes).
 // One admin for the site: PAY_ADMIN_USER / PAY_ADMIN_PASSWORD (also served as /api/pay/login).
-import { clientIp, HttpError, json, readJson, route, sameSecret } from "../_lib/http.js";
-import { query } from "../_lib/db.js";
-import { requireAdminConfigured } from "../_lib/auth.js";
-import { setSession } from "../_lib/session.js";
+import { clientIp, HttpError, json, readJson, route, sameSecret } from "../../_lib/http.js";
+import { query } from "../../_lib/db.js";
+import { requireAdminConfigured } from "../../_lib/auth.js";
+import { setSession } from "../../_lib/session.js";
 
 const MAX_FAILURES = 10;
 const WINDOW = "15 minutes";

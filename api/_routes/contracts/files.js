@@ -3,11 +3,11 @@
 //                                   images only for the signed-in admin.
 //   POST {name, data_url}           upload an image for a form (admin) -> { file_url }
 // Files live in the database (sign.files); SVG is refused because it could carry script.
-import { HttpError, json, readJson, route } from "../_lib/http.js";
-import { connectionString, query } from "../_lib/db.js";
-import { requireAdmin } from "../_lib/auth.js";
-import { sessionUser } from "../_lib/session.js";
-import { fileUrl, parseDataUrl, uuidParam } from "../_lib/sign.js";
+import { HttpError, json, readJson, route } from "../../_lib/http.js";
+import { connectionString, query } from "../../_lib/db.js";
+import { requireAdmin } from "../../_lib/auth.js";
+import { sessionUser } from "../../_lib/session.js";
+import { fileUrl, parseDataUrl, uuidParam } from "../../_lib/sign.js";
 
 const IMAGE_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
 const MAX_IMAGE = 3 * 1024 * 1024;

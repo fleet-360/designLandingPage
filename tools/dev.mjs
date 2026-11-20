@@ -37,14 +37,11 @@ function rules() {
   return out;
 }
 
-async function api(req, res, pathname) {
-  const file = path.join(ROOT, `${pathname.replace(/\/$/, "")}.js`);
-  if (!file.startsWith(path.join(ROOT, "api")) || pathname.includes("/_") || !fs.existsSync(file)) {
-    res.writeHead(404, { "Content-Type": "application/json" });
-    return res.end('{"error":"not_found"}');
-  }
-  const mod = await import(`${pathToFileURL(file).href}?t=${fs.statSync(file).mtimeMs}`);
-  return mod.default(req, res);
+// All of /api goes through api/router.js, as on Vercel. Restart after editing API code:
+// modules are cached once loaded.
+const apiRouter = import(pathToFileURL(path.join(ROOT, "api", "router.js")).href);
+async function api(req, res) {
+  return (await apiRouter).default(req, res);
 }
 
 function serveFile(res, file, status = 200) {

@@ -7,9 +7,9 @@
 // to override it. On Vercel the caller's IP comes from Vercel and cannot be forged. If
 // PAY_WEBHOOK_SECRET is set, the request must also carry it as a Bearer token.
 // A refused call is logged with its IP, so a Toro move shows up in the Vercel logs.
-import { clientIp, HttpError, json, readJson, route, sameSecret } from "../_lib/http.js";
-import { connectionString, query } from "../_lib/db.js";
-import { text, UUID_RE } from "../_lib/pay.js";
+import { clientIp, HttpError, json, readJson, route, sameSecret } from "../../_lib/http.js";
+import { connectionString, query } from "../../_lib/db.js";
+import { text, UUID_RE } from "../../_lib/pay.js";
 
 const TORO_IPS = ["213.165.85.39"]; // api.fleet360.co.il (the VPS)
 const LOCAL_IPS = ["127.0.0.1", "::1"];

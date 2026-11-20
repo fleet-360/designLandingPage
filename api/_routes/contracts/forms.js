@@ -5,11 +5,11 @@
 //   POST   {title, blocks, ...}      create (admin)
 //   PATCH  ?id=<uuid> {fields}        update (admin)
 //   DELETE ?id=<uuid>                 delete (admin); its submissions and audit log stay
-import { HttpError, json, readJson, route } from "../_lib/http.js";
-import { connectionString, query } from "../_lib/db.js";
-import { requireAdmin } from "../_lib/auth.js";
-import { sessionUser } from "../_lib/session.js";
-import { formRow, uuidParam } from "../_lib/sign.js";
+import { HttpError, json, readJson, route } from "../../_lib/http.js";
+import { connectionString, query } from "../../_lib/db.js";
+import { requireAdmin } from "../../_lib/auth.js";
+import { sessionUser } from "../../_lib/session.js";
+import { formRow, uuidParam } from "../../_lib/sign.js";
 
 const MAX_BODY = 4 * 1024 * 1024; // forms carry their blocks (text, styles) as JSON
 const FIELDS = ["title", "blocks", "is_published", "published_date", "submission_count"];
