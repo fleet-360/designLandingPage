@@ -1402,12 +1402,8 @@
       "destination": "/payment-link"
     },
     {
-      "source": "/contracts",
-      "destination": "/contracts/index.html"
-    },
-    {
       "source": "/contracts/:path*",
-      "destination": "/contracts/index.html"
+      "destination": "/contracts"
     }
   ],
   "headers": [
@@ -1440,6 +1436,12 @@
           "value": "public, max-age=31536000, immutable"
         }
       ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/daily",
+      "schedule": "0 5 * * *"
     }
   ]
 }

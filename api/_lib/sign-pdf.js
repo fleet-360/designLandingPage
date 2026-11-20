@@ -12,7 +12,7 @@ import { query } from "./db.js";
 export const PDF_VERSION = 1;
 
 let fonts = null;
-function loadFonts() {
+export function loadFonts() {
   if (!fonts) {
     const read = (name) => fs.readFileSync(new URL(`./fonts/${name}`, import.meta.url)).toString("base64");
     fonts = { regular: read("Heebo-Regular.ttf"), bold: read("Heebo-Bold.ttf") };
@@ -20,17 +20,17 @@ function loadFonts() {
   return fonts;
 }
 
-const HEBREW_RE = /[\u0590-\u05ff\ufb1d-\ufb4f]/;
+export const HEBREW_RE = /[\u0590-\u05ff\ufb1d-\ufb4f]/;
 const MIRROR = { "(": ")", ")": "(", "[": "]", "]": "[", "{": "}", "}": "{", "<": ">", ">": "<" };
 
 // Text goes to jsPDF in logical order and jsPDF's own BiDi engine lays it out (isInputVisual:false,
 // isInputRtl:true): that handles lines mixing Hebrew with Latin, numbers, emails and addresses.
 // SignEase's manual reordering fought that engine on mixed lines in jsPDF 4. The engine does not
 // mirror brackets, so in a line with Hebrew they are swapped first.
-function rtlText(text) {
+export function rtlText(text) {
   return HEBREW_RE.test(text) ? text.replace(/[()[\]{}<>]/g, (c) => MIRROR[c]) : text;
 }
-const RTL_OPTIONS = { isInputVisual: false, isInputRtl: true, isOutputVisual: true, isOutputRtl: false };
+export const RTL_OPTIONS = { isInputVisual: false, isInputRtl: true, isOutputVisual: true, isOutputRtl: false };
 
 function parseFontSize(sizeStr, defaultPt) {
   if (!sizeStr || sizeStr === "default") return defaultPt;

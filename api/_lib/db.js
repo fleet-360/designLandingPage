@@ -2,6 +2,10 @@
 // One database for every module; each module keeps its tables in its own schema (pay, sign, ...).
 import pg from "pg";
 
+// DATE columns as "YYYY-MM-DD" strings: the driver would otherwise make them a Date at local
+// midnight, which is the previous day in UTC for Israel.
+pg.types.setTypeParser(1082, (v) => v);
+
 export function connectionString() {
   return process.env.DATABASE_URL || process.env.POSTGRES_URL || "";
 }

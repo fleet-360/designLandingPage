@@ -10,11 +10,13 @@ export const ROUTES = {
   "auth/logout": () => import("./_routes/auth/logout.js"),
   "auth/session": () => import("./_routes/auth/session.js"),
 
-  "pay/links": () => import("./_routes/pay/links.js"),
-  "pay/login": () => import("./_routes/pay/login.js"),
-  "pay/logout": () => import("./_routes/pay/logout.js"),
-  "pay/paid": () => import("./_routes/pay/paid.js"),
-  "pay/session": () => import("./_routes/pay/session.js"),
+  "billing/card": () => import("./_routes/billing/card.js"),
+  "billing/card-link": () => import("./_routes/billing/card-link.js"),
+  "billing/card-request": () => import("./_routes/billing/card-request.js"),
+  "billing/due": () => import("./_routes/billing/due.js"),
+  "billing/invoice": () => import("./_routes/billing/invoice.js"),
+  "billing/result": () => import("./_routes/billing/result.js"),
+  "billing/subscriptions": () => import("./_routes/billing/subscriptions.js"),
 
   "contracts/files": () => import("./_routes/contracts/files.js"),
   "contracts/forms": () => import("./_routes/contracts/forms.js"),
@@ -23,6 +25,27 @@ export const ROUTES = {
   "contracts/signature-urls": () => import("./_routes/contracts/signature-urls.js"),
   "contracts/submissions": () => import("./_routes/contracts/submissions.js"),
   "contracts/submit": () => import("./_routes/contracts/submit.js"),
+
+  "cron/daily": () => import("./_routes/cron/daily.js"),
+
+  "outbox/item": () => import("./_routes/outbox/item.js"),
+  "outbox/result": () => import("./_routes/outbox/result.js"),
+
+  "pay/links": () => import("./_routes/pay/links.js"),
+  "pay/login": () => import("./_routes/pay/login.js"),
+  "pay/logout": () => import("./_routes/pay/logout.js"),
+  "pay/paid": () => import("./_routes/pay/paid.js"),
+  "pay/session": () => import("./_routes/pay/session.js"),
+
+  "sales/booking": () => import("./_routes/sales/booking.js"),
+  "sales/booking-result": () => import("./_routes/sales/booking-result.js"),
+  "sales/deal-file": () => import("./_routes/sales/deal-file.js"),
+  "sales/deal-public": () => import("./_routes/sales/deal-public.js"),
+  "sales/deals": () => import("./_routes/sales/deals.js"),
+  "sales/discovery": () => import("./_routes/sales/discovery.js"),
+  "sales/discovery-public": () => import("./_routes/sales/discovery-public.js"),
+  "sales/settings": () => import("./_routes/sales/settings.js"),
+  "sales/upload": () => import("./_routes/sales/upload.js"),
 };
 
 export default async function handler(req, res) {
