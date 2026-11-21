@@ -4,6 +4,7 @@ import { HttpError, json, origin, route } from "../../_lib/http.js";
 import { query } from "../../_lib/db.js";
 import { requireToro } from "../../_lib/toro.js";
 import { uuidParam } from "../../_lib/sign.js";
+import { mobileIL } from "../../_lib/sales.js";
 
 export default route(["GET"], async (req, res) => {
   requireToro(req);
@@ -19,7 +20,7 @@ export default route(["GET"], async (req, res) => {
   const c = s.customer;
   json(res, 200, {
     fullName: c.name || c.company,
-    phone: c.phone || "",
+    phone: mobileIL(c.phone) || c.phone || "",
     email: c.email || "",
     description: s.description,
     successUrl: `${back}?card=done`,

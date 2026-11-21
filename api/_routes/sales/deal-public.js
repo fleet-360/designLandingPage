@@ -14,7 +14,7 @@ import { parseDataUrl } from "../../_lib/sign.js";
 import { generateDealPdf } from "../../_lib/deal-pdf.js";
 import { createSubscription, firstCharge, scheduleFromService, subscriptionRow } from "../../_lib/billing.js";
 import { israelDate } from "../../_lib/sales-calc.js";
-import { callToro } from "../../_lib/toro.js";
+import { callToro, growReason } from "../../_lib/toro.js";
 
 const iso = (d) => (d ? new Date(d).toISOString() : null);
 
@@ -174,7 +174,7 @@ export default route(["GET", "POST"], async (req, res) => {
     const r = await callToro("/proAlgoSales/card/createProcess", { subscriptionId: s.id });
     if (!r.ok) {
       await logEvent("subscription", s.id, "card_page_failed", { error: r.error });
-      throw new HttpError(502, "card_unavailable");
+      return json(res, 502, { error: "card_unavailable", reason: growReason(r.error) });
     }
     await logEvent("subscription", s.id, "card_page_opened");
     return json(res, 200, { authCode: r.authCode || null, url: r.url || null, subscription: subscriptionRow(s) });

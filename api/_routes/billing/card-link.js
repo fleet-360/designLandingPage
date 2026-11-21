@@ -2,7 +2,7 @@
 // and for replacing a card). GET -> what the page shows; POST -> opens Grow's card page through Toro.
 import { HttpError, json, route } from "../../_lib/http.js";
 import { query } from "../../_lib/db.js";
-import { callToro } from "../../_lib/toro.js";
+import { callToro, growReason } from "../../_lib/toro.js";
 import { getSettings, logEvent } from "../../_lib/sales.js";
 import { firstCharge } from "../../_lib/billing.js";
 
@@ -29,7 +29,7 @@ export default route(["GET", "POST"], async (req, res) => {
   const r = await callToro("/proAlgoSales/card/createProcess", { subscriptionId: s.id });
   if (!r.ok) {
     await logEvent("subscription", s.id, "card_page_failed", { error: r.error });
-    throw new HttpError(502, "card_unavailable");
+    return json(res, 502, { error: "card_unavailable", reason: growReason(r.error) });
   }
   await logEvent("subscription", s.id, "card_page_opened");
   json(res, 200, { authCode: r.authCode || null, url: r.url || null });

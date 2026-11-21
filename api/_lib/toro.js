@@ -27,6 +27,13 @@ export function requireToro(req) {
 export const toroUrl = () => process.env.TORO_URL || (process.env.VERCEL ? TORO_URL : "");
 
 // POST to a Toro endpoint; never throws. -> { ok, ...answer } | { ok: false, error }
+// Toro passes Grow's refusal through as "Grow: <reason>"; Grow answers in Hebrew. -> the reason to show
+// the customer, or "" when it is technical (Toro down, a timeout)
+export const growReason = (error) => {
+  const why = String(error || "").replace(/^Grow:\s*/, "").trim();
+  return /[\u0590-\u05FF]/.test(why) ? why.slice(0, 200) : "";
+};
+
 export async function callToro(path, body, timeoutMs = 25000) {
   const base = toroUrl();
   if (!base) return { ok: false, error: "toro_not_configured" };
