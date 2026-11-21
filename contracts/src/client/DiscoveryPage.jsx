@@ -220,7 +220,8 @@ function PaySheet({ d, onClose, onPaid }) {
     setBusy(true);
     try {
       const here = `${window.location.origin}${window.location.pathname}`;
-      const proc = await createPayment({ ...p, ...f, fullName: f.fullName.trim(), email: f.email.trim(), phone, taxId, sum: p.sum, successUrl: `${here}?paid=1`, cancelUrl: here });
+      const proc = await createPayment({ ...p, ...f, fullName: f.fullName.trim(), email: f.email.trim(), phone, taxId, sum: p.sum, successUrl: `${here}?paid=1`, cancelUrl: here,
+        wallet: new URLSearchParams(window.location.search).get("wallet") === "sdk" ? "sdk" : undefined });
       if (proc.authCode) {
         const opened = await openWidget(proc.authCode, {
           onSuccess: () => onPaid(),
