@@ -8,7 +8,9 @@ window.ProAlgoPay = (function () {
     /* Payment API (Grow / Meshulam via cars-server).
        Route: POST /grow/proAlgorithm/createPaymentLink  -> { success, paymentUrl } */
     const PAYMENT_API = {
-        url: 'https://api.fleet360.co.il/grow/proAlgorithm/createPaymentLink'
+        // Toro's proAlgoSales endpoint: the same request and answer as grow/proAlgorithm/createPaymentLink,
+        // plus Bit, Apple Pay and Google Pay in the wallet
+        url: 'https://api.fleet360.co.il/proAlgoSales/payment/createLink'
         //url: 'http://localhost:8181/grow/proAlgorithm/createPaymentLink'
     };
 

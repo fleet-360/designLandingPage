@@ -2,7 +2,8 @@
 // Payments go through Toro: createPaymentLink for one-off payments (the spec request), and the
 // site's card actions (Toro /proAlgoSales/card/createProcess) for saving a card.
 const SDK = "https://cdn.meshulam.co.il/sdk/gs.min.js";
-const TORO_PAYMENT = "https://api.fleet360.co.il/grow/proAlgorithm/createPaymentLink";
+// same request and answer as grow/proAlgorithm/createPaymentLink, plus Bit, Apple Pay and Google Pay in the wallet
+const TORO_PAYMENT = "https://api.fleet360.co.il/proAlgoSales/payment/createLink";
 
 let loading = null;
 let handlers = {};
