@@ -94,11 +94,9 @@ function OrderStep({ d, post }) {
 
   return (
     <>
-      <DealHero order={o} />
+      <DealHero order={o} pitch={d.pitch} />
       {d.film && <FilmBand film={d.film} order={o} />}
       <Container className={`${d.film ? "" : "-mt-4 "}space-y-5 pb-10`}>
-        <PriceCard price={o.price} />
-
         <Section title="מה בונים לכם">
           <ul className="space-y-3">
             {o.project.specName && (
@@ -130,6 +128,8 @@ function OrderStep({ d, post }) {
       <JourneyRoad order={o} note={so(o)} />
 
       <Container className="space-y-5 py-8 pb-16">
+        {/* the price after what is built and the road ahead, right above how it is paid */}
+        <PriceCard price={o.price} />
         <Section title="לוח התשלומים">
           <p className="mb-3 text-sm text-muted-foreground">
             {o.payInfo

@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/use-toast";
 import { api, dateTime, dmy, errorText, FIELD_ERRORS, fileToDataUrl, isEmail, mobileIL, nis, taxIdIL } from "@/sales/lib";
 import { Card, FieldRow, History, Info, LinkBox, LoadError, PageHeader, Pill, Spinner, run, useApi } from "./AdminUi.jsx";
-import { Confirm } from "./Discovery.jsx";
+import { Confirm, PitchFields, pitchBody, pitchFrom } from "./Discovery.jsx";
 import SpecPagePicker from "./SpecPagePicker.jsx";
 import DealFilm from "./DealFilm.jsx";
 
@@ -283,6 +283,7 @@ export function DealForm() {
   const [error, setError] = useState("");
   const [specFile, setSpecFile] = useState(null); // a spec PDF waiting for its pages to be picked
   const [confirm, setConfirm] = useState(null);
+  const [pitch, setPitch] = useState(() => pitchFrom(null));   // a new deal's key lines (an existing deal edits them on its page)
 
   useEffect(() => {
     if (f) return;
@@ -358,7 +359,7 @@ export function DealForm() {
         await api(`sales/deals?id=${id}`, { method: "PATCH", body: { action: "update", ...f } });
         navigate(`/sales/deals/${id}`);
       } else {
-        const r = await api("sales/deals", { method: "POST", body: { ...f, sendEmail, paymentNote, ...(manual.on && { signMode: "manual", ...manualPayload(manual) }) } });
+        const r = await api("sales/deals", { method: "POST", body: { ...f, sendEmail, paymentNote, pitch: pitchBody(pitch), ...(manual.on && { signMode: "manual", ...manualPayload(manual) }) } });
         navigate(`/sales/deals/${r.item.id}`);
       }
     } catch (e) { setBusy(false); setError(errorText(e)); }
@@ -414,6 +415,12 @@ export function DealForm() {
             </div>
           </Card>
 
+          {!id && !manual.on && (
+            <Card title="משפטי מפתח בראש העמוד של הלקוח">
+              <p className="mb-3 text-sm text-muted-foreground">מופיעים בראש הזמנת העבודה ובמייל ההזמנה, במקום תיאור הפרויקט. אפשר להשאיר ריק.</p>
+              <PitchFields p={pitch} onChange={setPitch} stage="deal" />
+            </Card>
+          )}
           <Card title="הפרויקט">
             <div className="grid gap-3 sm:grid-cols-2">
               <FieldRow label="שם הפרויקט *" className="sm:col-span-2"><Input {...bind("data.project.name")} /></FieldRow>
@@ -613,6 +620,7 @@ export function DealDetail() {
       </Card>
 
       {!x.status.canceled && <DealFilm id={id} project={x.data.project.name} />}
+      {!x.status.canceled && x.signMode !== "manual" && <DealPitch id={id} item={x} onSaved={reload} />}
 
       <div className="grid gap-5 md:grid-cols-2">
         <Card title="מצב">
@@ -729,3 +737,24 @@ export const subStatus = (s) => ({
   pending_card: ["amber", "ממתין לכרטיס"], active: ["green", "פעיל"], paused: ["gray", "מושהה"],
   failed: ["red", "חיוב נכשל"], canceled: ["gray", "בוטל"], ended: ["gray", "הסתיים"],
 }[s.status] || ["gray", s.status]);
+
+// the key lines at the top of the client's page and in the order email: edited at any time, even after the
+// client approved, since they are not part of the order
+function DealPitch({ id, item, onSaved }) {
+  const [p, setP] = useState(() => pitchFrom(item));
+  const [busy, setBusy] = useState(false);
+  const saved = JSON.stringify(pitchBody(pitchFrom(item)));
+  const dirty = JSON.stringify(pitchBody(p)) !== saved;
+  const save = async () => {
+    setBusy(true);
+    const r = await run(() => api(`sales/deals?id=${id}`, { method: "PATCH", body: { action: "pitch", pitch: pitchBody(p) } }), "נשמר");
+    setBusy(false);
+    if (r) onSaved();
+  };
+  return (
+    <Card title="משפטי מפתח בראש העמוד של הלקוח" actions={dirty && <Button size="sm" onClick={save} disabled={busy}>{busy ? "שומר..." : "שמירה"}</Button>}>
+      <p className="mb-3 text-sm text-muted-foreground">מופיעים בראש הזמנת העבודה ובמייל ההזמנה, במקום תיאור הפרויקט. אפשר לשנות בכל שלב.</p>
+      <PitchFields p={p} onChange={setP} stage="deal" />
+    </Card>
+  );
+}

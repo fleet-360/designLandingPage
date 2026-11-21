@@ -21,7 +21,7 @@ function Waves({ className = "", stroke = "#E3D6B8" }) {
   );
 }
 
-export function DealHero({ order }) {
+export function DealHero({ order, pitch }) {
   const o = order;
   const included = o.service?.enabled ? o.service.rows?.find((r) => !r.price) : null;
   const facts = [
@@ -40,7 +40,17 @@ export function DealHero({ order }) {
           מוכנים לעשות<br />היסטוריה?
         </h1>
         <p className="mt-6 text-xl font-extrabold text-[#C2311E] sm:text-2xl">{o.project.name}</p>
-        {o.project.summary && <p className="mt-2 max-w-2xl whitespace-pre-line text-[17px] leading-relaxed text-[#4F3324]">{o.project.summary}</p>}
+        {pitch ? (
+          // the key lines sales chose for this client (written with Claude from the client's problem)
+          <div className="mt-3 max-w-2xl">
+            {pitch.headline && <p className="text-[22px] font-extrabold leading-snug sm:text-2xl" style={{ color: INK }}>{pitch.headline}</p>}
+            {pitch.lines.length > 0 && (
+              <ul className="mt-3 space-y-1.5">
+                {pitch.lines.map((l) => <li key={l} className="flex gap-2.5 text-[17px] leading-relaxed text-[#4F3324]"><Check className="mt-1 h-5 w-5 shrink-0 text-[#E0432F]" aria-hidden="true" />{l}</li>)}
+              </ul>
+            )}
+          </div>
+        ) : o.project.summary && <p className="mt-2 max-w-2xl whitespace-pre-line text-[17px] leading-relaxed text-[#4F3324]">{o.project.summary}</p>}
         <ul className="mt-6 flex flex-wrap gap-2">
           {facts.map((f) => (
             <li key={f} className="flex items-center gap-1.5 rounded-full border border-[#DCCFB0] bg-white/70 px-3 py-1.5 text-sm font-medium" style={{ color: INK }}>
