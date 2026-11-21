@@ -8,6 +8,7 @@ const TORO_PAYMENT = "https://api.fleet360.co.il/proAlgoSales/payment/createLink
 let loading = null;
 let handlers = {};
 let initialised = false;
+let ready = null;
 
 function loadSdk() {
   if (window.growPayment?.renderPaymentOptions) return Promise.resolve(true);
@@ -28,30 +29,46 @@ function loadSdk() {
   });
 }
 
+// growPayment.init() only fetches Grow's version list and then loads the real runtime (window.growRuntime)
+// in the background. renderPaymentOptions() before that runtime exists fails at once through onError
+// ("SDK was not loaded as needed"), which showed as a failed payment on the first tap, mostly on phones.
+// So init starts as the page loads and the widget opens only once the runtime is there.
+function prepare() {
+  if (!ready) {
+    ready = loadSdk().then(async (ok) => {
+      if (!ok) return false;
+      if (!initialised) {
+        initialised = true;
+        window.growPayment.init({
+          environment: "PRODUCTION",
+          version: 1,
+          events: {
+            onSuccess: (r) => handlers.onSuccess?.(r),
+            onFailure: (r) => handlers.onFailure?.(r),
+            onError: (r) => handlers.onFailure?.(r),
+            onTimeout: () => handlers.onFailure?.({ timeout: true }),
+            onWalletChange: (state) => { if (state === "close") handlers.onClose?.(); },
+          },
+        });
+      }
+      for (let i = 0; i < 150 && !window.growRuntime; i++) await new Promise((r) => setTimeout(r, 100));
+      return Boolean(window.growRuntime);
+    });
+    // a runtime that never came (blocked network) is tried again on the next tap
+    ready.then((ok) => { if (!ok) { ready = null; initialised = false; } });
+  }
+  return ready;
+}
+
 // events: { onSuccess, onFailure, onClose }
 export async function openWidget(authCode, events) {
   handlers = events || {};
-  const ok = await loadSdk();
-  if (!ok) return false;
-  if (!initialised) {
-    window.growPayment.init({
-      environment: "PRODUCTION",
-      version: 1,
-      events: {
-        onSuccess: (r) => handlers.onSuccess?.(r),
-        onFailure: (r) => handlers.onFailure?.(r),
-        onError: (r) => handlers.onFailure?.(r),
-        onTimeout: () => handlers.onFailure?.({ timeout: true }),
-        onWalletChange: (state) => { if (state === "close") handlers.onClose?.(); },
-      },
-    });
-    initialised = true;
-  }
+  if (!(await prepare())) return false;
   window.growPayment.renderPaymentOptions(authCode);
   return true;
 }
 
-export const warmUp = () => { loadSdk(); };
+export const warmUp = () => { prepare(); };
 
 // A one-off payment through Toro (same endpoint as /pay). p: { fullName, email, phone, sum, description, taxId, linkId }
 export async function createPayment(p) {
