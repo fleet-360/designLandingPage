@@ -144,7 +144,8 @@
 
 /* sticky reserve bar */
 .dv .sbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: var(--bar); color: var(--bar-ink); box-shadow: 0 -14px 40px -16px rgba(0,0,0,.45); }
-.dv .sbar .wrap { display: flex; align-items: center; gap: 22px; height: 112px; }
+/* wraps instead of running off the screen if a long price ever does not fit the row */
+.dv .sbar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; min-height: 112px; }
 .dv .sbar .db { background: var(--acc); color: var(--acc-ink); font-weight: 900; font-size: 22px; border-radius: 12px; padding: 8px 16px; display: flex; gap: 8px; align-items: center; white-space: nowrap; }
 .dv .sbar .pr { display: flex; align-items: baseline; gap: 12px; white-space: nowrap; }
 .dv .sbar .pr s { font-size: 22px; font-weight: 700; color: var(--bar-muted); text-decoration-thickness: 2.5px; }
@@ -153,7 +154,8 @@
 .dv .sbar .sv { font-size: 17px; font-weight: 900; border: 2px dashed var(--bar-muted); border-radius: 10px; padding: 6px 12px; white-space: nowrap; }
 .dv .sbar .perf { align-self: stretch; border-inline-start: 2.5px dashed var(--bar-muted); margin-inline-start: auto; position: relative; opacity: .8; }
 .dv .sbar .perf::before { content: ""; position: absolute; width: 26px; height: 26px; border-radius: 50%; background: var(--page); inset-inline-start: -14px; top: -13px; }
-.dv .sbar .go { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.dv .sbar .go { display: flex; flex-direction: column; align-items: center; gap: 4px; width: min-content; }
+.dv .sbar .go small { text-align: center; }
 .dv .sbar .go small { font-size: 13px; color: var(--bar-muted); font-weight: 600; }
 .dv .sbar .btn { font-size: 24px; padding: 18px 40px; border-radius: 16px; }
 
@@ -229,7 +231,25 @@
   .dv .ticket { max-width: 640px; }
   .dv .sch { grid-template-columns: 1fr; }
 }
+@media (max-width: 1240px) {
+  /* tablets and small laptops: the same row, smaller */
+  .dv.has-bar { padding-bottom: 98px; }
+  .dv .sbar .wrap { min-height: 92px; gap: 8px 14px; padding-inline: 24px; }
+  .dv .sbar .db { font-size: 17px; padding: 6px 12px; }
+  .dv .sbar .db svg { width: 18px; height: 18px; }
+  .dv .sbar .pr { gap: 8px; }
+  .dv .sbar .pr s { font-size: 17px; }
+  .dv .sbar .pr b { font-size: 36px; }
+  .dv .sbar .pr em { font-size: 13px; }
+  .dv .sbar .sv { font-size: 15px; padding: 4px 10px; }
+  .dv .sbar .btn { font-size: 19px; padding: 14px 24px; gap: 8px; }
+  .dv .sbar .btn svg { width: 20px; height: 20px; }
+  .dv .sbar .go small { font-size: 12px; }
+}
 @media (max-width: 900px) {
+  .dv.has-bar { padding-bottom: 130px; }
+  .dv .sbar .sv, .dv .sbar .perf { display: none; }
+  .dv .sbar .go { margin-inline-start: auto; }
   .dv .rmap { display: none; }
   .dv .rlist { display: block; }
   .dv .cgrid li { width: 25%; }
