@@ -1,6 +1,6 @@
 // /api/sales/discovery-public?token=   the client's spec request page (no sign-in; the token is the key)
 //   GET   -> the page's data; the first visit marks it viewed
-//   GET &slots=1 -> meeting slots (once paid)
+//   GET &slots=1 -> meeting slots (once paid): the first suggestions + every free time per day
 //   POST { action: "book", start, attendees: [email] }  -> books the meeting
 import { HttpError, json, readJson, route } from "../../_lib/http.js";
 import { query, transaction } from "../../_lib/db.js";
@@ -58,8 +58,8 @@ export default route(["GET", "POST"], async (req, res) => {
   if (req.method === "GET" && q.get("slots")) {
     if (!d.paid_at) throw new HttpError(402, "not_paid");
     if (d.meeting_start) return json(res, 200, { slots: [], booked: true });
-    const { slots, calendarConnected } = await availableSlots(settings, d.meeting_minutes, { excludeId: d.id });
-    return json(res, 200, { slots, calendarConnected });
+    const { slots, days, calendarConnected } = await availableSlots(settings, d.meeting_minutes, { excludeId: d.id });
+    return json(res, 200, { slots, days, calendarConnected });
   }
 
   if (req.method === "GET") {
