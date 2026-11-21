@@ -124,7 +124,8 @@ const dealData = {
   project: { name: "מערכת תמחור הצעות", summary: "מחשבון הצעות מחיר שמחובר למחירון ומפיק PDF ללקוח." },
   price: { amount: 36000, installments: 3, installmentDay: 1, balanceMethod: "transfer" },
   service: { enabled: true, includedMonths: 3, periods: [{ months: null, price: 900 }] },
-  standingOrder: { enabled: true, startDate: "", dayOfMonth: 1 },
+  // the first charge date is required with a monthly service (agreement v2)
+  standingOrder: { enabled: true, startDate: israelDay(Date.now() + 120 * 86400e3), dayOfMonth: 1 },
 };
 const dealClient = { companyName: "ברק הנדסה בע\"מ", taxId: "515555555", signerName: "נועה ברק", signerRole: "מנכ\"לית", email: "noa@example.com", phone: "0521112233", accountingEmail: "books@example.com" };
 const PDF = `data:application/pdf;base64,${Buffer.from("%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n").toString("base64")}`;

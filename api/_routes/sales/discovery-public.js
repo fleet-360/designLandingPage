@@ -1,6 +1,6 @@
 // /api/sales/discovery-public?token=   the client's spec request page (no sign-in; the token is the key)
 //   GET   -> the page's data; the first visit marks it viewed
-//   GET &slots=1 -> meeting slots
+//   GET &slots=1 -> meeting slots: the first suggestions + every free time per day
 //   POST { action: "hold", start, attendees: [email] }  -> keeps the time for the client until they pay
 //                                                         (once paid, or when the payment is not on the page:
 //                                                         books it, and the invites go out)
@@ -67,10 +67,10 @@ export default route(["GET", "POST"], async (req, res) => {
   const settings = await getSettings();
 
   if (req.method === "GET" && q.get("slots")) {
-    if (d.show_booking === false) return json(res, 200, { slots: [], manual: true });
-    if (d.meeting_start && d.booking_status !== "held") return json(res, 200, { slots: [], booked: true });
-    const { slots, calendarConnected } = await availableSlots(settings, d.meeting_minutes, { excludeId: d.id });
-    return json(res, 200, { slots, calendarConnected });
+    if (d.show_booking === false) return json(res, 200, { slots: [], days: [], manual: true });
+    if (d.meeting_start && d.booking_status !== "held") return json(res, 200, { slots: [], days: [], booked: true });
+    const { slots, days, calendarConnected } = await availableSlots(settings, d.meeting_minutes, { excludeId: d.id });
+    return json(res, 200, { slots, days, calendarConnected });
   }
 
   if (req.method === "GET") {

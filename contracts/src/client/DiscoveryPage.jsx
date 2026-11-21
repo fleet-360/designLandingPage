@@ -50,6 +50,8 @@ export default function DiscoveryPage({ token }) {
       if (!v) return;
       if (finished(v)) setStage("done");
       else if (v.paid && v.showBooking) setStage("schedule");
+      // back from Grow's page after paying (e.g. from the Bit app): wait for the payment report
+      else if (new URLSearchParams(window.location.search).get("paid") === "1") setStage("waiting");
     });
     warmUp();
   }, [load]);
@@ -217,7 +219,8 @@ function PaySheet({ d, onClose, onPaid }) {
     if (Object.values(errs).some(Boolean)) return setError("יש לתקן את השדות המסומנים");
     setBusy(true);
     try {
-      const proc = await createPayment({ ...p, ...f, fullName: f.fullName.trim(), email: f.email.trim(), phone, taxId, sum: p.sum });
+      const here = `${window.location.origin}${window.location.pathname}`;
+      const proc = await createPayment({ ...p, ...f, fullName: f.fullName.trim(), email: f.email.trim(), phone, taxId, sum: p.sum, successUrl: `${here}?paid=1`, cancelUrl: here });
       if (proc.authCode) {
         const opened = await openWidget(proc.authCode, {
           onSuccess: () => onPaid(),
@@ -300,7 +303,10 @@ function WaitForPayment({ load, onDone, onBack }) {
 }
 
 function Schedule({ token, d, onBack, onHeld, onBooked, children }) {
+  // the free days: a couple of suggested times each, and every free time under "more times"
   const [slots, setSlots] = useState(null);
+  const [shownDays, setShownDays] = useState(0);
+  const [moreTimes, setMoreTimes] = useState({});   // day -> showing every free time
   const [error, setError] = useState("");
   // coming back from the payment window: the held time stays picked
   const [pick, setPick] = useState(d.hold ? { start: d.hold.start, end: d.hold.end } : null);
@@ -311,7 +317,12 @@ function Schedule({ token, d, onBack, onHeld, onBooked, children }) {
 
   const loadSlots = useCallback(() => {
     setSlots(null);
-    api(`sales/discovery-public?token=${encodeURIComponent(token)}&slots=1`).then((r) => setSlots(r.slots)).catch((e) => { setSlots([]); setError(errorText(e)); });
+    setMoreTimes({});
+    api(`sales/discovery-public?token=${encodeURIComponent(token)}&slots=1`).then((r) => {
+      const days = r.days || groupDays(r.slots);
+      setSlots(days);
+      setShownDays(Math.max(1, new Set(r.slots.map((s) => dayLabel(s.start))).size));
+    }).catch((e) => { setSlots([]); setError(errorText(e)); });
   }, [token]);
   useEffect(loadSlots, [loadSlots]);
 
@@ -344,12 +355,8 @@ function Schedule({ token, d, onBack, onHeld, onBooked, children }) {
     }
   };
 
-  const days = [];
-  for (const s of slots || []) {
-    const key = dayLabel(s.start);
-    const day = days.find((x) => x.key === key) || (days.push({ key, slots: [] }), days[days.length - 1]);
-    day.slots.push(s);
-  }
+  const days = (slots || []).slice(0, shownDays);
+  const step = Math.max(2, Math.min(4, shownDays));
 
   return (
     <Shell company={d.company}>
@@ -372,11 +379,14 @@ function Schedule({ token, d, onBack, onHeld, onBooked, children }) {
             : slots.length === 0 ? <p className="mt-6 text-muted-foreground">כרגע אין מועדים פנויים בשבועיים הקרובים. נחזור אליכם לתאם, או התקשרו אלינו: <span className="pa-num">{d.company.phone}</span></p>
               : (
                 <div className="mt-5 space-y-4">
-                  {days.map((day) => (
-                    <div key={day.key}>
-                      <p className="mb-2 text-sm font-semibold text-muted-foreground">{day.key}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {day.slots.map((s) => {
+                  {days.map((day) => {
+                    const open = moreTimes[day.day];
+                    const shown = open ? day.all : day.suggested;
+                    return (
+                    <div key={day.day}>
+                      <p className="mb-2 text-sm font-semibold text-muted-foreground">{dayLabel(day.all[0].start)}</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {shown.map((s) => {
                           const on = pick?.start === s.start;
                           return (
                             <button key={s.start} type="button" onClick={() => setPick(s)} aria-pressed={on}
@@ -385,9 +395,21 @@ function Schedule({ token, d, onBack, onHeld, onBooked, children }) {
                             </button>
                           );
                         })}
+                        {day.all.length > day.suggested.length && (
+                          <button type="button" onClick={() => setMoreTimes((m) => ({ ...m, [day.day]: !open }))} aria-expanded={Boolean(open)}
+                            className="rounded-xl px-3 py-2.5 text-sm font-medium text-primary underline-offset-2 hover:underline">
+                            {open ? "פחות שעות" : "שעות נוספות"}
+                          </button>
+                        )}
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
+                  {shownDays < slots.length && (
+                    <Button type="button" variant="outline" className="h-11 w-full rounded-xl" onClick={() => setShownDays((n) => n + step)}>
+                      <CalendarDays className="ms-1 h-4 w-4" />תאריכים נוספים
+                    </Button>
+                  )}
                 </div>
               )}
         </section>
@@ -423,6 +445,18 @@ function Schedule({ token, d, onBack, onHeld, onBooked, children }) {
       {children}
     </Shell>
   );
+}
+
+// an older API answer (slots only) as days
+function groupDays(slots = []) {
+  const days = [];
+  for (const s of slots) {
+    const key = dayLabel(s.start);
+    const day = days.find((x) => x.day === key) || (days.push({ day: key, suggested: [], all: [] }), days[days.length - 1]);
+    day.suggested.push(s);
+    day.all.push(s);
+  }
+  return days;
 }
 
 const shortDay = (iso) => new Date(iso).toLocaleDateString("he-IL", { timeZone: "Asia/Jerusalem", weekday: "short", day: "numeric", month: "numeric" });

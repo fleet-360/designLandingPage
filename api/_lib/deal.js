@@ -4,12 +4,13 @@
 // part is frozen; when they sign, the whole thing is frozen with its hash (deal.snapshot).
 import { createHash } from "node:crypto";
 import { AGREEMENT as AGREEMENT_V1 } from "./agreement-v1.js";
+import { AGREEMENT as AGREEMENT_V2 } from "./agreement-v2.js";
 import { chargeDayOf, israelDate, paymentSchedule, servicePeriods, withVat } from "./sales-calc.js";
 import { HttpError } from "./http.js";
 import { str } from "./sales.js";
 
-export const AGREEMENTS = { v1: AGREEMENT_V1 };
-export const CURRENT_AGREEMENT = "v1";
+export const AGREEMENTS = { v1: AGREEMENT_V1, v2: AGREEMENT_V2 };
+export const CURRENT_AGREEMENT = "v2";
 
 const num = (v, d = 0) => (Number.isFinite(Number(v)) ? Number(v) : d);
 const contact = (c = {}) => ({ name: str(c.name, 100), role: str(c.role, 100), phone: str(c.phone, 30), email: str(c.email, 160) });
@@ -25,9 +26,10 @@ export function cleanDealData(b, settings) {
     project: {
       name: str(p.name, 160),
       summary: str(p.summary, 1200),
+      // the spec is identified by its file (the PDF from Canva); its name comes from the file name
       specName: str(p.specName, 160),
       specVersion: str(p.specVersion, 40),
-      specDate: str(p.specDate, 10),
+      specDate: str(p.specDate, 10) || israelDate(),
       specFileId: p.specFileId && /^[0-9a-f-]{36}$/i.test(p.specFileId) ? p.specFileId : null,
       targetWeeks: Math.max(0, Math.trunc(num(p.targetWeeks))),
       kickoffNeeds: str(p.kickoffNeeds, 600),
@@ -42,7 +44,9 @@ export function cleanDealData(b, settings) {
     },
     service: {
       enabled: sv.enabled !== false,
-      includedMonths: Math.max(0, Math.trunc(num(sv.includedMonths, 3))),
+      // the service is included in the project price until the first charge date (standingOrder.startDate);
+      // includedMonths is kept only for deals made before that (agreement v1)
+      includedMonths: sv.includedMonths == null ? null : Math.max(0, Math.trunc(num(sv.includedMonths, 3))),
       periods: (sv.periods || []).slice(0, 4).map((x) => ({ months: x.months ? Math.trunc(num(x.months)) : null, price: Math.round(num(x.price) * 100) / 100 }))
         .filter((x) => x.price > 0),
     },
@@ -53,11 +57,6 @@ export function cleanDealData(b, settings) {
       return { enabled: Boolean(so.enabled), startDate: start, dayOfMonth: chargeDayOf(start, so.dayOfMonth) };
     })(),
     appendix: {
-      authorizedContact: contact(a.authorizedContact),
-      accountingContact: contact(a.accountingContact),
-      companyContact: contact(a.companyContact),
-      demoFeatures: str(a.demoFeatures, 2000),
-      optionalExtensions: str(a.optionalExtensions, 1000),
       notIncluded: str(a.notIncluded, 2000),
       exclusivity: str(a.exclusivity, 300),
       stages: (a.stages || []).slice(0, 8).map((s) => ({
@@ -65,23 +64,18 @@ export function cleanDealData(b, settings) {
         criteria: str(s.criteria, 600), target: str(s.target, 60),
       })).filter((s) => s.name || s.deliverable),
       testPeriodDays: Math.max(1, Math.trunc(num(a.testPeriodDays, 14))),
-      hourlyRate: Math.round(num(a.hourlyRate) * 100) / 100,
+      hourlyRates: (Array.isArray(a.hourlyRates) ? a.hourlyRates : settings.hourlyRates || []).slice(0, 8)
+        .map((r) => ({ role: str(r.role, 60), rate: Math.round(num(r.rate) * 100) / 100 })).filter((r) => r.role && r.rate > 0),
       serviceComponents: (a.serviceComponents || []).map((x) => str(x, 60)).filter(Boolean).slice(0, 8),
-      backupFrequency: str(a.backupFrequency, 60),
-      hostingDependent: str(a.hostingDependent, 600),
       liabilityCapIncluded: Math.round(num(a.liabilityCapIncluded) * 100) / 100,
-      thirdParty: (a.thirdParty || []).slice(0, 8).map((t) => ({
-        component: str(t.component, 120), payer: t.payer === "company" ? "company" : "client", nature: str(t.nature, 200), approval: str(t.approval, 200),
-      })).filter((t) => t.component),
       usersCount: str(a.usersCount, 60),
-      environment: ["local", "cloud", "mixed"].includes(a.environment) ? a.environment : "",
-      softwareVersions: str(a.softwareVersions, 400),
-      personalData: a.personalData === "attached" ? "attached" : "na",
     },
   };
   if (!data.project.name) throw new HttpError(400, "bad_project_name");
   if (!(data.price.amount > 0)) throw new HttpError(400, "bad_price");
-  if (data.standingOrder.enabled && !data.service.periods.length) throw new HttpError(400, "bad_service_periods");
+  if (data.service.enabled && !data.service.periods.length) throw new HttpError(400, "bad_service_periods");
+  // the agreement (clause 6.2) names the date the monthly charge starts
+  if (data.service.enabled && !data.standingOrder.startDate) throw new HttpError(400, "bad_first_charge_date");
   return data;
 }
 
@@ -96,6 +90,8 @@ export function cleanClient(c = {}) {
     phone: str(c.phone, 30),
     accountingEmail: str(c.accountingEmail, 160),
     accountingName: str(c.accountingName, 120),
+    // clause 4.2: who hands over changes and development requests and approves them for the client
+    authorizedContact: contact(c.authorizedContact),
   };
 }
 
@@ -115,16 +111,27 @@ export function buildOrder(deal, settings, from = israelDate()) {
     price: { amount: d.price.amount, vatRate: d.price.vatRate, total: withVat(d.price.amount, d.price.vatRate), depositPercent: d.price.depositPercent },
     balanceMethod: d.price.balanceMethod,
     schedule,
-    service: { ...d.service, rows: servicePeriods(d.service, d.price.vatRate), includes: settings.service.includes },
+    service: {
+      ...d.service,
+      rows: servicePeriods(d.service, d.price.vatRate, d.standingOrder?.startDate),
+      includes: d.appendix?.serviceComponents?.length ? d.appendix.serviceComponents : settings.service.includes,
+    },
     standingOrder: d.standingOrder,
   };
 }
 
 // The agreement with its parties and Appendix A, ready to render
 export function buildAgreement(deal, settings, version = CURRENT_AGREEMENT) {
-  const text = AGREEMENTS[version];
   const c = deal.client;
   const a = deal.data.appendix;
+  const start = deal.data.standingOrder?.startDate;
+  // per-deal values in the text (v2 clause 6.2)
+  const fill = (s) => String(s).replace(/\{\{firstChargeDate\}\}/g,
+    start ? start.split("-").reverse().join("/") : "במועד שהחברה תודיע עליו בכתב");
+  const text = JSON.parse(fill(JSON.stringify(AGREEMENTS[version])));
+  const authorized = c.authorizedContact?.name || c.authorizedContact?.email ? c.authorizedContact : a.authorizedContact || {};
+  const ours = a.companyContact?.name || a.companyContact?.email ? a.companyContact : settings.companyContact || {};
+  const rates = a.hourlyRates?.length ? a.hourlyRates : a.hourlyRate ? [{ role: "", rate: a.hourlyRate }] : [];
   return {
     version,
     title: text.title,
@@ -137,31 +144,23 @@ export function buildAgreement(deal, settings, version = CURRENT_AGREEMENT) {
     sections: text.sections,
     appendix: {
       contacts: [
-        ["איש הקשר המוסמך מטעם הלקוח", fmtContact(a.authorizedContact)],
-        ["איש קשר להנהלת חשבונות מטעם הלקוח", fmtContact(a.accountingContact.name || a.accountingContact.email ? a.accountingContact : { name: c.accountingName, email: c.accountingEmail })],
-        ["איש קשר מטעם החברה", fmtContact(a.companyContact)],
+        ["איש הקשר המוסמך מטעם הלקוח (סעיף 4.2)", fmtContact(authorized)],
+        ["איש קשר להנהלת חשבונות מטעם הלקוח", fmtContact(a.accountingContact?.name || a.accountingContact?.email ? a.accountingContact : { name: c.accountingName, email: c.accountingEmail })],
+        ["איש קשר מטעם החברה", fmtContact(ours)],
       ],
       scope: [
-        ["יכולות מתוך הדמו שנכללו במפורש", a.demoFeatures || "—"],
-        ["הרחבות אופציונליות שהוזמנו", a.optionalExtensions || "לא הוזמנו"],
         ["לא כלול (מעבר לכל מה שאינו באפיון המאושר)", a.notIncluded || "—"],
         ["בלעדיות (סעיף 10.6)", a.exclusivity || "לא בלעדי"],
       ],
-      stages: a.stages,
-      testPeriodDays: a.testPeriodDays,
-      hourlyRate: a.hourlyRate,
+      stages: a.stages || [],
+      testPeriodDays: a.testPeriodDays || 14,
+      hourlyRates: rates,
       balanceMethod: deal.data.price.balanceMethod,
       bankAccount: [settings.bank.bank, settings.bank.branch, settings.bank.account].filter(Boolean).join(" · "),
-      serviceComponents: a.serviceComponents,
-      backupFrequency: a.backupFrequency,
-      hostingDependent: a.hostingDependent,
+      serviceComponents: a.serviceComponents?.length ? a.serviceComponents : settings.service.includes,
       liabilityCapIncluded: a.liabilityCapIncluded,
-      thirdParty: a.thirdParty,
       operation: [
         ["מספר משתמשים / תחנות (סעיף 10.2)", a.usersCount || "—"],
-        ["סביבת הפעלה", { local: "מקומית אצל הלקוח", cloud: "ענן של החברה", mixed: "משולב" }[a.environment] || "—"],
-        ["תוכנות וגרסאות שהלקוח יחזיק (סעיף 3.4)", a.softwareVersions || "—"],
-        ["עיבוד מידע אישי (סעיף 11.5)", a.personalData === "attached" ? "נספח עיבוד מידע מצורף" : "לא רלוונטי"],
       ],
     },
     companySigner: { name: settings.signer.name, role: settings.signer.role, signatureFileId: settings.signer.signatureFileId || null },

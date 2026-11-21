@@ -146,8 +146,22 @@ export const withVat = (amount, rate) => shekels(agorot(amount) + Math.round((ag
  * Monthly service for the order page: { includedMonths, periods: [{ months|null, price }] }
  * -> rows [{ label, when, price, priceWithVat }]
  */
-export function servicePeriods(service, vatRate) {
+export function servicePeriods(service, vatRate, firstChargeDate) {
   if (!service?.enabled) return [];
+  // with a first charge date (agreement v2): included until then, the periods run from it
+  if (firstChargeDate) {
+    const dmy = (iso) => iso.split("-").reverse().join("/");
+    const day = Number(firstChargeDate.slice(8, 10));
+    const rows = [{ label: "כלול במחיר הפרויקט", when: `עד ${dmy(firstChargeDate)}`, price: 0, priceWithVat: 0 }];
+    let from = firstChargeDate;
+    for (const p of service.periods || []) {
+      const months = p.months ? Math.trunc(Number(p.months)) : null;
+      rows.push({ label: months ? `${months} חודשים` : "בהמשך", when: `מ-${dmy(from)}`, price: Number(p.price), priceWithVat: withVat(p.price, vatRate) });
+      if (!months) break;
+      from = addMonths(from, months, day);
+    }
+    return rows;
+  }
   const included = Math.max(0, Math.trunc(Number(service.includedMonths ?? 3)));
   const rows = [];
   if (included) rows.push({ label: `${included} חודשים ראשונים`, when: "מתחילת הפרויקט", price: 0, priceWithVat: 0 });

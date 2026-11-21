@@ -114,17 +114,19 @@ export function DealsList() {
 
 const emptyContact = { name: "", role: "", phone: "", email: "" };
 const blankDeal = (s) => ({
-  client: { companyName: "", taxId: "", address: "", signerName: "", signerRole: "", email: "", phone: "", accountingName: "", accountingEmail: "" },
+  client: {
+    companyName: "", taxId: "", address: "", signerName: "", signerRole: "", email: "", phone: "", accountingName: "", accountingEmail: "",
+    authorizedContact: { ...emptyContact },
+  },
   data: {
     project: { name: "", summary: "", specName: "", specVersion: "", specDate: "", specFileId: null, targetWeeks: "", kickoffNeeds: "" },
     price: { amount: "", vatRate: s?.vatRate ?? 18, depositPercent: s?.depositPercent ?? 30, installments: 3, installmentDay: 1, balanceMethod: "transfer" },
-    service: { enabled: true, includedMonths: 3, periods: [{ months: 12, price: "" }, { months: null, price: "" }] },
+    service: { enabled: true, periods: [{ months: 12, price: "" }, { months: null, price: "" }] },
     standingOrder: { enabled: true, startDate: "", dayOfMonth: 1 },
     appendix: {
-      authorizedContact: { ...emptyContact }, accountingContact: { ...emptyContact }, companyContact: { ...emptyContact },
-      demoFeatures: "", optionalExtensions: "", notIncluded: "", exclusivity: "", stages: [], testPeriodDays: 14, hourlyRate: "",
-      serviceComponents: [...(s?.service?.includes || [])], backupFrequency: "", hostingDependent: "", liabilityCapIncluded: "",
-      thirdParty: [], usersCount: "", environment: "", softwareVersions: "", personalData: "na",
+      notIncluded: "", exclusivity: "", stages: [], testPeriodDays: 14,
+      hourlyRates: (s?.hourlyRates || []).map((r) => ({ ...r })),
+      serviceComponents: [...(s?.service?.includes || [])], liabilityCapIncluded: "", usersCount: "",
     },
   },
 });
@@ -148,10 +150,27 @@ export function DealForm() {
   const [preview, setPreview] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [confirm, setConfirm] = useState(null);
 
   useEffect(() => {
     if (f) return;
-    if (id && existing.data) setF({ client: existing.data.item.client, data: existing.data.item.data });
+    if (id && existing.data && settings.data) {
+      // deals made before this form keep their data; the fields it now edits get their defaults
+      const { client, data } = existing.data.item;
+      const st = settings.data?.settings;
+      setF({
+        client: { ...client, authorizedContact: { ...emptyContact, ...(client.authorizedContact || data.appendix?.authorizedContact || {}) } },
+        data: {
+          ...data,
+          appendix: {
+            ...data.appendix,
+            stages: data.appendix?.stages || [],
+            hourlyRates: data.appendix?.hourlyRates || (data.appendix?.hourlyRate ? [{ role: "", rate: data.appendix.hourlyRate }] : (st?.hourlyRates || []).map((r) => ({ ...r }))),
+            serviceComponents: data.appendix?.serviceComponents?.length ? data.appendix.serviceComponents : [...(st?.service?.includes || [])],
+          },
+        },
+      });
+    }
     else if (!id && settings.data) setF(blankDeal(settings.data.settings));
   }, [id, existing.data, settings.data, f]);
 
@@ -187,6 +206,8 @@ export function DealForm() {
     // the client can still correct them on the page, but Grow (invoices, card) refuses invalid ones
     if (f.client.phone.trim() && !mobileIL(f.client.phone)) return setError(`טלפון הלקוח: ${FIELD_ERRORS.phone}`);
     if (f.client.taxId.trim() && !taxIdIL(f.client.taxId)) return setError(`ח.פ הלקוח: ${FIELD_ERRORS.taxId}`);
+    if (f.client.authorizedContact?.email && !isEmail(f.client.authorizedContact.email)) return setError(`איש הקשר המוסמך: ${FIELD_ERRORS.email}`);
+    if (f.data.service.enabled && !f.data.standingOrder.startDate) return setError("יש לבחור את תאריך החיוב הראשון של השירות החודשי");
     setBusy(true);
     try {
       if (id) {
@@ -204,7 +225,7 @@ export function DealForm() {
     remove: (i) => setF((s) => setIn(s, path, v(path).filter((_, j) => j !== i))),
   });
   const stages = list("data.appendix.stages", { name: "", deliverable: "", testFiles: "", criteria: "", target: "" });
-  const third = list("data.appendix.thirdParty", { component: "", payer: "client", nature: "", approval: "" });
+  const rates = list("data.appendix.hourlyRates", { role: "", rate: "" });
   const periods = list("data.service.periods", { months: null, price: "" });
 
   return (
@@ -230,13 +251,22 @@ export function DealForm() {
           <Card title="הלקוח">
             <div className="grid gap-3 sm:grid-cols-2">
               <FieldRow label="שם החברה"><Input {...bind("client.companyName")} /></FieldRow>
-              <FieldRow label="ח.פ / ע.מ" hint="הלקוח יכול לתקן בעמוד"><Input {...bind("client.taxId")} dir="ltr" /></FieldRow>
-              <FieldRow label="כתובת"><Input {...bind("client.address")} /></FieldRow>
-              <FieldRow label="טלפון"><Input {...bind("client.phone")} dir="ltr" /></FieldRow>
-              <FieldRow label="מורשה חתימה"><Input {...bind("client.signerName")} /></FieldRow>
-              <FieldRow label="תפקיד"><Input {...bind("client.signerRole")} /></FieldRow>
+              <FieldRow label="ח.פ / ע.מ" hint="אפשר להשאיר ריק. הלקוח ימלא באישור"><Input {...bind("client.taxId")} dir="ltr" /></FieldRow>
               <FieldRow label="אימייל (לשם יישלח הקישור) *"><Input {...bind("client.email")} type="email" dir="ltr" /></FieldRow>
-              <FieldRow label="אימייל הנהלת חשבונות" hint="אם ריק, הלקוח ימלא באישור"><Input {...bind("client.accountingEmail")} type="email" dir="ltr" /></FieldRow>
+              <FieldRow label="טלפון נייד" hint="אפשר להשאיר ריק. הלקוח ימלא באישור"><Input {...bind("client.phone")} dir="ltr" /></FieldRow>
+              <FieldRow label="שם החותם" hint="הלקוח יראה ויוכל לשנות לפני החתימה"><Input {...bind("client.signerName")} /></FieldRow>
+              <FieldRow label="תפקיד החותם"><Input {...bind("client.signerRole")} /></FieldRow>
+              <FieldRow label="אימייל הנהלת חשבונות" hint="אפשר להשאיר ריק. הלקוח ימלא באישור"><Input {...bind("client.accountingEmail")} type="email" dir="ltr" /></FieldRow>
+            </div>
+            <div className="mt-4 border-t border-border pt-4">
+              <p className="text-sm font-medium">איש קשר מוסמך לשינויים ולבקשות פיתוח</p>
+              <p className="mb-2 text-xs text-muted-foreground">מי שמעביר אלינו שינויים ובקשות פיתוח ומאשר אותם בשם הלקוח. אפשר להשאיר ריק, הלקוח ימלא באישור.</p>
+              <div className="grid gap-3 sm:grid-cols-4">
+                <Input {...bind("client.authorizedContact.name")} placeholder="שם" />
+                <Input {...bind("client.authorizedContact.role")} placeholder="תפקיד" />
+                <Input {...bind("client.authorizedContact.phone")} placeholder="טלפון" dir="ltr" />
+                <Input {...bind("client.authorizedContact.email")} placeholder="אימייל" dir="ltr" />
+              </div>
             </div>
           </Card>
 
@@ -244,22 +274,17 @@ export function DealForm() {
             <div className="grid gap-3 sm:grid-cols-2">
               <FieldRow label="שם הפרויקט *" className="sm:col-span-2"><Input {...bind("data.project.name")} /></FieldRow>
               <FieldRow label="מה מפתחים (בשתי-שלוש שורות)" className="sm:col-span-2" hint="מופיע בראש העמוד של הלקוח"><Textarea {...bind("data.project.summary")} rows={3} /></FieldRow>
-              <FieldRow label="שם מסמך האפיון"><Input {...bind("data.project.specName")} /></FieldRow>
-              <div className="grid grid-cols-2 gap-3">
-                <FieldRow label="גרסה"><Input {...bind("data.project.specVersion")} dir="ltr" /></FieldRow>
-                <FieldRow label="תאריך"><Input {...bind("data.project.specDate")} type="date" /></FieldRow>
-              </div>
               <div className="sm:col-span-2">
                 <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm hover:bg-secondary">
-                  <Upload className="h-4 w-4" />{f.data.project.specFileId ? "האפיון מצורף · החלפה" : "צירוף קובץ האפיון (PDF)"}
+                  <Upload className="h-4 w-4" />{f.data.project.specFileId ? `האפיון מצורף${f.data.project.specName ? ` (${f.data.project.specName})` : ""} · החלפה` : "צירוף קובץ האפיון (PDF)"}
                   <input type="file" accept="application/pdf" className="hidden" onChange={(e) => upload(e.target.files?.[0])} />
                 </label>
+                <p className="mt-1 text-xs text-muted-foreground">קובץ ה-PDF של האפיון מ-Canva. זה המסמך שמגדיר את התכולה בהסכם.</p>
               </div>
               <FieldRow label="יעד פיתוח משוער (שבועות)"><Input {...bind("data.project.targetWeeks")} inputMode="numeric" dir="ltr" /></FieldRow>
               <FieldRow label="מה נצטרך מהלקוח לפתיחה" className="sm:col-span-2"><Textarea {...bind("data.project.kickoffNeeds")} rows={2} /></FieldRow>
             </div>
           </Card>
-
           <Card title="מחיר ותשלומים">
             <div className="grid gap-3 sm:grid-cols-3">
               <FieldRow label='מחיר לפני מע"מ *'><Input {...bind("data.price.amount")} inputMode="decimal" dir="ltr" /></FieldRow>
@@ -283,7 +308,6 @@ export function DealForm() {
           <Card title="שירות חודשי והוראת קבע" actions={<label className="flex items-center gap-2 text-sm"><Switch checked={f.data.service.enabled} onCheckedChange={(x) => setF((s) => setIn(s, "data.service.enabled", x))} />שירות חודשי</label>}>
             {f.data.service.enabled ? (
               <div className="space-y-4">
-                <FieldRow label="חודשים כלולים במחיר הפרויקט"><Input {...bind("data.service.includedMonths")} inputMode="numeric" dir="ltr" className="max-w-32" /></FieldRow>
                 <div className="space-y-2">
                   <p className="text-sm font-medium">תקופות בתשלום (לפני מע"מ)</p>
                   {f.data.service.periods.map((p, i) => (
@@ -297,85 +321,73 @@ export function DealForm() {
                   <Button type="button" size="sm" variant="outline" onClick={periods.add}><Plus className="ms-1 h-4 w-4" />תקופה</Button>
                   <p className="text-xs text-muted-foreground">תקופה בלי מספר חודשים נמשכת עד שמפסיקים. התקופה האחרונה היא בדרך כלל כזו.</p>
                 </div>
-                <div className="rounded-xl bg-secondary/60 p-3">
-                  <label className="flex items-center gap-2 text-sm font-medium"><Switch checked={f.data.standingOrder.enabled} onCheckedChange={(x) => setF((s) => setIn(s, "data.standingOrder.enabled", x))} />גבייה בהוראת קבע בכרטיס אשראי (הלקוח מגדיר כרטיס דרך הקישור)</label>
-                  {!f.data.standingOrder.enabled && <p className="mt-2 text-xs text-muted-foreground">{id ? "בלי הוראת קבע בכרטיס. את אופן התשלום על השירות רושמים במסך העסקה." : "בלי הוראת קבע בכרטיס. כתבו למעלה, באופן התשלום, איך ישולם השירות החודשי."}</p>}
-                  {f.data.standingOrder.enabled && (
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                      <FieldRow label="תאריך החיוב הראשון" hint={f.data.standingOrder.startDate ? `החיובים הבאים ב-${Number(f.data.standingOrder.startDate.slice(8, 10))} בכל חודש` : "ריק: ייקבע כשתסמנו שהפרויקט התחיל (תחילת עבודה + החודשים הכלולים)"}><Input {...bind("data.standingOrder.startDate")} type="date" /></FieldRow>
-                      {!f.data.standingOrder.startDate && <FieldRow label="יום החיוב בחודש" hint="התאריך שייקבע יעוגל ליום הזה"><Input {...bind("data.standingOrder.dayOfMonth")} inputMode="numeric" dir="ltr" /></FieldRow>}
-                    </div>
-                  )}
-                </div>
+                <FieldRow label="תאריך החיוב הראשון *" hint={f.data.standingOrder.startDate ? `עד אז השירות כלול במחיר הפרויקט. החיובים הבאים ב-${Number(f.data.standingOrder.startDate.slice(8, 10))} בכל חודש. התאריך נכתב בהסכם.` : "עד התאריך הזה השירות כלול במחיר הפרויקט. התאריך נכתב בהסכם."}>
+                  <Input {...bind("data.standingOrder.startDate")} type="date" className="max-w-48" />
+                </FieldRow>
+                <FieldRow label="מה השירות החודשי כולל">
+                  <div className="grid gap-1.5 sm:grid-cols-2">
+                    {(settings.data?.settings?.service?.includes || []).map((x) => {
+                      const on = ap.serviceComponents.includes(x);
+                      return (
+                        <label key={x} className="flex items-center gap-2 text-sm">
+                          <input type="checkbox" checked={on} onChange={() => setF((s) => setIn(s, "data.appendix.serviceComponents", on ? ap.serviceComponents.filter((y) => y !== x) : [...ap.serviceComponents, x]))} />{x}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </FieldRow>
+                <label className="flex items-center gap-2 text-sm"><Switch checked={f.data.standingOrder.enabled} onCheckedChange={(x) => setF((s) => setIn(s, "data.standingOrder.enabled", x))} />גבייה בהוראת קבע בכרטיס אשראי (הלקוח מגדיר כרטיס דרך הקישור)</label>
+                {!f.data.standingOrder.enabled && <p className="text-xs text-muted-foreground">{id ? "בלי הוראת קבע בכרטיס. את אופן התשלום על השירות רושמים במסך העסקה." : "בלי הוראת קבע בכרטיס. כתבו למעלה, באופן התשלום, איך ישולם השירות החודשי."}</p>}
               </div>
             ) : <p className="text-sm text-muted-foreground">ללא שירות חודשי.</p>}
           </Card>
 
           {!manual.on && <Card title="נספח א'">
             <div className="space-y-5">
-              <div className="grid gap-4 sm:grid-cols-3">
-                {[["authorizedContact", "איש קשר מוסמך (לקוח)"], ["accountingContact", "הנהלת חשבונות (לקוח)"], ["companyContact", "איש קשר מטעמנו"]].map(([k, l]) => (
-                  <div key={k} className="space-y-2">
-                    <p className="text-sm font-medium">{l}</p>
-                    <Input {...bind(`data.appendix.${k}.name`)} placeholder="שם" />
-                    <Input {...bind(`data.appendix.${k}.role`)} placeholder="תפקיד" />
-                    <Input {...bind(`data.appendix.${k}.phone`)} placeholder="טלפון" dir="ltr" />
-                    <Input {...bind(`data.appendix.${k}.email`)} placeholder="אימייל" dir="ltr" />
-                  </div>
-                ))}
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <FieldRow label="יכולות מתוך הדמו שנכללו"><Textarea {...bind("data.appendix.demoFeatures")} rows={3} /></FieldRow>
-                <FieldRow label="לא כלול"><Textarea {...bind("data.appendix.notIncluded")} rows={3} /></FieldRow>
-                <FieldRow label="הרחבות אופציונליות שהוזמנו"><Textarea {...bind("data.appendix.optionalExtensions")} rows={2} /></FieldRow>
-                <FieldRow label="בלעדיות (סעיף 10.6)" hint="ריק: לא בלעדי"><Textarea {...bind("data.appendix.exclusivity")} rows={2} /></FieldRow>
+              <FieldRow label="לא כלול" hint="מה לא כלול בפרויקט, מעבר למה שלא מופיע באפיון"><Textarea {...bind("data.appendix.notIncluded")} rows={2} /></FieldRow>
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <Switch checked={Boolean(ap.exclusivity)} onCheckedChange={(x) => {
+                    if (!x) return setF((s) => setIn(s, "data.appendix.exclusivity", ""));
+                    setConfirm({
+                      title: "לתת ללקוח בלעדיות?",
+                      description: "ברירת המחדל בהסכם היא ללא בלעדיות: אנחנו רשאים לעבוד גם עם מתחרים של הלקוח. בלעדיות מגבילה אותנו. להמשיך רק אם זה סוכם במפורש.",
+                      onConfirm: () => setF((s) => setIn(s, "data.appendix.exclusivity", "בלעדי")),
+                    });
+                  }} />בלעדיות ללקוח
+                </label>
+                {ap.exclusivity ? (
+                  <FieldRow label="מה בדיוק הבלעדיות" className="mt-2" hint="למשל: לא נפתח מערכת דומה למתחרה ישיר באזור X במשך שנה"><Textarea {...bind("data.appendix.exclusivity")} rows={2} /></FieldRow>
+                ) : <p className="mt-1 text-xs text-muted-foreground">ללא בלעדיות (ברירת המחדל)</p>}
               </div>
               <div className="space-y-2">
-                <p className="text-sm font-medium">שלבים ובדיקות קבלה</p>
+                <p className="text-sm font-medium">מה ייחשב כהשלמה מוצלחת של הפיתוח</p>
+                <p className="text-xs text-muted-foreground">לכל שלב: מה נמסר, על מה בודקים ומה צריך לצאת. לפי זה הלקוח מאשר שהעבודה הושלמה. אפשר להשאיר ריק, ואז הבדיקה היא מול האפיון.</p>
                 {ap.stages.map((s, i) => (
                   <div key={i} className="grid gap-2 rounded-xl border border-border p-3 sm:grid-cols-2">
-                    <Input {...bind(`data.appendix.stages.${i}.deliverable`)} placeholder="תוצר" />
-                    <Input {...bind(`data.appendix.stages.${i}.target`)} placeholder="מועד יעד משוער" />
-                    <Input {...bind(`data.appendix.stages.${i}.testFiles`)} placeholder="קובצי בדיקה וגרסאות" />
-                    <div className="flex gap-2"><Input {...bind(`data.appendix.stages.${i}.criteria`)} placeholder="קריטריונים ופלט מצופה" /><Button type="button" size="icon" variant="ghost" onClick={() => stages.remove(i)} aria-label="הסרת שלב"><Trash2 className="h-4 w-4" /></Button></div>
+                    <Input {...bind(`data.appendix.stages.${i}.deliverable`)} placeholder="מה נמסר (למשל: הפקת גיליון בודד)" />
+                    <Input {...bind(`data.appendix.stages.${i}.target`)} placeholder="מתי בערך (למשל: שבוע 3)" />
+                    <Input {...bind(`data.appendix.stages.${i}.testFiles`)} placeholder="על אילו קבצים בודקים" />
+                    <div className="flex gap-2"><Input {...bind(`data.appendix.stages.${i}.criteria`)} placeholder="מה צריך לצאת כדי שזה ייחשב תקין" /><Button type="button" size="icon" variant="ghost" onClick={() => stages.remove(i)} aria-label="הסרת שלב"><Trash2 className="h-4 w-4" /></Button></div>
                   </div>
                 ))}
                 <Button type="button" size="sm" variant="outline" onClick={stages.add}><Plus className="ms-1 h-4 w-4" />שלב</Button>
               </div>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <FieldRow label="תקופת בדיקה (ימי עסקים)"><Input {...bind("data.appendix.testPeriodDays")} inputMode="numeric" dir="ltr" /></FieldRow>
-                <FieldRow label='תעריף שעה (לפני מע"מ)'><Input {...bind("data.appendix.hourlyRate")} inputMode="decimal" dir="ltr" /></FieldRow>
-                <FieldRow label="תקרת אחריות בחודשים הכלולים"><Input {...bind("data.appendix.liabilityCapIncluded")} inputMode="decimal" dir="ltr" /></FieldRow>
-                <FieldRow label="תדירות גיבויים"><Input {...bind("data.appendix.backupFrequency")} /></FieldRow>
-                <FieldRow label="מספר משתמשים / תחנות"><Input {...bind("data.appendix.usersCount")} /></FieldRow>
-                <FieldRow label="סביבת הפעלה">
-                  <select {...bind("data.appendix.environment")} className="h-9 w-full rounded-md border border-input bg-transparent px-2 text-sm">
-                    <option value="">—</option><option value="local">מקומית אצל הלקוח</option><option value="cloud">ענן של החברה</option><option value="mixed">משולב</option>
-                  </select>
-                </FieldRow>
-              </div>
-              <FieldRow label="רכיבי השירות החודשי" hint="שורה לכל רכיב">
-                <Textarea value={ap.serviceComponents.join("\n")} rows={4} onChange={(e) => setF((s) => setIn(s, "data.appendix.serviceComponents", e.target.value.split("\n")))} />
-              </FieldRow>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <FieldRow label="יכולות התלויות באירוח או ברישיון חיצוני"><Textarea {...bind("data.appendix.hostingDependent")} rows={2} /></FieldRow>
-                <FieldRow label="תוכנות וגרסאות שהלקוח יחזיק (סעיף 3.4)"><Textarea {...bind("data.appendix.softwareVersions")} rows={2} /></FieldRow>
-              </div>
               <div className="space-y-2">
-                <p className="text-sm font-medium">עלויות צד שלישי</p>
-                {ap.thirdParty.map((t, i) => (
-                  <div key={i} className="grid gap-2 rounded-xl border border-border p-3 sm:grid-cols-2">
-                    <Input {...bind(`data.appendix.thirdParty.${i}.component`)} placeholder="רכיב / ספק" />
-                    <select {...bind(`data.appendix.thirdParty.${i}.payer`)} className="h-9 rounded-md border border-input bg-transparent px-2 text-sm">
-                      <option value="client">הלקוח משלם ישירות</option><option value="company">אנחנו, בחיוב הלקוח</option>
-                    </select>
-                    <Input {...bind(`data.appendix.thirdParty.${i}.nature`)} placeholder="אופי החיוב" />
-                    <div className="flex gap-2"><Input {...bind(`data.appendix.thirdParty.${i}.approval`)} placeholder="אופן האישור" /><Button type="button" size="icon" variant="ghost" onClick={() => third.remove(i)} aria-label="הסרה"><Trash2 className="h-4 w-4" /></Button></div>
+                <p className="text-sm font-medium">תעריפי שעה (לפני מע"מ)</p>
+                <p className="text-xs text-muted-foreground">לתמחור שינויים ולחישוב אם הלקוח מבטל באמצע. ברירת המחדל מההגדרות.</p>
+                {ap.hourlyRates.map((r, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Input {...bind(`data.appendix.hourlyRates.${i}.role`)} placeholder="תפקיד" className="w-40" />
+                    <Input {...bind(`data.appendix.hourlyRates.${i}.rate`)} placeholder="₪ לשעה" inputMode="decimal" dir="ltr" className="w-28" />
+                    <Button type="button" size="icon" variant="ghost" onClick={() => rates.remove(i)} aria-label="הסרה"><Trash2 className="h-4 w-4" /></Button>
                   </div>
                 ))}
-                <Button type="button" size="sm" variant="outline" onClick={third.add}><Plus className="ms-1 h-4 w-4" />רכיב</Button>
+                <Button type="button" size="sm" variant="outline" onClick={rates.add}><Plus className="ms-1 h-4 w-4" />תפקיד</Button>
               </div>
-              <label className="flex items-center gap-2 text-sm"><Switch checked={ap.personalData === "attached"} onCheckedChange={(x) => setF((s) => setIn(s, "data.appendix.personalData", x ? "attached" : "na"))} />מצורף נספח עיבוד מידע אישי (סעיף 11.5)</label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <FieldRow label="מספר משתמשים / תחנות" hint="ריק: ללא הגבלה"><Input {...bind("data.appendix.usersCount")} /></FieldRow>
+              </div>
             </div>
           </Card>}
         </div>
@@ -413,6 +425,7 @@ export function DealForm() {
           </div>
         </aside>
       </div>
+      {confirm && <Confirm {...confirm} onClose={() => setConfirm(null)} />}
     </div>
   );
 }

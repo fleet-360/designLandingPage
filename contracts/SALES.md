@@ -17,7 +17,8 @@ Clients get personal links, with no sign-in (the token in the link is the key):
 **Spec request.** Sales enters the client, the price (with an optional price before discount, shown struck
 through) and the responsible team lead, salesperson and office manager → link (email / WhatsApp / copy). The
 client picks a meeting time first. The free times are the configured hours, minus busy times in the
-`developers@` calendar (when connected) and times booked or held here, at most two per day. The picked time
+`developers@` calendar (when connected) and times booked or held here: two suggestions per day (from 10:00
+and from 12:30), with every other free time under "שעות נוספות" and later days under "תאריכים נוספים". The picked time
 is held for the client for 30 minutes (`api/_lib/discovery-book.js`), and no invite goes out yet. Then the
 client pays in the page through Toro's existing `grow/proAlgorithm/createPaymentLink`, with the request's id
 as the link id. Toro's existing payment report (`/api/pay/paid`) marks it paid, which books the held time:
@@ -97,6 +98,13 @@ The site trusts Toro's calls by its IP (`api/_lib/toro.js`), the same as `/api/p
 - **Grow card saving:** the Grow account must allow token payments (Get Token Only and charging a saved
   token). If Grow gives a separate page code for it, set `PRO_ALGO_GROW_TOKEN_PAGE_CODE` in Toro.
 - **Settings screen:** bank account, the company signer's name and signature image, the accounting contact.
+
+## Agreement versions
+
+The agreement text is `api/_lib/agreement-v1.js` (from the Word file) and `agreement-v2.js` (current), which
+`tools/sales/agreement_v2_from_v1.py` builds from v1 by exact replacements, so that script is the full list of
+differences. A deal shows the current version until it is signed; the signed text is frozen in its snapshot.
+In v2, clause 6.2 names the first charge date that sales sets on the deal ("{{firstChargeDate}}").
 
 ## Database
 

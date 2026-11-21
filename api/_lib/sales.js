@@ -22,6 +22,10 @@ export const DEFAULT_SETTINGS = {
   bank: { beneficiary: 'פרו אלגוריתם בע"מ', bank: "", branch: "", account: "" },
   checks: { payee: 'פרו אלגוריתם בע"מ', pickupDays: 7 },
   signer: { name: "", role: "", signatureFileId: null },
+  // our contact in Appendix A of every deal
+  companyContact: { name: "ליאת", role: "", phone: "053-946-2842", email: "accounts@pro-algorithm.co.il" },
+  // hourly rates by role (Appendix A; clauses 8 and 9.2), before VAT; each deal starts from these
+  hourlyRates: [{ role: "מתכנת", rate: 360 }, { role: "ראש צוות", rate: 450 }],
   vatRate: 18,
   depositPercent: 30,
   discovery: {
@@ -47,7 +51,8 @@ export const DEFAULT_SETTINGS = {
     bufferMinutes: 15,
   },
   service: {
-    includes: ["תמיכה ומענה", "הדרכות", "תיקון תקלות", "אירוח, גיבויים ועדכוני אבטחה", "סקירת AI רבעונית ללא עלות"],
+    // the options sales picks from for each deal's monthly service
+    includes: ["תמיכה ומענה", "הדרכות", "תיקון תקלות", "אירוח ועדכוני אבטחה", "סקירת AI רבעונית ללא עלות"],
   },
 };
 
