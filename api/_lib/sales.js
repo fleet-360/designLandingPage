@@ -42,6 +42,8 @@ export const DEFAULT_SETTINGS = {
   },
   calendar: {
     user: "developers@pro-algo.com",
+    // our team on every spec meeting invitation, next to the client, the client's guests and the calendar user
+    invitees: ["sharon@pro-algo.com", "yariv@pro-algo.com", "sales@pro-algo.com"],
     days: [0, 1, 2, 3, 4],          // Sunday..Thursday
     from: "09:00",
     to: "17:00",

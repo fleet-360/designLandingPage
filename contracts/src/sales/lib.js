@@ -26,6 +26,19 @@ export async function api(path, { method = "GET", body } = {}) {
   return data;
 }
 
+// A GET for a client's page: a passing failure (no network, a server error while the server wakes up) is tried
+// again before the page gives up. A 4xx is the answer itself (404: the link is not active).
+export async function getWithRetry(path, tries = 3) {
+  for (let i = 1; ; i++) {
+    try {
+      return await api(path);
+    } catch (err) {
+      if (i >= tries || (err.status >= 400 && err.status < 500)) throw err;
+      await new Promise((r) => setTimeout(r, 800 * i));
+    }
+  }
+}
+
 export const nis = (n, { decimals } = {}) =>
   n == null || n === "" ? "" :
     `₪\u00a0${Number(n).toLocaleString("en-US", { minimumFractionDigits: decimals ?? (Number(n) % 1 ? 2 : 0), maximumFractionDigits: 2 })}`;
@@ -119,14 +132,31 @@ const ERRORS = {
   no_card: "עדיין לא הוגדר כרטיס",
   bad_status: "הפעולה לא אפשרית במצב הנוכחי",
   file_too_large: "הקובץ גדול מדי (עד 3MB)",
+  too_large: "הקובץ גדול מדי",
   bad_meeting_start: "יש להזין תאריך ושעה לפגישה",
   bad_payment_method: "יש לבחור אמצעי תשלום",
+  bad_payments: "יש להזין לפחות תשלום אחד",
+  bad_payment_date: "יש להזין תאריך לכל תשלום",
+  bad_payment_amount: "יש להזין סכום לכל תשלום",
+  bad_payments_sum: "סכום התשלומים צריך להיות שווה למחיר הפרויקט",
+  bad_id_number: "מספר תעודת הזהות לא תקין",
   bad_payment_status: "מצב התשלום לא תקין",
   booking_manual: "מועד הפגישה נקבע איתכם ישירות. לשינוי צרו קשר.",
   bad_file: "הקובץ לא נמצא. העלו אותו שוב",
   not_signed: "העסקה עוד לא נחתמה",
   canceled: "הפריט בוטל",
   unsupported_file_type: "סוג הקובץ לא נתמך",
+  bad_problem: "כתבו בכמה מילים מה הלקוח רוצה לפתור",
+  ai_not_configured: "כתיבה אוטומטית לא מוגדרת בשרת. אפשר לכתוב את המשפטים ידנית.",
+  ai_busy: "יש עומס על שירות הכתיבה. נסו שוב בעוד דקה.",
+  ai_failed: "הכתיבה לא הצליחה. נסו שוב, או כתבו את המשפטים ידנית.",
+  ai_refused: "לא הצלחנו לכתוב משפטים מהתיאור הזה. נסו לנסח אותו אחרת.",
+  demo_too_big: "קוד הדמו גדול מדי לכתיבת תסריט (מעל 900 אלף תווים בלי התמונות המוטמעות)",
+  no_demo: "יש להעלות קודם את קובץ הדמו",
+  no_script: "אין עדיין תסריט לסרטון",
+  bad_script: "התסריט לא תקין",
+  video_too_large: "הסרטון גדול מ-60MB. אפשר לכווץ אותו (למשל ב-HandBrake) ולהעלות שוב",
+  bad_part: "ההעלאה נקטעה. העלו את הסרטון שוב",
 };
 export const errorText = (e) => ERRORS[e?.code] || ERRORS.server_error;
 

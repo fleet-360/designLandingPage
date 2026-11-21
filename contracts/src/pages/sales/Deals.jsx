@@ -9,6 +9,8 @@ import { toast } from "@/components/ui/use-toast";
 import { api, dateTime, dmy, errorText, FIELD_ERRORS, fileToDataUrl, isEmail, mobileIL, nis, taxIdIL } from "@/sales/lib";
 import { Card, FieldRow, History, Info, LinkBox, LoadError, PageHeader, Pill, Spinner, run, useApi } from "./AdminUi.jsx";
 import { Confirm } from "./Discovery.jsx";
+import SpecPagePicker from "./SpecPagePicker.jsx";
+import DealFilm from "./DealFilm.jsx";
 
 const todayIL = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Jerusalem" });
 const MAX_UPLOAD = 3 * 1024 * 1024;
@@ -56,6 +58,135 @@ function OrderMailOptions({ m, setM, hasFile }) {
     </div>
   );
 }
+// ---- the payment schedule: every payment with its date, amount (before VAT) and method ----
+const METHODS = [["transfer", "העברה בנקאית"], ["check", "שיק"], ["card", "כרטיס אשראי"]];
+const methodName = (m) => METHODS.find(([k]) => k === m)?.[1] || "";
+const agorot = (v) => Math.round(Number(v || 0) * 100);
+const isoAddDays = (iso, n) => { const d = new Date(`${iso}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+const isoAddMonths = (iso, k) => {
+  const [y, m, day] = iso.split("-").map(Number);
+  const last = new Date(Date.UTC(y, m - 1 + k + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(y, m - 1 + k, Math.min(day, last), 12)).toISOString().slice(0, 10);
+};
+// three working days from today, skipping Friday and Saturday (holidays are the salesperson's call)
+const soonWorkday = () => { let d = todayIL(); let n = 3; while (n > 0) { d = isoAddDays(d, 1); const w = new Date(`${d}T12:00:00Z`).getUTCDay(); if (w !== 5 && w !== 6) n--; } return d; };
+const firstOfNextMonth = () => { const t = todayIL(); return isoAddMonths(`${t.slice(0, 8)}01`, 1); };
+// the same split of VAT as the server (api/_lib/sales-calc.js): proportional, remainder on the last
+function withVatRows(amounts, price, vatRate) {
+  const before = amounts.map(agorot);
+  const vatA = Math.round((agorot(price) * Number(vatRate || 0)) / 100);
+  const sum = before.reduce((a, b) => a + b, 0);
+  const vats = before.map((b) => (sum ? Math.floor((vatA * b) / sum) : 0));
+  if (vats.length) vats[vats.length - 1] += vatA - vats.reduce((a, b) => a + b, 0);
+  return before.map((b, i) => (b + vats[i]) / 100);
+}
+const blankSplit = (price = {}) => ({
+  depositPercent: price.depositPercent ?? 30, depositDate: soonWorkday(), depositMethod: "transfer",
+  count: price.installments ?? 3, firstDate: firstOfNextMonth(), method: price.balanceMethod === "checks" ? "check" : "transfer",
+});
+// deposit + equal monthly payments in whole shekels, the remainder on the last one
+function splitPayments(amount, s) {
+  const total = agorot(amount);
+  const deposit = Math.round((total * Number(s.depositPercent || 0)) / 10000) * 100;
+  const n = Math.max(0, Math.min(35, Math.trunc(Number(s.count) || 0)));
+  const rest = total - deposit;
+  const each = n ? Math.floor(rest / n / 100) * 100 : 0;
+  const rows = [{ date: s.depositDate, amount: (n ? deposit : total) / 100, method: s.depositMethod }];
+  for (let i = 0; i < n; i++) rows.push({ date: isoAddMonths(s.firstDate, i), amount: (i === n - 1 ? rest - each * (n - 1) : each) / 100, method: s.method });
+  return rows;
+}
+
+function PaymentsEditor({ price, vatRate, payments, setPayments, pickupDate, setPickupDate, legacy }) {
+  const [split, setSplit] = useState(() => blankSplit(legacy));
+  const rows = payments || [];
+  const totals = withVatRows(rows.map((p) => p.amount), price, vatRate);
+  const target = agorot(price);
+  const sum = rows.reduce((a, p) => a + agorot(p.amount), 0);
+  const diff = target - sum;
+  const today = todayIL();
+  const set = (i, k, val) => setPayments(rows.map((p, j) => (j === i ? { ...p, [k]: val } : p)));
+  const hasChecks = rows.some((p) => p.method === "check");
+  const sel = "h-9 w-full rounded-md border border-input bg-transparent px-2 text-sm";
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl bg-secondary/60 p-3">
+        <p className="mb-2 text-sm font-medium">חלוקה מהירה</p>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-sm">
+          <span>מקדמה</span>
+          <Input value={split.depositPercent} onChange={(e) => setSplit({ ...split, depositPercent: e.target.value })} inputMode="numeric" dir="ltr" className="h-8 w-16" aria-label="אחוז מקדמה" /><span>%</span>
+          <span>ב-</span><Input type="date" value={split.depositDate} onChange={(e) => setSplit({ ...split, depositDate: e.target.value })} className="h-8 w-40" aria-label="תאריך המקדמה" />
+          <select value={split.depositMethod} onChange={(e) => setSplit({ ...split, depositMethod: e.target.value })} className="h-8 rounded-md border border-input bg-transparent px-2" aria-label="אמצעי תשלום המקדמה">
+            {METHODS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+          </select>
+          <span>ואז</span>
+          <Input value={split.count} onChange={(e) => setSplit({ ...split, count: e.target.value })} inputMode="numeric" dir="ltr" className="h-8 w-14" aria-label="מספר תשלומים" />
+          <span>תשלומים חודשיים מ-</span><Input type="date" value={split.firstDate} onChange={(e) => setSplit({ ...split, firstDate: e.target.value })} className="h-8 w-40" aria-label="תאריך התשלום הראשון" />
+          <select value={split.method} onChange={(e) => setSplit({ ...split, method: e.target.value })} className="h-8 rounded-md border border-input bg-transparent px-2" aria-label="אמצעי תשלום היתרה">
+            {METHODS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+          </select>
+          <Button type="button" size="sm" variant="outline" disabled={!(target > 0) || !split.depositDate || (Number(split.count) > 0 && !split.firstDate)}
+            onClick={() => setPayments(splitPayments(price, split))}>{rows.length ? "חלוקה מחדש" : "מילוי הטבלה"}</Button>
+        </div>
+        <p className="mt-1.5 text-xs text-muted-foreground">ממלא את הטבלה למטה. אחר כך אפשר לשנות כל תשלום בנפרד.</p>
+      </div>
+
+      {rows.length > 0 && (
+        <div className="space-y-2">
+          <div className="hidden grid-cols-[72px_150px_1fr_1fr_150px_36px] gap-2 px-1 text-xs text-muted-foreground sm:grid">
+            <span /> <span>תאריך</span><span>סכום לפני מע"מ</span><span>כולל מע"מ</span><span>אמצעי תשלום</span><span />
+          </div>
+          {rows.map((p, i) => {
+            const late = p.date && p.date < today;
+            const order = i > 0 && p.date && rows[i - 1].date && p.date < rows[i - 1].date;
+            return (
+              <div key={i}>
+                <div className="grid grid-cols-2 items-center gap-2 rounded-xl border border-border p-2 sm:grid-cols-[72px_150px_1fr_1fr_150px_36px] sm:border-0 sm:p-0 sm:px-1">
+                  <span className="text-sm font-medium">{i === 0 ? "מקדמה" : `תשלום ${i}`}</span>
+                  <Input type="date" value={p.date} onChange={(e) => set(i, "date", e.target.value)} aria-label="תאריך" className="h-9" />
+                  <Input value={p.amount} onChange={(e) => set(i, "amount", e.target.value)} inputMode="decimal" dir="ltr" placeholder="₪" aria-label='סכום לפני מע"מ' className="h-9" />
+                  <span className="text-sm tabular-nums text-muted-foreground" dir="ltr">{Number(p.amount) > 0 ? nis(totals[i]) : ""}</span>
+                  <select value={p.method} onChange={(e) => set(i, "method", e.target.value)} className={sel} aria-label="אמצעי תשלום">
+                    <option value="">אמצעי תשלום...</option>
+                    {METHODS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                  </select>
+                  <Button type="button" size="icon" variant="ghost" onClick={() => setPayments(rows.filter((_, j) => j !== i))} aria-label="הסרת התשלום"><Trash2 className="h-4 w-4" /></Button>
+                </div>
+                {(late || order) && <p className="px-1 pt-0.5 text-xs text-amber-700">{late ? "התאריך כבר עבר" : "התאריך מוקדם מהתשלום הקודם"}</p>}
+              </div>
+            );
+          })}
+          <Button type="button" size="sm" variant="outline" onClick={() => setPayments([...rows, {
+            date: rows.length && rows[rows.length - 1].date ? isoAddMonths(rows[rows.length - 1].date, 1) : soonWorkday(),
+            amount: diff > 0 ? diff / 100 : "", method: rows[rows.length - 1]?.method || "transfer",
+          }])}><Plus className="ms-1 h-4 w-4" />תשלום</Button>
+        </div>
+      )}
+
+      {rows.length > 0 && target > 0 && (
+        <div className={`flex flex-wrap items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm ${diff === 0 ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`} role="status">
+          <span>
+            {diff === 0 ? "✓ " : ""}סה"כ <span className="tabular-nums font-semibold">{nis(sum / 100)}</span> מתוך <span className="tabular-nums">{nis(target / 100)}</span> לפני מע"מ
+            {diff > 0 && <> · חסרים <span className="tabular-nums font-semibold">{nis(diff / 100)}</span></>}
+            {diff < 0 && <> · עודף של <span className="tabular-nums font-semibold">{nis(-diff / 100)}</span></>}
+            {diff === 0 && <> · <span className="tabular-nums">{nis(totals.reduce((a, b) => a + b, 0))}</span> כולל מע"מ</>}
+          </span>
+          {diff !== 0 && agorot(rows[rows.length - 1].amount) + diff > 0 && (
+            <Button type="button" size="sm" variant="outline" className="h-7 bg-white" onClick={() => set(rows.length - 1, "amount", (agorot(rows[rows.length - 1].amount) + diff) / 100)}>
+              {diff > 0 ? "להוסיף את החסר לתשלום האחרון" : "להוריד את העודף מהתשלום האחרון"}
+            </Button>
+          )}
+        </div>
+      )}
+
+      {hasChecks && (
+        <FieldRow label="איסוף השיקים על ידי שליח" hint="הלקוח יראה את התאריך ואת הסכומים המדויקים, כדי שיכין את השיקים מראש. אפשר להשאיר ריק ולתאם בהמשך">
+          <Input type="date" value={pickupDate || ""} onChange={(e) => setPickupDate(e.target.value)} className="max-w-48" />
+        </FieldRow>
+      )}
+    </div>
+  );
+}
+
 const blankManual = () => ({ on: false, signedOn: todayIL(), file: null, sendOrderMail: true, attachContract: true });
 const manualPayload = (m) => ({ signedOn: m.signedOn, fileId: m.file?.fileId || undefined, sendOrderMail: m.sendOrderMail, attachContract: Boolean(m.file) && m.attachContract });
 
@@ -119,8 +250,8 @@ const blankDeal = (s) => ({
     authorizedContact: { ...emptyContact },
   },
   data: {
-    project: { name: "", summary: "", specName: "", specVersion: "", specDate: "", specFileId: null, targetWeeks: "", kickoffNeeds: "" },
-    price: { amount: "", vatRate: s?.vatRate ?? 18, depositPercent: s?.depositPercent ?? 30, installments: 3, installmentDay: 1, balanceMethod: "transfer" },
+    project: { name: "", summary: "", specName: "", specVersion: "", specDate: "", specFileId: null, specPages: null, specPageCount: null, targetWeeks: "", kickoffNeeds: "" },
+    price: { amount: "", vatRate: s?.vatRate ?? 18, depositPercent: s?.depositPercent ?? 30, installments: 3, installmentDay: 1, balanceMethod: "transfer", payments: [], checksPickupDate: "" },
     service: { enabled: true, periods: [{ months: 12, price: "" }, { months: null, price: "" }] },
     standingOrder: { enabled: true, startDate: "", dayOfMonth: 1 },
     appendix: {
@@ -150,6 +281,7 @@ export function DealForm() {
   const [preview, setPreview] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [specFile, setSpecFile] = useState(null); // a spec PDF waiting for its pages to be picked
   const [confirm, setConfirm] = useState(null);
 
   useEffect(() => {
@@ -162,6 +294,8 @@ export function DealForm() {
         client: { ...client, authorizedContact: { ...emptyContact, ...(client.authorizedContact || data.appendix?.authorizedContact || {}) } },
         data: {
           ...data,
+          // deals made before payments were set one by one: the salesperson fills the table (quick split)
+          price: { ...data.price, payments: data.price.payments || [], checksPickupDate: data.price.checksPickupDate || "" },
           appendix: {
             ...data.appendix,
             stages: data.appendix?.stages || [],
@@ -190,11 +324,14 @@ export function DealForm() {
   const bind = (path, extra = {}) => ({ value: v(path), onChange: (e) => setF((s) => setIn(s, path, e.target.value)), ...extra });
   const ap = f.data.appendix;
 
-  const upload = async (file) => {
-    if (!file) return;
-    const r = await run(async () => api("sales/upload", { method: "POST", body: { name: file.name, data_url: await fileToDataUrl(file) } }), "האפיון הועלה");
-    if (r) setF((s) => setIn(setIn(s, "data.project.specFileId", r.fileId), "data.project.specName", s.data.project.specName || file.name.replace(/\.pdf$/i, "")));
+  // the spec: sales picks its pages (SpecPagePicker), and only those are uploaded as Appendix B
+  const specPicked = (file, r) => {
+    setSpecFile(null);
+    setF((s) => ["specFileId", "specPages", "specPageCount"].reduce((x, k) => setIn(x, `data.project.${k}`, r[k]),
+      setIn(s, "data.project.specName", s.data.project.specName || file.name.replace(/\.pdf$/i, ""))));
+    toast({ title: "העמודים צורפו להסכם" });
   };
+  const sp = f.data.project;
 
   const save = async () => {
     setError("");
@@ -207,6 +344,13 @@ export function DealForm() {
     if (f.client.phone.trim() && !mobileIL(f.client.phone)) return setError(`טלפון הלקוח: ${FIELD_ERRORS.phone}`);
     if (f.client.taxId.trim() && !taxIdIL(f.client.taxId)) return setError(`ח.פ הלקוח: ${FIELD_ERRORS.taxId}`);
     if (f.client.authorizedContact?.email && !isEmail(f.client.authorizedContact.email)) return setError(`איש הקשר המוסמך: ${FIELD_ERRORS.email}`);
+    const pays = f.data.price.payments;
+    if (!pays.length) return setError("יש להזין את לוח התשלומים (אפשר בחלוקה המהירה)");
+    if (pays.some((p) => !p.date)) return setError("יש להזין תאריך לכל תשלום");
+    if (pays.some((p) => !(Number(p.amount) > 0))) return setError("יש להזין סכום לכל תשלום");
+    if (pays.some((p) => !p.method)) return setError("יש לבחור אמצעי תשלום לכל תשלום, כולל המקדמה");
+    const gap = agorot(f.data.price.amount) - pays.reduce((a, p) => a + agorot(p.amount), 0);
+    if (gap) return setError(`סכום התשלומים לא שווה למחיר: ${gap > 0 ? "חסרים" : "עודף של"} ${nis(Math.abs(gap) / 100)} לפני מע"מ`);
     if (f.data.service.enabled && !f.data.standingOrder.startDate) return setError("יש לבחור את תאריך החיוב הראשון של השירות החודשי");
     setBusy(true);
     try {
@@ -276,10 +420,19 @@ export function DealForm() {
               <FieldRow label="מה מפתחים (בשתי-שלוש שורות)" className="sm:col-span-2" hint="מופיע בראש העמוד של הלקוח"><Textarea {...bind("data.project.summary")} rows={3} /></FieldRow>
               <div className="sm:col-span-2">
                 <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm hover:bg-secondary">
-                  <Upload className="h-4 w-4" />{f.data.project.specFileId ? `האפיון מצורף${f.data.project.specName ? ` (${f.data.project.specName})` : ""} · החלפה` : "צירוף קובץ האפיון (PDF)"}
-                  <input type="file" accept="application/pdf" className="hidden" onChange={(e) => upload(e.target.files?.[0])} />
+                  <Upload className="h-4 w-4" />{sp.specFileId ? `האפיון מצורף${sp.specName ? ` (${sp.specName})` : ""} · החלפה` : "צירוף קובץ האפיון (PDF)"}
+                  <input type="file" accept="application/pdf" className="hidden" onChange={(e) => { const x = e.target.files?.[0]; e.target.value = ""; if (x) setSpecFile(x); }} />
                 </label>
-                <p className="mt-1 text-xs text-muted-foreground">קובץ ה-PDF של האפיון מ-Canva. זה המסמך שמגדיר את התכולה בהסכם.</p>
+                {sp.specFileId && (
+                  <p className="mt-1 text-sm">
+                    {sp.specPages?.length
+                      ? `נספח ב' בהסכם: ${sp.specPages.length === 1 ? "עמוד" : "עמודים"} ${sp.specPages.join(", ")}${sp.specPageCount ? ` מתוך ${sp.specPageCount}` : ""}.`
+                      : "נספח ב' בהסכם: כל הקובץ שצורף."}
+                    {id && <> <a href={`/api/sales/deal-file?id=${id}&kind=spec`} target="_blank" rel="noreferrer" className="text-primary underline">תצוגה כפי שהלקוח יראה</a></>}
+                  </p>
+                )}
+                <p className="mt-1 text-xs text-muted-foreground">קובץ ה-PDF של האפיון מ-Canva. אחרי הבחירה בוחרים אילו עמודים ממנו מצורפים להסכם כנספח ב'. כדי לשנות את העמודים, מצרפים את הקובץ שוב.</p>
+                {specFile && <SpecPagePicker file={specFile} onClose={() => setSpecFile(null)} onSave={(r) => specPicked(specFile, r)} />}
               </div>
               <FieldRow label="יעד פיתוח משוער (שבועות)"><Input {...bind("data.project.targetWeeks")} inputMode="numeric" dir="ltr" /></FieldRow>
               <FieldRow label="מה נצטרך מהלקוח לפתיחה" className="sm:col-span-2"><Textarea {...bind("data.project.kickoffNeeds")} rows={2} /></FieldRow>
@@ -288,15 +441,14 @@ export function DealForm() {
           <Card title="מחיר ותשלומים">
             <div className="grid gap-3 sm:grid-cols-3">
               <FieldRow label='מחיר לפני מע"מ *'><Input {...bind("data.price.amount")} inputMode="decimal" dir="ltr" /></FieldRow>
-              <FieldRow label="מקדמה %"><Input {...bind("data.price.depositPercent")} inputMode="numeric" dir="ltr" /></FieldRow>
               <FieldRow label='מע"מ %'><Input {...bind("data.price.vatRate")} inputMode="decimal" dir="ltr" /></FieldRow>
-              <FieldRow label="מספר תשלומי יתרה"><Input {...bind("data.price.installments")} inputMode="numeric" dir="ltr" /></FieldRow>
-              <FieldRow label="יום בחודש לתשלום"><Input {...bind("data.price.installmentDay")} inputMode="numeric" dir="ltr" /></FieldRow>
-              <FieldRow label="אמצעי תשלום היתרה">
-                <select {...bind("data.price.balanceMethod")} className="h-9 w-full rounded-md border border-input bg-transparent px-2 text-sm">
-                  <option value="transfer">העברה בנקאית</option><option value="checks">שיקים דחויים</option>
-                </select>
-              </FieldRow>
+              <div className="sm:col-span-3">
+                <p className="text-sm font-medium">לוח התשלומים *</p>
+                <p className="mb-3 text-xs text-muted-foreground">כל תשלום עם התאריך המדויק, הסכום ואמצעי התשלום. הראשון הוא המקדמה. הלקוח רואה את הטבלה כמו שהיא.</p>
+                <PaymentsEditor price={f.data.price.amount} vatRate={f.data.price.vatRate} legacy={f.data.price}
+                  payments={f.data.price.payments} setPayments={(p) => setF((s) => setIn(s, "data.price.payments", p))}
+                  pickupDate={f.data.price.checksPickupDate} setPickupDate={(d) => setF((s) => setIn(s, "data.price.checksPickupDate", d))} />
+              </div>
               {!id && (
                 <FieldRow label="איך הלקוח משלם או שילם (פנימי)" className="sm:col-span-3" hint="למשל: המקדמה הועברה ב-12/11, השירות החודשי בהעברה. אפשר לעדכן בהמשך במסך העסקה">
                   <Textarea value={paymentNote} onChange={(e) => setPaymentNote(e.target.value)} rows={2} />
@@ -402,13 +554,13 @@ export function DealForm() {
                     {preview.schedule.rows.map((r) => (
                       <tr key={r.n} className="border-b border-border/60">
                         <td className="py-1.5">{r.kind === "deposit" ? `מקדמה ${preview.price.depositPercent}%` : `תשלום ${r.n - 1}`}</td>
-                        <td className="py-1.5 text-xs text-muted-foreground">{r.kind === "deposit" ? `עד ${dmy(r.date)}` : dmy(r.date)}</td>
+                        <td className="py-1.5 text-xs text-muted-foreground">{r.kind === "deposit" && !r.method ? `עד ${dmy(r.date)}` : dmy(r.date)}{r.method && <span className="block">{methodName(r.method)}</span>}</td>
                         <td className="py-1.5 text-end tabular-nums">{nis(r.total)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                <p className="text-xs text-muted-foreground">התאריכים מחושבים מהיום. בפועל הם נקבעים ביום שהלקוח מאשר את ההזמנה (ימי עסקים, בלי שישי-שבת וחגים).</p>
+                {preview.schedule.rows.some((r) => r.dateNote && r.method === "transfer") && <p className="text-xs text-amber-700">העברה בתאריך שאינו יום עסקים בנקאי צריכה להגיע ביום העסקים שלפניו.</p>}
                 {preview.service.rows?.length > 0 && (
                   <div className="space-y-1 border-t border-border pt-3">
                     {preview.service.rows.map((r, i) => <p key={i} className="flex justify-between"><span className="text-muted-foreground">{r.when}</span><span className="tabular-nums">{r.price ? `${nis(r.priceWithVat)} לחודש` : "ללא עלות"}</span></p>)}
@@ -459,6 +611,8 @@ export function DealDetail() {
       <Card title="הקישור ללקוח" actions={!x.status.canceled && <Button size="sm" variant="outline" onClick={() => act({ action: "send_email" }, "המייל נשלח לתור")}>שליחה במייל</Button>}>
         <LinkBox url={x.url} phone={x.client.phone} message={`היי ${x.client.signerName || ""}, מצורף הקישור להזמנת העבודה ולהסכם של ${x.data.project.name}:`} />
       </Card>
+
+      {!x.status.canceled && <DealFilm id={id} project={x.data.project.name} />}
 
       <div className="grid gap-5 md:grid-cols-2">
         <Card title="מצב">
@@ -511,7 +665,7 @@ export function DealDetail() {
         <Card title="הלקוח">
           <Info rows={[
             ["חברה", x.client.companyName], ["ח.פ", x.client.taxId], ["כתובת", x.client.address],
-            ["חותם", [x.client.signerName, x.client.signerRole].filter(Boolean).join(", ")],
+            ["חותם", [x.client.signerName, x.client.signerRole, x.signerIdNumber && `ת.ז ${x.signerIdNumber}`].filter(Boolean).join(", ")],
             ["אימייל", x.client.email && <span dir="ltr">{x.client.email}</span>], ["טלפון", x.client.phone && <span dir="ltr">{x.client.phone}</span>],
             ["הנהלת חשבונות", x.client.accountingEmail && <span dir="ltr">{x.client.accountingEmail}</span>],
           ]} />
@@ -545,12 +699,14 @@ export function DealDetail() {
               <tr key={r.n} className="border-b border-border/60">
                 <td className="py-2">{r.kind === "deposit" ? `מקדמה ${o.price.depositPercent}%` : `תשלום ${r.n - 1}`}</td>
                 <td className="py-2">{dmy(r.date)}{r.dateNote && <span className="block text-xs text-muted-foreground sm:ms-2 sm:inline">{r.dateNote}</span>}</td>
+                <td className="py-2 text-muted-foreground">{methodName(r.method)}</td>
                 <td className="hidden whitespace-nowrap py-2 tabular-nums sm:table-cell">{nis(r.before)}</td>
                 <td className="whitespace-nowrap py-2 text-end font-medium tabular-nums">{nis(r.total)}</td>
               </tr>
             ))}
           </tbody>
         </table>
+        {o.payInfo?.checks?.pickupDate && <p className="mt-3 text-sm">איסוף השיקים על ידי שליח: <span className="tabular-nums">{dmy(o.payInfo.checks.pickupDate)}</span></p>}
       </Card>
 
       {sub && (

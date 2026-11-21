@@ -39,11 +39,14 @@ export const ROUTES = {
   "sales/booking": () => import("./_routes/sales/booking.js"),
   "sales/booking-result": () => import("./_routes/sales/booking-result.js"),
   "sales/deal-file": () => import("./_routes/sales/deal-file.js"),
+  "sales/deal-film": () => import("./_routes/sales/deal-film.js"),
   "sales/deal-public": () => import("./_routes/sales/deal-public.js"),
   "sales/deals": () => import("./_routes/sales/deals.js"),
   "sales/discovery": () => import("./_routes/sales/discovery.js"),
   "sales/discovery-public": () => import("./_routes/sales/discovery-public.js"),
+  "sales/pitch": () => import("./_routes/sales/pitch.js"),
   "sales/settings": () => import("./_routes/sales/settings.js"),
+  "sales/spec-pages": () => import("./_routes/sales/spec-pages.js"),
   "sales/upload": () => import("./_routes/sales/upload.js"),
 };
 

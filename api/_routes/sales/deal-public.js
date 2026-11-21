@@ -1,7 +1,7 @@
 // /api/sales/deal-public?token=   the client's deal page (no sign-in; the token is the key)
 //   GET  -> everything the three steps show; the first visit marks the order viewed
 //   POST { action: "approve", client, approverName, accept }          step 1: work order and payments
-//   POST { action: "sign", name, role, signature (PNG data URL), accept }  step 2: the agreement
+//   POST { action: "sign", name, role, idNumber (optional), signature (PNG data URL), accept }  step 2: the agreement
 //   POST { action: "card" }  step 3: opens Grow's card page (through Toro) -> { authCode, url }
 // Each step stands on its own: signing does not need the card, and the signed agreement is kept
 // even if the client stops before step 3.
@@ -12,6 +12,7 @@ import { buildAgreement, buildOrder, cleanClient, snapshotHash } from "../../_li
 import { dealAccountingMail, dealSignedMail } from "../../_lib/sales-mail.js";
 import { parseDataUrl } from "../../_lib/sign.js";
 import { generateDealPdf } from "../../_lib/deal-pdf.js";
+import { sha256, specFile, specPageCount } from "../../_lib/spec-pdf.js";
 import { createDealSubscription, firstCharge, subscriptionRow } from "../../_lib/billing.js";
 import { israelDate } from "../../_lib/sales-calc.js";
 import { callToro, growReason } from "../../_lib/toro.js";
@@ -49,6 +50,14 @@ async function view(d, settings, base) {
       spec: d.data.project?.specFileId ? `${base}/api/sales/deal-file?token=${d.token}&kind=spec` : null,
       signedPdf: d.signed_pdf_file_id ? `${base}/api/sales/deal-file?token=${d.token}&kind=signed` : null,
     },
+    // the demo film above the price (api/_lib/demo-film.js), once sales published it
+    // a ready video, when one was uploaded, takes the film's place
+    film: d.film?.published && (d.film.video || (d.film.script && d.film.demoFileId)) ? {
+      video: d.film.video ? `${base}/api/sales/deal-file?token=${d.token}&kind=video&v=${encodeURIComponent(d.film.video.parts[0].slice(0, 8))}` : null,
+      demo: d.film.video ? null : `${base}/api/sales/deal-file?token=${d.token}&kind=demo&v=${encodeURIComponent(d.film.demoFileId.slice(0, 8))}`,
+      logo: d.film.logoFileId ? `${base}/api/sales/deal-file?token=${d.token}&kind=logo&v=${encodeURIComponent(d.film.logoFileId.slice(0, 8))}` : null,
+      script: d.film.video ? null : d.film.script,
+    } : null,
     company: { name: settings.company.name, phone: settings.company.phone, email: settings.officeEmail },
     officeEmail: settings.officeEmail,
   };
@@ -110,16 +119,29 @@ export default route(["GET", "POST"], async (req, res) => {
     if (b.accept !== true) throw new HttpError(400, "not_accepted");
     const name = str(b.name, 120);
     if (name.length < 2) throw new HttpError(400, "bad_name");
+    // the signer's ID number is optional; when given it must be a valid one
+    const idNumber = String(b.idNumber || "").trim() ? taxIdIL(b.idNumber) : "";
+    if (String(b.idNumber || "").trim() && !idNumber) throw new HttpError(400, "bad_id_number");
     const img = parseDataUrl(b.signature, { allowed: ["image/png"], maxBytes: 1024 * 1024 });
     const sigFile = await query(
       "INSERT INTO sign.files (is_public, name, content_type, size, data) VALUES (false, 'deal-signature.png', 'image/png', $1, $2) RETURNING id",
       [img.bytes.length, img.bytes]);
-    const signature = who(req, { name, role: str(b.role, 80), email: d.client.email, fileId: sigFile.rows[0].id });
+    const signature = who(req, { name, role: str(b.role, 80), ...(idNumber && { idNumber }), email: d.client.email, fileId: sigFile.rows[0].id });
     let companySignature = null;
     if (settings.signer.signatureFileId) {
       const f = await query("SELECT content_type, data FROM sign.files WHERE id = $1", [settings.signer.signatureFileId]);
       if (f.rows[0]) companySignature = `data:${f.rows[0].content_type};base64,${f.rows[0].data.toString("base64")}`;
     }
+    // Appendix B: the spec file as approved (only the pages sales picked), identified by its hash
+    const proj = d.snapshot.order.project || {};
+    const sf = await specFile(proj.specFileId);
+    const spec = sf ? {
+      fileId: proj.specFileId,
+      pages: proj.specPages || null,
+      pageCount: proj.specPageCount || null,
+      attachedPages: await specPageCount(sf.data).catch(() => null),
+      sha256: sha256(sf.data),
+    } : null;
     const snapshot = {
       order: d.snapshot.order,
       agreement: buildAgreement(d, settings),
@@ -127,9 +149,10 @@ export default route(["GET", "POST"], async (req, res) => {
       approval: d.approval,
       signature,
       companySignature,
+      spec,
     };
     const hash = snapshotHash(snapshot);
-    const pdf = await generateDealPdf({ ...snapshot, hash });
+    const pdf = await generateDealPdf({ ...snapshot, hash }, { specBytes: sf?.data });
     const pdfName = `הסכם ${d.number} - ${(d.client.companyName || d.client.signerName || "").replace(/[\\/:*?"<>|]+/g, "-")}.pdf`;
     const pf = await query(
       "INSERT INTO sign.files (is_public, name, content_type, size, data) VALUES (false, $1, 'application/pdf', $2, $3) RETURNING id",

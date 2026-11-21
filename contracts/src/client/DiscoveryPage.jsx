@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { CalendarCheck, CalendarDays, CalendarPlus, Clock, Cpu, FileText, Map as MapIcon, PiggyBank, Plus, ShieldCheck, Target, Users, Workflow, X } from "lucide-react";
+import { CalendarCheck, CalendarDays, CalendarPlus, Check, Clock, Cpu, FileText, Map as MapIcon, PiggyBank, Plus, ShieldCheck, Target, Users, Workflow, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { api, dayLabel, errorText, FIELD_ERRORS, fullNameOk, isEmail, meetingTime, mobileIL, nis, taxIdIL, timeLabel } from "@/sales/lib";
+import { api, dayLabel, errorText, FIELD_ERRORS, fullNameOk, getWithRetry, isEmail, meetingTime, mobileIL, nis, taxIdIL, timeLabel } from "@/sales/lib";
 import { createPayment, openWidget, warmUp } from "@/sales/grow";
-import { Container, ErrorLine, Field, Loading, Notice, Shell } from "./ui.jsx";
+import { Container, ErrorLine, Field, Loading, LoadFailed, Notice, Shell } from "./ui.jsx";
 
 const BENEFITS = [
   { icon: Target, title: "חזון פרויקט ברור", text: "יודעים בדיוק מה בונים ולמה, לפני שכותבים שורת קוד." },
@@ -34,13 +34,15 @@ export default function DiscoveryPage({ token }) {
   // Sales may take either part off the page: a meeting time they set is shown, and a payment made outside
   // the page is not asked for.
   const [stage, setStage] = useState("view"); // view | schedule | pay | waiting | done
+  // d: undefined while loading, null when the link is not active (404), "failed" when the page could not load.
+  // A failed reload once the page is up (the payment polling) keeps what is on screen.
   const load = useCallback(async () => {
     try {
-      const v = await api(`sales/discovery-public?token=${encodeURIComponent(token)}`);
+      const v = await getWithRetry(`sales/discovery-public?token=${encodeURIComponent(token)}`);
       setD(v);
       return v;
-    } catch {
-      setD(null);
+    } catch (err) {
+      setD((cur) => (err.status === 404 ? null : cur && cur !== "failed" ? cur : "failed"));
       return null;
     }
   }, [token]);
@@ -58,6 +60,7 @@ export default function DiscoveryPage({ token }) {
 
   if (d === undefined) return <Shell><Loading /></Shell>;
   if (d === null) return <Shell><Notice title="הקישור אינו פעיל" text="ייתכן שההצעה בוטלה או שהקישור הועתק חלקית. נשמח לשלוח קישור חדש." /></Shell>;
+  if (d === "failed") return <Shell><LoadFailed /></Shell>;
 
   if (stage === "done") return <Booked d={d} />;
   const back = d.showBooking ? "schedule" : "view";
@@ -94,8 +97,24 @@ export default function DiscoveryPage({ token }) {
         <Container className="pb-14 pt-10 sm:pb-20 sm:pt-16">
           <p className="text-sm font-medium text-white/80">הוכן עבור {d.companyName || d.clientName}</p>
           <h1 className="mt-2 text-4xl font-extrabold leading-tight sm:text-5xl">{d.title}</h1>
-          <p className="mt-3 text-lg font-semibold text-white/95">ניתוח, מיפוי טכנולוגי וארכיטקטורת פתרון.</p>
-          <p className="mt-1 text-white/80">המרת דרישות עסקיות למפת דרכים ברורה ויישימה לפיתוח.</p>
+          {d.pitch ? (
+            // the key lines sales chose for this client (written with Claude from the client's problem)
+            <div className="mt-5 max-w-2xl">
+              {d.pitch.headline && <p className="text-2xl font-bold leading-snug text-white sm:text-3xl">{d.pitch.headline}</p>}
+              {d.pitch.lines.length > 0 && (
+                <ul className="mt-4 space-y-2">
+                  {d.pitch.lines.map((l) => (
+                    <li key={l} className="flex gap-2.5 text-[17px] leading-relaxed text-white/90">
+                      <Check className="mt-1 h-5 w-5 shrink-0 text-white/70" aria-hidden="true" />{l}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ) : (<>
+            <p className="mt-3 text-lg font-semibold text-white/95">ניתוח, מיפוי טכנולוגי וארכיטקטורת פתרון.</p>
+            <p className="mt-1 text-white/80">המרת דרישות עסקיות למפת דרכים ברורה ויישימה לפיתוח.</p>
+          </>)}
           {d.note && <p className="mt-6 max-w-xl rounded-xl bg-white/10 p-4 text-[15px] leading-relaxed text-white/95">{d.note}</p>}
         </Container>
       </header>

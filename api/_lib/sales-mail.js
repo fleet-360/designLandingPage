@@ -1,6 +1,9 @@
 // Emails of the sales system (queued with sales.js sendMail, sent by Toro from info@pro-algo.com).
 // Hebrew, RTL, inline styles (mail clients ignore <style>). Every value from a person is escaped.
 
+import { payInstructions } from "./deal.js";
+import { PAYMENT_METHODS } from "./sales-calc.js";
+
 const BRAND = "#2B2A8C";
 const ACCENT = "#4A6FD8";
 
@@ -56,9 +59,11 @@ export function dealInviteMail(deal, settings, url) {
 
 // the payment schedule table and how to pay it, shared by the accounting email and the order confirmation
 const scheduleRows = (s) => [["<strong>#</strong>", "<strong>מועד</strong>", "<strong>לפני מע\"מ</strong>", "<strong>כולל מע\"מ</strong>"],
-  ...s.rows.map((r) => [r.n, `${r.kind === "deposit" ? "מקדמה · " : ""}${ddmmyyyy(r.date)}${r.dateNote ? `<br><span style="color:#6B7280;font-size:13px">${esc(r.dateNote)}</span>` : ""}`, nis(r.before), nis(r.total)]),
+  ...s.rows.map((r) => [r.n, `${r.kind === "deposit" ? "מקדמה · " : ""}${ddmmyyyy(r.date)}${r.method ? ` · ${esc(PAYMENT_METHODS[r.method] || "")}` : ""}${r.dateNote ? `<br><span style="color:#6B7280;font-size:13px">${esc(r.dateNote)}</span>` : ""}`, nis(r.before), nis(r.total)]),
   ["", "<strong>סה\"כ</strong>", `<strong>${nis(s.totals.before)}</strong>`, `<strong>${nis(s.totals.total)}</strong>`]];
 function howToPay(order, settings, number) {
+  const lines = payInstructions(order);
+  if (lines) return lines.map((l) => { const [head, ...rest] = l.split(": "); return `<p><strong>${esc(head)}:</strong> ${esc(rest.join(": "))}</p>`; }).join("");
   const b = settings.bank;
   return order.balanceMethod === "checks"
     ? `<p><strong>שיקים דחויים:</strong> לפקודת ${esc(settings.checks.payee)}, שיק לכל תשלום לפי הטבלה. השיקים ייאספו בתוך ${esc(settings.checks.pickupDays)} ימי עסקים מהחתימה; נתאם איתכם את האיסוף.</p>`
@@ -282,7 +287,7 @@ export function discoveryBookedMail(d, settings, { calendarInvited }) {
   const when = israelDateTime(d.meeting_start);
   return {
     to: [d.email, ...(d.attendees || [])],
-    cc: [settings.officeEmail, settings.calendar.user],
+    cc: [settings.officeEmail, ...(settings.calendar.invitees || []), settings.calendar.user],
     replyTo: settings.officeEmail,
     subject: `נקבעה פגישת פתיחה · ${settings.discovery.title}`,
     html: layout({
@@ -303,7 +308,7 @@ export function meetingIcs(d, settings) {
     `UID:${d.id}@pro-algo.com`, `DTSTAMP:${stamp(new Date())}`, `DTSTART:${stamp(d.meeting_start)}`, `DTEND:${stamp(d.meeting_end)}`,
     `SUMMARY:${settings.discovery.title} · ${String(d.company_name || d.client_name).replace(/[,;\n]/g, " ")}`,
     `ORGANIZER;CN=Pro Algorithm:mailto:${settings.calendar.user}`,
-    ...[d.email, ...(d.attendees || [])].filter(Boolean).map((e) => `ATTENDEE;RSVP=TRUE:mailto:${e}`),
+    ...[...new Set([d.email, ...(d.attendees || []), ...(settings.calendar.invitees || [])].filter(Boolean))].map((e) => `ATTENDEE;RSVP=TRUE:mailto:${e}`),
     "END:VEVENT", "END:VCALENDAR",
   ];
   return lines.join("\r\n");

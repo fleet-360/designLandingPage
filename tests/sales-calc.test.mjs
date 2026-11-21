@@ -52,3 +52,24 @@ test("standing order amounts follow the periods", () => {
   assert.deepEqual(rows.map((r) => r.when), ["מתחילת הפרויקט", "חודשים 4–9", "מחודש 10"]);
   assert.equal(rows[1].priceWithVat, 590);
 });
+
+test("payments set one by one keep their dates and methods, and add up exactly", () => {
+  const payments = [
+    { date: "2026-11-26", amount: 3703.7, method: "transfer" },
+    { date: "2026-12-01", amount: 2880, method: "check" },
+    { date: "2027-01-01", amount: 2880, method: "check" },
+    { date: "2027-02-01", amount: 2881.97, method: "card" },
+  ];
+  const s = paymentSchedule({ price: 12345.67, vatRate: 18, payments }, "2026-11-22");
+  assert.deepEqual(s.rows.map((r) => [r.kind, r.date, r.method]), [
+    ["deposit", "2026-11-26", "transfer"], ["installment", "2026-12-01", "check"],
+    ["installment", "2027-01-01", "check"], ["installment", "2027-02-01", "card"],
+  ]);
+  assert.equal(cents(s.totals.before), cents(12345.67));
+  assert.equal(cents(s.totals.total), cents(s.total));
+  for (const r of s.rows) assert.equal(cents(r.before) + cents(r.vat), cents(r.total));
+  // a transfer due on a Friday notes the business day before it; checks and cards do not
+  const f = paymentSchedule({ price: 100, vatRate: 18, payments: [{ date: "2027-01-01", amount: 50, method: "transfer" }, { date: "2027-01-01", amount: 50, method: "check" }] });
+  assert.match(f.rows[0].dateNote, /31\/12\/2026/);
+  assert.equal(f.rows[1].dateNote, null);
+});

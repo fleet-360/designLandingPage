@@ -56,6 +56,7 @@ export function dealRow(r, base) {
     subscriptionId: r.subscription_id,
     signMode: r.sign_mode || "link",
     signedOn: r.signature?.manual ? r.signature.on : null,
+    signerIdNumber: r.signature?.idNumber || null,
     paymentNote: r.payment_note || null,
   };
 }

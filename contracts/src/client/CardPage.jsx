@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
-import { api, dmy, nis } from "@/sales/lib";
-import { Container, Loading, Notice, Section, Shell } from "./ui.jsx";
+import { api, dmy, getWithRetry, nis } from "@/sales/lib";
+import { Container, Loading, LoadFailed, Notice, Section, Shell } from "./ui.jsx";
 import CardSetup from "./CardSetup.jsx";
 
 // /card/<token>: a standing order's card page (new card, or replacing one)
@@ -9,11 +9,12 @@ export default function CardPage({ token }) {
   const [s, setS] = useState(undefined);
   const [replace, setReplace] = useState(false);
   const url = `billing/card-link?token=${encodeURIComponent(token)}`;
-  const load = useCallback(() => api(url).then((v) => { setS(v); return v; }), [url]);
-  useEffect(() => { load().catch(() => setS(null)); }, [load]);
+  const load = useCallback(() => getWithRetry(url).then((v) => { setS(v); return v; }), [url]);
+  useEffect(() => { load().catch((err) => setS(err.status === 404 ? null : "failed")); }, [load]);
 
   if (s === undefined) return <Shell><Loading /></Shell>;
   if (s === null) return <Shell><Notice title="הקישור אינו פעיל" text="ייתכן שהוראת הקבע הסתיימה או בוטלה. לשאלות אפשר לפנות אלינו." /></Shell>;
+  if (s === "failed") return <Shell><LoadFailed /></Shell>;
 
   const periods = (s.schedule || []).map((p, i) => ({
     label: p.months ? `${p.months} חודשים` : i ? "בהמשך" : "חודשי",
