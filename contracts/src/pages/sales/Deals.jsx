@@ -313,7 +313,6 @@ export function DealForm() {
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <FieldRow label="מספר משתמשים / תחנות" hint="ריק: ללא הגבלה"><Input {...bind("data.appendix.usersCount")} /></FieldRow>
-                {f.data.service.enabled && <FieldRow label="תקרת אחריות עד תחילת החיוב החודשי (₪)" hint="סעיף 12.3"><Input {...bind("data.appendix.liabilityCapIncluded")} inputMode="decimal" dir="ltr" /></FieldRow>}
               </div>
             </div>
           </Card>
