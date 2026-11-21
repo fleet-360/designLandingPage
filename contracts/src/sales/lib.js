@@ -127,6 +127,11 @@ const ERRORS = {
   not_signed: "העסקה עוד לא נחתמה",
   canceled: "הפריט בוטל",
   unsupported_file_type: "סוג הקובץ לא נתמך",
+  bad_problem: "כתבו בכמה מילים מה הלקוח רוצה לפתור",
+  ai_not_configured: "כתיבה אוטומטית לא מוגדרת בשרת. אפשר לכתוב את המשפטים ידנית.",
+  ai_busy: "יש עומס על שירות הכתיבה. נסו שוב בעוד דקה.",
+  ai_failed: "הכתיבה לא הצליחה. נסו שוב, או כתבו את המשפטים ידנית.",
+  ai_refused: "לא הצלחנו לכתוב משפטים מהתיאור הזה. נסו לנסח אותו אחרת.",
 };
 export const errorText = (e) => ERRORS[e?.code] || ERRORS.server_error;
 
