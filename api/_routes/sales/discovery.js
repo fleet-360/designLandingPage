@@ -6,6 +6,8 @@
 //          salesName, salesPhone, leadName, leadPhone, officeName, officePhone: the responsible salesperson,
 //          team lead and office manager, shown in
 //          the booking confirmation (default: settings.discovery.contacts)
+//          pitch { problem, headline, lines: [] }: the key lines at the top of the client's page (see
+//          sales/pitch, which writes them with Claude); null = the standard opening
 //          showBooking, showPayment (default true): what the client's page offers. When one is false, sales
 //          types it in, with the same fields as the "manual" action below
 //   PATCH  ?id= { action: "cancel" | "mark_paid" | "send_email" | "update" | "manual", ...fields }
@@ -40,6 +42,7 @@ export function discoveryRow(r, base) {
     vatRate: Number(r.vat_rate),
     total: withVat(r.price, r.vat_rate),
     note: r.note,
+    pitch: r.pitch || null,
     meetingMinutes: r.meeting_minutes,
     status: r.canceled_at ? "canceled" : r.status,
     viewedAt: iso(r.viewed_at),
@@ -184,10 +187,20 @@ function fields(b, settings, partial = false, current = null) {
     out.contacts = JSON.stringify(c);
   }
   set("note", b.note === undefined ? undefined : str(b.note, 1500) || null);
+  if (b.pitch !== undefined) out.pitch = pitchOf(b.pitch);
   if (!partial || b.meetingMinutes !== undefined) {
     out.meeting_minutes = Math.min(180, Math.max(15, Math.trunc(Number(b.meetingMinutes) || settings.discovery.meetingMinutes)));
   }
   return out;
+}
+
+// { problem, headline, lines } as sales left it -> the stored JSON, or null when there is nothing to show
+export function pitchOf(p) {
+  if (!p || typeof p !== "object") return null;
+  const headline = str(p.headline, 200);
+  const lines = (Array.isArray(p.lines) ? p.lines : []).map((l) => str(l, 240)).filter(Boolean).slice(0, 4);
+  if (!headline && !lines.length) return null;
+  return JSON.stringify({ problem: str(p.problem, 500), headline, lines });
 }
 
 // a price before discount is only shown when it is higher than the price
@@ -218,9 +231,9 @@ export default route(["GET", "POST", "PATCH"], async (req, res) => {
     checkListPrice(f.price, f.list_price);
     checkManual(b);
     const { rows } = await query(
-      `INSERT INTO sales.discovery (token, created_by, client_name, company_name, email, phone, tax_id, price, list_price, vat_rate, note, meeting_minutes, contacts)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
-      [newToken(), user, f.client_name, f.company_name, f.email, f.phone, f.tax_id, f.price, f.list_price, settings.vatRate, f.note, f.meeting_minutes, f.contacts]);
+      `INSERT INTO sales.discovery (token, created_by, client_name, company_name, email, phone, tax_id, price, list_price, vat_rate, note, meeting_minutes, contacts, pitch)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
+      [newToken(), user, f.client_name, f.company_name, f.email, f.phone, f.tax_id, f.price, f.list_price, settings.vatRate, f.note, f.meeting_minutes, f.contacts, f.pitch ?? null]);
     let d = rows[0];
     await logEvent("discovery", d.id, "created", { by: user, price: Number(d.price), ...(d.list_price !== null && { listPrice: Number(d.list_price) }) });
     if (b.showBooking === false || b.showPayment === false) d = await applyManual(d.id, b, user);

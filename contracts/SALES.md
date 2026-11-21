@@ -32,6 +32,13 @@ take overlapping times. When the calendar is not connected, the confirmation ema
 instead. The calendar is reached directly from the site when `GOOGLE_CALENDAR_CREDENTIALS` is set in Vercel
 (`api/_lib/calendar.js`), otherwise through Toro.
 
+**Key lines at the top of the spec request page.** On the request form sales types in a few words what the
+client wants solved ("להוציא כתבי כמויות של ברזל") and presses "כתיבת משפטים". Claude (`api/_lib/ai-pitch.js`,
+through `/api/sales/pitch`) returns three headline options and three supporting lines; sales picks a headline
+and edits or removes lines before saving. They replace the page's two standard opening lines (`pitch` on the
+request; what sales typed stays internal). Only the problem text is sent to the API, never the client's name or
+details. Without `ANTHROPIC_API_KEY` the lines can still be typed by hand.
+
 **The spec in the contract (Appendix B).** On the deal form sales attaches the Canva PDF and picks which of its
 pages go into the contract (`contracts/src/pages/sales/SpecPagePicker.jsx`). The PDF is read in the browser:
 thumbnails, plus each page's text, which Claude reads (`api/_lib/ai-spec-pages.js`, through
@@ -105,7 +112,7 @@ The site trusts Toro's calls by its IP (`api/_lib/toro.js`), the same as `/api/p
 
   The calendar is the one on the settings screen (`developers@pro-algo.com`), and its
   "בדיקת חיבור ליומן" button shows whether it works. Until then booking works with `.ics` invites.
-- **Spec pages (Claude):** in Vercel (landing-page-build → Settings → Environment Variables):
+- **Key lines and spec pages (Claude):** in Vercel (landing-page-build → Settings → Environment Variables):
   `ANTHROPIC_API_KEY` = a key from console.anthropic.com. Redeploy. Optional `ANTHROPIC_MODEL` replaces the
   default model (`claude-opus-5-5`).
 - **Grow card saving:** the Grow account must allow token payments (Get Token Only and charging a saved

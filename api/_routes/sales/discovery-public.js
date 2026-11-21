@@ -28,6 +28,8 @@ function view(d, settings) {
     clientName: d.client_name,
     companyName: d.company_name,
     note: d.note,
+    // the key lines sales chose for the top of the page (what sales typed about the problem stays internal)
+    pitch: d.pitch && (d.pitch.headline || d.pitch.lines?.length) ? { headline: d.pitch.headline || "", lines: d.pitch.lines || [] } : null,
     price: Number(d.price),
     listPrice: d.list_price === null ? null : Number(d.list_price),   // before discount, struck through
     vatRate: Number(d.vat_rate),
