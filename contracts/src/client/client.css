@@ -1,43 +1,52 @@
-/* Client pages: Pro Algorithm's own look (deep indigo and blue, Heebo), over the app's shadcn tokens */
+/* Client pages (the order and agreement, the card page): the colors of the spec request page
+   (discovery.css): mint, tomato, cream and coffee, in Rubik, over the app's shadcn tokens */
 .pa {
-  --background: 216 33% 97%;
-  --foreground: 221 39% 11%;
-  --card: 0 0% 100%;
-  --card-foreground: 221 39% 11%;
-  --primary: 224 64% 57%;
+  --background: 44 62% 90%;          /* cream #F4ECD6 */
+  --foreground: 21 41% 16%;          /* coffee ink #3A2418 */
+  --card: 41 100% 96%;               /* paper #FFF9EC */
+  --card-foreground: 21 41% 16%;
+  --primary: 7 74% 53%;              /* tomato #E0432F */
   --primary-foreground: 0 0% 100%;
-  --secondary: 220 24% 94%;
-  --secondary-foreground: 221 39% 11%;
-  --muted: 220 24% 95%;
-  --muted-foreground: 220 9% 46%;
-  --accent: 224 70% 95%;
-  --accent-foreground: 245 58% 30%;
-  --border: 220 18% 89%;
-  --input: 220 18% 86%;
-  --ring: 224 64% 57%;
+  --secondary: 43 52% 85%;
+  --secondary-foreground: 21 41% 16%;
+  --muted: 43 52% 87%;
+  --muted-foreground: 20 38% 30%;    /* coffee #6A4330 */
+  --accent: 157 45% 88%;             /* light mint */
+  --accent-foreground: 21 41% 16%;
+  --border: 42 44% 81%;              /* #E3D6B8 */
+  --input: 42 41% 74%;
+  --ring: 7 74% 53%;
   --radius: 0.9rem;
-  font-family: 'Heebo', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Rubik', 'Heebo', ui-sans-serif, system-ui, sans-serif;
   font-size: 16px;
   color: hsl(var(--foreground));
   background: hsl(var(--background));
   min-height: 100vh;
 }
 
-.pa h1, .pa h2, .pa h3 { font-family: 'Heebo', ui-sans-serif, system-ui, sans-serif; letter-spacing: -0.01em; }
+.pa h1, .pa h2, .pa h3 { font-family: 'Rubik', 'Heebo', ui-sans-serif, system-ui, sans-serif; letter-spacing: -0.01em; }
+.pa h1 { font-weight: 800; }
 
-.pa-hero {
-  background:
-    radial-gradient(120% 90% at 100% 0%, rgba(84, 120, 230, 0.55), transparent 60%),
-    linear-gradient(160deg, #231a6e 0%, #2d2390 55%, #3b46b8 100%);
-  color: #fff;
-}
+/* the top bar: mint, as on the spec request page */
+.pa > header.pa-noprint { background: #9ED9C3; border-color: #7FBFA8; }
+.pa > header.pa-noprint a { color: #4F3324; }
+
+.pa-hero { background: #9ED9C3; color: #3A2418; }
+/* the hero's text was written white for the old indigo band */
+.pa-hero [class*="text-white"] { color: #3A2418; }
+.pa-hero [class*="text-white/"] { color: #4F3324; }
 
 .pa-card {
-  background: #fff;
+  background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
-  border-radius: 1.1rem;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px -16px rgba(16, 24, 40, 0.18);
+  border-radius: 1.25rem;
+  box-shadow: 0 1px 2px rgba(58, 36, 24, 0.05), 0 14px 30px -20px rgba(58, 36, 24, 0.35);
 }
+/* the old brand colors written into the page, mapped to this palette */
+.pa .text-\[\#1c1a4f\] { color: #3A2418; }
+.pa .text-\[\#2d2a8f\] { color: #E0432F; }
+/* done and confirmed stay green, a deeper one that holds on cream */
+.pa .bg-emerald-600 { background-color: #1F7A55; }
 
 .pa-num { font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate; }
 
@@ -48,7 +57,7 @@
   bottom: 0;
   z-index: 40;
   padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
-  background: linear-gradient(to top, rgba(245, 247, 250, 0.98) 70%, rgba(245, 247, 250, 0));
+  background: linear-gradient(to top, rgba(244, 236, 214, 0.98) 70%, rgba(244, 236, 214, 0));
 }
 
 .pa-legal p { margin: 0 0 0.55rem; line-height: 1.75; }
