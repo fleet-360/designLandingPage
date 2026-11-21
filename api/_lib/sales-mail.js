@@ -373,7 +373,7 @@ ${d.paid_via === "grow" ? `<div style="font-size:12.5px;color:${PV.muted};margin
   const sentTo = others.length ? ` ואל ${others.map((a) => `<span dir="ltr">${esc(a)}</span>`).join(", ")}` : "";
   return {
     to: [d.email, ...(d.attendees || [])],
-    cc: [settings.officeEmail, settings.calendar.user],
+    cc: [settings.officeEmail, ...(settings.calendar.invitees || []), settings.calendar.user],
     replyTo: settings.officeEmail,
     subject: `נקבעה פגישת פתיחה · ${settings.discovery.title}`,
     html: passMail({
@@ -397,7 +397,7 @@ export function meetingIcs(d, settings) {
     `UID:${d.id}@pro-algo.com`, `DTSTAMP:${stamp(new Date())}`, `DTSTART:${stamp(d.meeting_start)}`, `DTEND:${stamp(d.meeting_end)}`,
     `SUMMARY:${settings.discovery.title} · ${String(d.company_name || d.client_name).replace(/[,;\n]/g, " ")}`,
     `ORGANIZER;CN=Pro Algorithm:mailto:${settings.calendar.user}`,
-    ...[d.email, ...(d.attendees || [])].filter(Boolean).map((e) => `ATTENDEE;RSVP=TRUE:mailto:${e}`),
+    ...[...new Set([d.email, ...(d.attendees || []), ...(settings.calendar.invitees || [])].filter(Boolean))].map((e) => `ATTENDEE;RSVP=TRUE:mailto:${e}`),
     "END:VEVENT", "END:VCALENDAR",
   ];
   return lines.join("\r\n");

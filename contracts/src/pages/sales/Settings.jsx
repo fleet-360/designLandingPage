@@ -30,6 +30,7 @@ export default function SalesSettings() {
   const save = async () => {
     setBusy(true);
     let clean = setIn(s, "service.includes", (s.service?.includes || []).map((y) => y.trim()).filter(Boolean));
+    clean = setIn(clean, "calendar.invitees", (s.calendar?.invitees || []).map((y) => y.trim().toLowerCase()).filter(Boolean));
     clean = setIn(clean, "hourlyRates", (s.hourlyRates || []).map((r) => ({ role: String(r.role || "").trim(), rate: Number(r.rate) })).filter((r) => r.role && r.rate > 0));
     const r = await run(() => api("sales/settings", { method: "PUT", body: { settings: clean } }), "ההגדרות נשמרו");
     if (r) setS(r.settings);
@@ -154,6 +155,12 @@ export default function SalesSettings() {
           <FieldRow label="התראה מינימלית (שעות)"><Input {...bind("calendar.minNoticeHours", true)} dir="ltr" /></FieldRow>
           <FieldRow label="כמה מועדים להציע"><Input {...bind("calendar.slotsToOffer", true)} dir="ltr" /></FieldRow>
           <FieldRow label="מרווח בין פגישות (דקות)"><Input {...bind("calendar.bufferMinutes", true)} dir="ltr" /></FieldRow>
+        </div>
+        <div className="mt-3">
+          <FieldRow label="מוזמנים מטעמנו" hint="כתובת בכל שורה. מקבלים זימון לכל פגישת איפיון, יחד עם הלקוח, המשתתפים שהוסיף והיומן עצמו">
+            <textarea value={(s.calendar?.invitees || []).join("\n")} onChange={(e) => setS((x) => setIn(x, "calendar.invitees", e.target.value.split("\n")))} rows={3} dir="ltr"
+              className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
+          </FieldRow>
         </div>
         <div className="mt-3 flex flex-wrap gap-1.5">
           {DAYS.map((d, i) => {

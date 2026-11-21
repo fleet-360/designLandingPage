@@ -22,6 +22,8 @@ export default route(["GET", "PUT"], async (req, res) => {
   const s = b.settings;
   if (!s || typeof s !== "object") throw new HttpError(400, "bad_settings");
   if (!isEmail(s.officeEmail)) throw new HttpError(400, "bad_office_email");
+  if (s.calendar?.invitees !== undefined && (!Array.isArray(s.calendar.invitees) || !s.calendar.invitees.every(isEmail)))
+    throw new HttpError(400, "bad_invitee");
   const vat = Number(s.vatRate);
   if (!(vat >= 0 && vat <= 50)) throw new HttpError(400, "bad_vat");
   await saveSettings(s);

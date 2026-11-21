@@ -5,7 +5,7 @@ import { createVerify, generateKeyPairSync } from "node:crypto";
 
 const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
 const KEY = privateKey.export({ type: "pkcs8", format: "pem" });
-const settings = { calendar: { user: "developers@pro-algo.com" }, discovery: { title: "ספרינט תכנון ומיפוי" }, officeEmail: "sales@pro-algorithm.co.il" };
+const settings = { calendar: { user: "developers@pro-algo.com", invitees: ["sharon@pro-algo.com", "yariv@pro-algo.com", "sales@pro-algo.com"] }, discovery: { title: "ספרינט תכנון ומיפוי" }, officeEmail: "sales@pro-algorithm.co.il" };
 const calls = [];
 
 globalThis.fetch = async (url, opts = {}) => {
@@ -55,7 +55,7 @@ test("direct: booking creates an event with Meet and invitations", async () => {
   const ev = calls.find((c) => c.url.includes("/events?"));
   assert.ok(ev.url.includes("/calendars/developers%40pro-algo.com/events?conferenceDataVersion=1&sendUpdates=all"));
   const body = JSON.parse(ev.opts.body);
-  assert.deepEqual(body.attendees.map((a) => a.email), ["ronen@example.com", "dana@example.com", "sales@pro-algorithm.co.il"]);
+  assert.deepEqual(body.attendees.map((a) => a.email), ["ronen@example.com", "dana@example.com", "sharon@pro-algo.com", "yariv@pro-algo.com", "sales@pro-algo.com", "developers@pro-algo.com"]);
   assert.equal(body.conferenceData.createRequest.conferenceSolutionKey.type, "hangoutsMeet");
   assert.equal(body.start.dateTime, "2026-11-23T10:00:00.000Z");
   // one token for both calls (cached)

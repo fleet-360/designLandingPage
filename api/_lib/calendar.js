@@ -95,7 +95,9 @@ export function bookingEvent(d, settings) {
     end: new Date(d.meeting_end).toISOString(),
     summary: `${settings.discovery.title} · ${who}`,
     description: [`פגישת פתיחה של ${settings.discovery.title}.`, `לקוח: ${who}`, d.email ? `אימייל: ${d.email}` : "", d.phone ? `טלפון: ${d.phone}` : "", d.note ? `\n${d.note}` : ""].filter(Boolean).join("\n"),
-    attendees: [...new Set([d.email, ...(d.attendees || []), settings.officeEmail].filter(Boolean))],
+    // the client, the guests they added, our team (settings) and the calendar user who organizes the meeting
+    attendees: [...new Set([d.email, ...(d.attendees || []), ...(settings.calendar?.invitees || []), calendarUser(settings)]
+      .map((e) => String(e || "").trim().toLowerCase()).filter(Boolean))],
   };
 }
 
