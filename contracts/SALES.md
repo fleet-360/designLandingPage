@@ -54,7 +54,7 @@ The site trusts Toro's calls by its IP (`api/_lib/toro.js`), the same as `/api/p
 | `POST /proAlgoSales/calendar/book { bookingId }` | creates the event (the same, only without the key) |
 | `POST /proAlgoSales/card/createProcess { subscriptionId }` | Grow page that saves a card without charging |
 | `POST /proAlgoSales/grow/notifyCard` | Grow's callback → `/api/billing/card` |
-| `POST /proAlgoSales/billing/run` | charges what `/api/billing/due` hands out, invoices, reports to `/api/billing/result` (also the 08:00 cron) |
+| `POST /proAlgoSales/billing/run` | charges what `/api/billing/due` hands out, invoices, reports to `/api/billing/result` (Toro's own 08:00 cron) |
 
 ## What has to be set up once
 
