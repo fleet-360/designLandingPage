@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { CalendarCheck, CalendarDays, CalendarPlus, Clock, Cpu, FileText, Map as MapIcon, PiggyBank, Plus, ShieldCheck, Target, Users, Workflow, X } from "lucide-react";
+import { CalendarCheck, CalendarDays, CalendarPlus, Check, Clock, Cpu, FileText, Map as MapIcon, PiggyBank, Plus, ShieldCheck, Target, Users, Workflow, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api, dayLabel, errorText, FIELD_ERRORS, fullNameOk, isEmail, meetingTime, mobileIL, nis, taxIdIL, timeLabel } from "@/sales/lib";
@@ -94,8 +94,24 @@ export default function DiscoveryPage({ token }) {
         <Container className="pb-14 pt-10 sm:pb-20 sm:pt-16">
           <p className="text-sm font-medium text-white/80">הוכן עבור {d.companyName || d.clientName}</p>
           <h1 className="mt-2 text-4xl font-extrabold leading-tight sm:text-5xl">{d.title}</h1>
-          <p className="mt-3 text-lg font-semibold text-white/95">ניתוח, מיפוי טכנולוגי וארכיטקטורת פתרון.</p>
-          <p className="mt-1 text-white/80">המרת דרישות עסקיות למפת דרכים ברורה ויישימה לפיתוח.</p>
+          {d.pitch ? (
+            // the key lines sales chose for this client (written with Claude from the client's problem)
+            <div className="mt-5 max-w-2xl">
+              {d.pitch.headline && <p className="text-2xl font-bold leading-snug text-white sm:text-3xl">{d.pitch.headline}</p>}
+              {d.pitch.lines.length > 0 && (
+                <ul className="mt-4 space-y-2">
+                  {d.pitch.lines.map((l) => (
+                    <li key={l} className="flex gap-2.5 text-[17px] leading-relaxed text-white/90">
+                      <Check className="mt-1 h-5 w-5 shrink-0 text-white/70" aria-hidden="true" />{l}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ) : (<>
+            <p className="mt-3 text-lg font-semibold text-white/95">ניתוח, מיפוי טכנולוגי וארכיטקטורת פתרון.</p>
+            <p className="mt-1 text-white/80">המרת דרישות עסקיות למפת דרכים ברורה ויישימה לפיתוח.</p>
+          </>)}
           {d.note && <p className="mt-6 max-w-xl rounded-xl bg-white/10 p-4 text-[15px] leading-relaxed text-white/95">{d.note}</p>}
         </Container>
       </header>

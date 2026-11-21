@@ -32,6 +32,13 @@ take overlapping times. When the calendar is not connected, the confirmation ema
 instead. The calendar is reached directly from the site when `GOOGLE_CALENDAR_CREDENTIALS` is set in Vercel
 (`api/_lib/calendar.js`), otherwise through Toro.
 
+**Key lines at the top of the spec request page.** On the request form sales types in a few words what the
+client wants solved ("להוציא כתבי כמויות של ברזל") and presses "כתיבת משפטים". Claude (`api/_lib/ai-pitch.js`,
+through `/api/sales/pitch`) returns three headline options and three supporting lines; sales picks a headline
+and edits or removes lines before saving. They replace the page's two standard opening lines (`pitch` on the
+request; what sales typed stays internal). Only the problem text is sent to the API, never the client's name or
+details. Without `ANTHROPIC_API_KEY` the lines can still be typed by hand.
+
 **Spec request arranged outside the page.** Two switches on the request (both on by default, also editable
 later under "עדכון ידני"): whether the client books the meeting on the page, and whether they pay on it.
 Booking off: sales types the date, time and length. No invite is sent. The time is shown on the client's
@@ -95,6 +102,9 @@ The site trusts Toro's calls by its IP (`api/_lib/toro.js`), the same as `/api/p
 
   The calendar is the one on the settings screen (`developers@pro-algo.com`), and its
   "בדיקת חיבור ליומן" button shows whether it works. Until then booking works with `.ics` invites.
+- **Key lines (Claude):** in Vercel (landing-page-build → Settings → Environment Variables):
+  `ANTHROPIC_API_KEY` = a key from console.anthropic.com. Redeploy. Optional `ANTHROPIC_MODEL` replaces the
+  default model (`claude-opus-5-5`).
 - **Grow card saving:** the Grow account must allow token payments (Get Token Only and charging a saved
   token). If Grow gives a separate page code for it, set `PRO_ALGO_GROW_TOKEN_PAGE_CODE` in Toro.
 - **Settings screen:** bank account, the company signer's name and signature image, the accounting contact.
