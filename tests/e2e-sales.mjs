@@ -68,18 +68,18 @@ step("deal: preview and create");
 const dealData = {
   project: { name: "מערכת הפקת גיליונות", summary: "תוסף ל-AutoCAD שמפיק גיליונות אוטומטית מהמודל וחוסך כ-10 שעות שבועיות לצוות.", specName: "אפיון מערכת גיליונות", specVersion: "1.2", specDate: "2026-11-10", targetWeeks: 8, kickoffNeeds: "מודל Revit לדוגמה ותבנית גיליון" },
   price: { amount: 48000, installments: 4, installmentDay: 1, balanceMethod: "transfer" },
-  service: { enabled: true, includedMonths: 3, periods: [{ months: 9, price: 1200 }, { months: null, price: 1500 }] },
-  standingOrder: { enabled: true, startDate: "", dayOfMonth: 1 },
+  service: { enabled: true, periods: [{ months: 9, price: 1200 }, { months: null, price: 1500 }] },
+  standingOrder: { enabled: true, startDate: "2027-02-01" },
   appendix: {
-    authorizedContact: { name: "רונן לוי", role: "מנכ\"ל", phone: "0521234567", email: "ronen@example.com" },
-    companyContact: { name: "צח", role: "מנהל פרויקט", phone: "052-6247267", email: "sales@pro-algorithm.co.il" },
     stages: [{ name: "אב-טיפוס", deliverable: "הפקת גיליון בודד", criteria: "גיליון תקין מהמודל לדוגמה", target: "שבוע 3" }],
-    hourlyRate: 350,
-    serviceComponents: ["תמיכה טכנית", "תיקון תקלות", "אירוח בענן"],
-    environment: "cloud",
+    hourlyRates: [{ role: "מתכנת", rate: 360 }, { role: "ראש צוות", rate: 450 }],
+    serviceComponents: ["תמיכה ומענה", "תיקון תקלות"],
   },
 };
-const dealClient = { companyName: "לוי אדריכלים בע\"מ", taxId: "515555555", address: "הרצל 1, חיפה", signerName: "רונן לוי", signerRole: "מנכ\"ל", email: "ronen@example.com", phone: "0521234567" };
+const dealClient = {
+  companyName: "לוי אדריכלים בע\"מ", taxId: "515555555", address: "הרצל 1, חיפה", signerName: "רונן לוי", signerRole: "מנכ\"ל", email: "ronen@example.com", phone: "0521234567",
+  authorizedContact: { name: "רונן לוי", role: "מנכ\"ל", phone: "0521234567", email: "ronen@example.com" },
+};
 const preview = await api("sales/deals?preview=1", { method: "POST", body: { data: dealData, client: dealClient } });
 const sumRows = preview.order.schedule.rows.reduce((a, r) => a + Math.round(r.total * 100), 0);
 assert.equal(sumRows, Math.round(preview.order.price.total * 100));

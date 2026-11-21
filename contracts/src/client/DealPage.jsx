@@ -58,14 +58,16 @@ export default function DealPage({ token }) {
 
 function OrderStep({ d, post }) {
   const o = d.order;
-  const [c, setC] = useState({ ...d.client });
+  const [c, setC] = useState({ ...d.client, authorizedContact: { name: "", role: "", phone: "", email: "", ...(d.client.authorizedContact || {}) } });
   const [approver, setApprover] = useState(d.client.signerName || "");
   const [accept, setAccept] = useState(false);
-  const [edit, setEdit] = useState(!d.client.accountingEmail || !d.client.taxId);
+  // the client completes what sales did not know: address, tax id, accounting, phone
+  const [edit, setEdit] = useState(!d.client.accountingEmail || !d.client.taxId || !d.client.address || !d.client.phone);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [bad, setBad] = useState({});
   const set = (k) => (e) => { setC((s) => ({ ...s, [k]: e.target.value })); setBad((b) => ({ ...b, [k]: "" })); };
+  const setA = (k) => (e) => { setC((s) => ({ ...s, authorizedContact: { ...s.authorizedContact, [k]: e.target.value } })); setBad((b) => ({ ...b, authorizedEmail: "" })); };
 
   const approve = async () => {
     setError("");
@@ -76,6 +78,8 @@ function OrderStep({ d, post }) {
       phone: mobileIL(c.phone) ? "" : FIELD_ERRORS.phone,
       signerName: fullNameOk(c.signerName) ? "" : FIELD_ERRORS.fullName,
       accountingEmail: isEmail(c.accountingEmail) ? "" : "יש להזין אימייל של הנהלת החשבונות, לשם יישלחו החשבוניות",
+      address: c.address?.trim() ? "" : "יש להזין כתובת. היא מופיעה בהסכם",
+      authorizedEmail: !c.authorizedContact.email || isEmail(c.authorizedContact.email) ? "" : FIELD_ERRORS.email,
     };
     setBad(errs);
     if (Object.values(errs).some(Boolean)) { setEdit(true); return setError("יש לתקן את השדות המסומנים בפרטי ההתקשרות"); }
@@ -145,18 +149,27 @@ function OrderStep({ d, post }) {
               {c.address && <p className="text-muted-foreground">{c.address}</p>}
               <p className="text-muted-foreground">חותם/ת: {c.signerName}{c.signerRole && `, ${c.signerRole}`}</p>
               <p className="text-muted-foreground">חשבוניות: <span dir="ltr">{c.accountingEmail}</span></p>
+              {c.authorizedContact.name && <p className="text-muted-foreground">שינויים ובקשות פיתוח: {c.authorizedContact.name}{c.authorizedContact.role && `, ${c.authorizedContact.role}`}</p>}
               <button type="button" className="mt-2 text-sm font-semibold text-primary underline" onClick={() => setEdit(true)}>עריכת הפרטים</button>
             </div>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="שם החברה"><Input value={c.companyName} onChange={set("companyName")} className="h-11" /></Field>
               <Field label="ח.פ / ע.מ / ת.ז" required error={bad.taxId}><Input value={c.taxId} onChange={set("taxId")} inputMode="numeric" dir="ltr" className="h-11" /></Field>
-              <Field label="כתובת"><Input value={c.address} onChange={set("address")} className="h-11" /></Field>
+              <Field label="כתובת" required error={bad.address}><Input value={c.address} onChange={set("address")} className="h-11" /></Field>
               <Field label="טלפון נייד" required error={bad.phone}><Input value={c.phone} onChange={set("phone")} type="tel" dir="ltr" className="h-11" /></Field>
-              <Field label="שם מורשה החתימה" required error={bad.signerName}><Input value={c.signerName} onChange={set("signerName")} className="h-11" /></Field>
-              <Field label="תפקיד"><Input value={c.signerRole} onChange={set("signerRole")} className="h-11" /></Field>
+              <Field label="שם החותם" required error={bad.signerName}><Input value={c.signerName} onChange={set("signerName")} className="h-11" /></Field>
+              <Field label="תפקיד החותם"><Input value={c.signerRole} onChange={set("signerRole")} className="h-11" /></Field>
               <Field label="איש קשר בהנהלת החשבונות"><Input value={c.accountingName} onChange={set("accountingName")} className="h-11" /></Field>
               <Field label="אימייל להנהלת החשבונות" required hint="לשם יישלחו החשבוניות" error={bad.accountingEmail}><Input value={c.accountingEmail} onChange={set("accountingEmail")} type="email" dir="ltr" className="h-11" /></Field>
+              <div className="sm:col-span-2 pt-2">
+                <p className="text-sm font-semibold">איש קשר מוסמך לשינויים ולבקשות פיתוח</p>
+                <p className="text-xs text-muted-foreground">מי שמעביר אלינו בקשות לשינויים ולפיתוח ומאשר אותן בשמכם (סעיף 4.2 בהסכם)</p>
+              </div>
+              <Field label="שם"><Input value={c.authorizedContact.name} onChange={setA("name")} className="h-11" /></Field>
+              <Field label="תפקיד"><Input value={c.authorizedContact.role} onChange={setA("role")} className="h-11" /></Field>
+              <Field label="טלפון"><Input value={c.authorizedContact.phone} onChange={setA("phone")} type="tel" dir="ltr" className="h-11" /></Field>
+              <Field label="אימייל" error={bad.authorizedEmail}><Input value={c.authorizedContact.email} onChange={setA("email")} type="email" dir="ltr" className="h-11" /></Field>
             </div>
           )}
         </Section>
@@ -247,8 +260,8 @@ function AgreementStep({ d, post }) {
           <section id="sign" className="pa-card scroll-mt-4 p-5 sm:p-7">
             <h2 className="flex items-center gap-2 text-lg font-bold"><PenLine className="h-5 w-5 text-primary" />חתימה</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <Field label="שם מלא" required><Input value={name} onChange={(e) => setName(e.target.value)} className="h-11" autoComplete="name" /></Field>
-              <Field label="תפקיד"><Input value={role} onChange={(e) => setRole(e.target.value)} className="h-11" /></Field>
+              <Field label="שם החותם" required><Input value={name} onChange={(e) => setName(e.target.value)} className="h-11" autoComplete="name" /></Field>
+              <Field label="תפקיד החותם"><Input value={role} onChange={(e) => setRole(e.target.value)} className="h-11" /></Field>
             </div>
             <div className="mt-4"><SignaturePad ref={pad} /></div>
             <label className="mt-4 flex items-start gap-3 text-[15px] leading-relaxed">
@@ -326,7 +339,8 @@ function Appendix({ d }) {
       <div>
         <h3 className="mb-2 font-bold">ד. מחיר ותשלום</h3>
         <p className="mb-3 text-[15px]">מחיר הפרויקט: <span className="pa-num font-semibold">{nis(o.price.amount)}</span> לפני מע"מ (<span className="pa-num">{nis(o.price.total)}</span> כולל מע"מ).
-          {ap.hourlyRate ? <> תעריף שעה לשינויים ולחישוב בביטול: <span className="pa-num">{nis(ap.hourlyRate)}</span> לפני מע"מ.</> : null}
+          {ap.hourlyRates?.length > 0 && <> תעריפי שעה לשינויים ולחישוב בביטול, לפני מע"מ: {ap.hourlyRates.map((r, i) => <span key={i}>{i > 0 && " · "}{r.role} <span className="pa-num">{nis(r.rate)}</span></span>)}.</>}
+          {!ap.hourlyRates && ap.hourlyRate ? <> תעריף שעה לשינויים ולחישוב בביטול: <span className="pa-num">{nis(ap.hourlyRate)}</span> לפני מע"מ.</> : null}
           {" "}אמצעי תשלום היתרה: {ap.balanceMethod === "checks" ? "שיקים דחויים" : "העברות בנקאיות"}{ap.bankAccount && ap.balanceMethod !== "checks" ? ` (${ap.bankAccount})` : ""}.</p>
         <ScheduleTable schedule={o.schedule} depositPercent={o.price.depositPercent} />
       </div>
@@ -334,18 +348,11 @@ function Appendix({ d }) {
         <div>
           <h3 className="mb-2 font-bold">ה. שירות חודשי</h3>
           <ServiceTimeline rows={o.service.rows} />
-          {ap.serviceComponents?.length > 0 && <p className="mt-2 text-sm">רכיבי השירות: {ap.serviceComponents.join(", ")}{ap.backupFrequency && ` (גיבויים: ${ap.backupFrequency})`}.</p>}
-          {ap.hostingDependent && <p className="mt-1 text-sm">תלוי באירוח או ברישיון חיצוני: {ap.hostingDependent}</p>}
-          {ap.liabilityCapIncluded ? <p className="mt-1 text-sm">תקרת אחריות בחודשים הכלולים: <span className="pa-num">{nis(ap.liabilityCapIncluded)}</span></p> : null}
+          {ap.serviceComponents?.length > 0 && <p className="mt-2 text-sm">רכיבי השירות: {ap.serviceComponents.join(", ")}.</p>}
+          {ap.liabilityCapIncluded ? <p className="mt-1 text-sm">תקרת אחריות עד תחילת החיוב החודשי: <span className="pa-num">{nis(ap.liabilityCapIncluded)}</span></p> : null}
         </div>
       )}
-      {ap.thirdParty?.length > 0 && (
-        <div>
-          <h3 className="mb-2 font-bold">ו. עלויות צד שלישי</h3>
-          <Rows rows={ap.thirdParty.map((t) => [t.component, [t.payer === "company" ? "החברה, בחיוב הלקוח" : "הלקוח ישירות", t.nature, t.approval].filter(Boolean).join(" · ")])} />
-        </div>
-      )}
-      <div><h3 className="mb-2 font-bold">ז. הפעלה, רישיונות ומידע</h3><Rows rows={ap.operation} /></div>
+      <div><h3 className="mb-2 font-bold">ו. הפעלה ורישיון</h3><Rows rows={ap.operation} /></div>
     </section>
   );
 }

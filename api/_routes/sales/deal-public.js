@@ -83,6 +83,8 @@ export default route(["GET", "POST"], async (req, res) => {
     // invoices and the card for the standing order go through Grow, which refuses invalid ones
     if (!taxIdIL(client.taxId)) throw new HttpError(400, "bad_tax_id");
     if (!mobileIL(client.phone)) throw new HttpError(400, "bad_phone");
+    if (!client.address) throw new HttpError(400, "bad_address");    // it appears in the agreement
+    if (client.authorizedContact.email && !isEmail(client.authorizedContact.email)) throw new HttpError(400, "bad_email");
     client.taxId = taxIdIL(client.taxId);
     client.phone = mobileIL(client.phone);
     const approverName = str(b.approverName, 120);
