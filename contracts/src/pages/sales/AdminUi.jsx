@@ -103,6 +103,8 @@ const EVENT_LABELS = {
   start_date_set: "נקבע מועד החיוב הראשון", charge_paid: "חיוב הצליח", charge_failed: "חיוב נכשל", pause: "הושהה", resume: "חודש",
   cancel: "בוטל", update: "עודכן", charge_now: "חיוב יזום", charge_requested: "נשלחה בקשת חיוב", invoice_failed: "הפקת החשבונית נכשלה",
   reminder_sent: "נשלחה תזכורת", underpaid: "התקבל תשלום נמוך מהמחיר", charge_settled: "חיוב סומן ידנית",
+  held: "הלקוח בחר מועד", hold_lost: "המועד שנבחר נתפס", manual: "פגישה או תשלום עודכנו ידנית",
+  signed_manual: "סומן כנחתם מחוץ לקישור", signed_file: "קובץ החוזה החתום עודכן", payment_note: "אופן התשלום עודכן",
 };
 const MAIL_STATUS = { sent: ["green", "נשלח"], queued: ["amber", "בתור"], fetched: ["amber", "בשליחה"], failed: ["red", "נכשל"] };
 

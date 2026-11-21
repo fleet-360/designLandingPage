@@ -14,11 +14,11 @@ export const DEFAULT_SETTINGS = {
     name: 'פרו אלגוריתם בע"מ',
     taxId: "517124608",
     address: "הרברט סמואל 51, חדרה",
-    phone: "052-6247267",
+    phone: "053-9462842",
     website: "pro-algo.com",
   },
   officeEmail: "sales@pro-algorithm.co.il",
-  accountingContact: { name: "", phone: "052-6247267", email: "sales@pro-algorithm.co.il" },
+  accountingContact: { name: "", phone: "053-9462842", email: "sales@pro-algorithm.co.il" },
   bank: { beneficiary: 'פרו אלגוריתם בע"מ', bank: "", branch: "", account: "" },
   checks: { payee: 'פרו אלגוריתם בע"מ', pickupDays: 7 },
   signer: { name: "", role: "", signatureFileId: null },
@@ -31,7 +31,14 @@ export const DEFAULT_SETTINGS = {
   discovery: {
     title: "ספרינט תכנון ומיפוי",
     defaultPrice: 999,
+    defaultListPrice: 4500,         // "price before discount", struck through; empty = not shown
     meetingMinutes: 60,
+    // shown to the client in the booking confirmation; filled into each new request, editable there
+    contacts: {
+      sales: { name: "שרון הראל", phone: "053-9539802" },
+      lead: { name: "יריב פרוינד", phone: "050-7215225" },
+      office: { name: "", phone: "053-9462842" },   // מנהלת משרד
+    },
   },
   calendar: {
     user: "developers@pro-algo.com",
@@ -141,10 +148,13 @@ export async function markDiscoveryPaid(id, { via, ref, payer = {}, amount = nul
       WHERE id = $1 AND canceled_at IS NULL AND paid_at IS NULL RETURNING *`, [id, via, ref || null, email, str(payer.phone, 30) || null]);
   if (!rows[0]) return null;
   await logEvent("discovery", id, "paid", { via, ref: ref || null });
-  const { discoveryPaidMail } = await import("./sales-mail.js");
   const settings = await getSettings();
-  await sendMail({ ...discoveryPaidMail(rows[0], settings, amount), entity: "discovery", entityId: id, kind: "discovery_paid_office" });
-  return rows[0];
+  // the time the client picked before paying becomes a booking now, and the invites go out
+  const { confirmHeld } = await import("./discovery-book.js");
+  const booked = await confirmHeld(id, settings);
+  const { discoveryPaidMail } = await import("./sales-mail.js");
+  await sendMail({ ...discoveryPaidMail(booked || rows[0], settings, amount), entity: "discovery", entityId: id, kind: "discovery_paid_office" });
+  return booked || rows[0];
 }
 
 // ---- Small helpers ----

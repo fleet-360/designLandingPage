@@ -24,9 +24,16 @@ const DELIVERABLES = [
   { icon: MapIcon, title: "מפת דרכים טכנולוגית", text: "הערכת לוחות זמנים, משאבים ותקציב לפיתוח." },
 ];
 
+// nothing left for the client to do on the page: the meeting is set (or sales sets it) and paid (or paid outside it)
+const finished = (v) => (v.booked || !v.showBooking) && (v.paid || !v.showPayment);
+
 export default function DiscoveryPage({ token }) {
   const [d, setD] = useState(undefined);
-  const [stage, setStage] = useState("view"); // view | pay | waiting | schedule | done
+  // view -> schedule (pick a time; it is held for the client) -> pay -> waiting (the invite goes out once the
+  // payment is confirmed) -> done. A request paid without a time (marked paid by hand) goes straight to schedule.
+  // Sales may take either part off the page: a meeting time they set is shown, and a payment made outside
+  // the page is not asked for.
+  const [stage, setStage] = useState("view"); // view | schedule | pay | waiting | done
   const load = useCallback(async () => {
     try {
       const v = await api(`sales/discovery-public?token=${encodeURIComponent(token)}`);
@@ -41,8 +48,8 @@ export default function DiscoveryPage({ token }) {
   useEffect(() => {
     load().then((v) => {
       if (!v) return;
-      if (v.booked) setStage("done");
-      else if (v.paid) setStage("schedule");
+      if (finished(v)) setStage("done");
+      else if (v.paid && v.showBooking) setStage("schedule");
       // back from Grow's page after paying (e.g. from the Bit app): wait for the payment report
       else if (new URLSearchParams(window.location.search).get("paid") === "1") setStage("waiting");
     });
@@ -52,8 +59,34 @@ export default function DiscoveryPage({ token }) {
   if (d === undefined) return <Shell><Loading /></Shell>;
   if (d === null) return <Shell><Notice title="הקישור אינו פעיל" text="ייתכן שההצעה בוטלה או שהקישור הועתק חלקית. נשמח לשלוח קישור חדש." /></Shell>;
 
-  if (stage === "schedule") return <Schedule token={token} d={d} onBooked={(v) => { setD(v); setStage("done"); }} />;
   if (stage === "done") return <Booked d={d} />;
+  const back = d.showBooking ? "schedule" : "view";
+  const sheets = (
+    <>
+      {stage === "pay" && <PaySheet d={d} onClose={() => setStage(back)} onPaid={() => setStage("waiting")} />}
+      {stage === "waiting" && (
+        <WaitForPayment load={load} onBack={() => setStage(back)}
+          onDone={(v) => setStage(finished(v) ? "done" : back)} />
+      )}
+    </>
+  );
+  if (stage !== "view" && d.showBooking) {
+    return (
+      <Schedule token={token} d={d} onBack={() => setStage("view")}
+        onHeld={(v) => { setD(v); setStage("pay"); }} onBooked={(v) => { setD(v); setStage(finished(v) ? "done" : "view"); }}>
+        {sheets}
+      </Schedule>
+    );
+  }
+  const canBook = d.showBooking && !d.booked;
+  const canPay = d.showPayment && !d.paid;
+  const steps = [
+    canBook
+      ? { icon: CalendarDays, t: "בוחרים מועד", s: canPay ? "מהמועדים הפנויים ביומן שלנו. המועד נשמר עבורכם בזמן התשלום." : "מהמועדים הפנויים ביומן שלנו. הזימון נשלח מיד." }
+      : d.meeting && { icon: CalendarDays, t: "המועד נקבע", s: meetingTime(d.meeting.start) },
+    canPay && { icon: ShieldCheck, t: "תשלום מאובטח", s: canBook ? "בכרטיס אשראי, כאן בעמוד. מיד אחרי האישור נשלחים הזימון ליומן וחשבונית מס קבלה." : "בכרטיס אשראי, כאן בעמוד. מיד אחרי האישור נשלחת חשבונית מס קבלה." },
+    { icon: Users, t: "נפגשים", s: `פגישת פתיחה של ${d.meetingMinutes} דקות. אפשר לצרף אנשי מקצוע מהצוות שלכם.` },
+  ].filter(Boolean);
 
   return (
     <Shell company={d.company}>
@@ -113,19 +146,15 @@ export default function DiscoveryPage({ token }) {
 
         <section className="overflow-hidden rounded-2xl bg-gradient-to-l from-[#4a3fc4] to-[#2d2390] p-6 text-white sm:p-8">
           <p className="text-sm font-medium text-white/80">חבילת פתרון</p>
-          <p className="mt-1 text-4xl font-extrabold"><span className="pa-num">{nis(d.price)}</span> <span className="text-lg font-semibold text-white/85">+ מע"מ</span></p>
+          <p className="mt-1 text-4xl font-extrabold">{d.listPrice > d.price && <s className="pa-num me-3 text-2xl font-semibold text-white/60">{nis(d.listPrice)}</s>}<span className="pa-num">{nis(d.price)}</span> <span className="text-lg font-semibold text-white/85">+ מע"מ</span></p>
           <p className="mt-1 text-sm text-white/80"><span className="pa-num">{nis(d.total)}</span> כולל מע"מ</p>
           <p className="mt-4 max-w-lg text-white/95">כולל את כל תהליכי הניתוח, התיעוד והכנת מפת הדרכים לפרויקט. הופכים את הרעיון לתוכנית פעולה שאפשר לבצע.</p>
         </section>
 
         <section className="pa-card p-6 sm:p-8">
-          <h2 className="text-xl font-bold">שלושה צעדים להתחלה</h2>
-          <ol className="mt-4 grid gap-4 sm:grid-cols-3">
-            {[
-              { icon: ShieldCheck, t: "תשלום מאובטח", s: "כאן בעמוד, בכרטיס אשראי. חשבונית מס קבלה תישלח במייל." },
-              { icon: CalendarDays, t: "בוחרים מועד", s: "מיד אחרי התשלום מופיעים המועדים הפנויים ביומן שלנו." },
-              { icon: Users, t: "נפגשים", s: `פגישת פתיחה של ${d.meetingMinutes} דקות. אפשר לצרף אנשי מקצוע מהצוות שלכם.` },
-            ].map(({ icon: Icon, t, s }, i) => (
+          <h2 className="text-xl font-bold">{steps.length === 3 ? "שלושה צעדים להתחלה" : "מה הלאה"}</h2>
+          <ol className={`mt-4 grid gap-4 ${steps.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+            {steps.map(({ icon: Icon, t, s }, i) => (
               <li key={t} className="flex gap-3">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary font-bold">{i + 1}</span>
                 <div><h3 className="flex items-center gap-1.5 font-bold"><Icon className="h-4 w-4 text-primary" />{t}</h3><p className="text-sm text-muted-foreground">{s}</p></div>
@@ -137,17 +166,17 @@ export default function DiscoveryPage({ token }) {
         <p className="py-4 text-center text-sm text-muted-foreground">הופכים רעיון לתוכנית פעולה ברורה. · {d.company.name}</p>
       </Container>
 
-      <div className="pa-dock">
-        <Container>
-          <Button size="lg" className="h-14 w-full rounded-2xl text-base font-bold shadow-lg" onClick={() => setStage("pay")}>
-            <CalendarCheck className="ms-2 h-5 w-5" />
-            שלם עכשיו וקבע תאריך לאיפיון
-          </Button>
-        </Container>
-      </div>
-
-      {stage === "pay" && <PaySheet d={d} onClose={() => setStage("view")} onPaid={async () => { setStage("waiting"); }} />}
-      {stage === "waiting" && <WaitForPayment load={load} onPaid={() => setStage("schedule")} onBack={() => setStage("view")} />}
+      {(canBook || canPay) && (
+        <div className="pa-dock">
+          <Container>
+            <Button size="lg" className="h-14 w-full rounded-2xl text-base font-bold shadow-lg" onClick={() => setStage(canBook ? "schedule" : "pay")}>
+              {canBook ? <CalendarCheck className="ms-2 h-5 w-5" /> : <ShieldCheck className="ms-2 h-5 w-5" />}
+              {canBook ? "בחירת מועד לפגישת האיפיון" : <>לתשלום <span className="pa-num ms-1">{nis(d.total)}</span></>}
+            </Button>
+          </Container>
+        </div>
+      )}
+      {sheets}
     </Shell>
   );
 }
@@ -216,9 +245,17 @@ function PaySheet({ d, onClose, onPaid }) {
   return (
     <Sheet title="תשלום מאובטח" onClose={busy ? null : onClose}>
       <form onSubmit={pay} className="space-y-4">
-        <div className="flex items-center justify-between rounded-xl bg-secondary px-4 py-3">
-          <span className="font-medium">{d.title}</span>
-          <span className="font-bold pa-num">{nis(p.sum)}</span>
+        <div className="rounded-xl bg-secondary px-4 py-3">
+          <div className="flex items-center justify-between">
+            <span className="font-medium">{d.title}</span>
+            <span className="font-bold pa-num">{nis(p.sum)}</span>
+          </div>
+          {d.hold && (
+            <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+              <CalendarDays className="h-4 w-4" />{meetingTime(d.hold.start)}
+              {onClose && <button type="button" onClick={onClose} className="ms-auto font-medium text-primary underline-offset-2 hover:underline">שינוי</button>}
+            </p>
+          )}
         </div>
         <Field label="שם הלקוח לחשבונית" required error={bad.fullName} hint="שם החברה, או שם פרטי ושם משפחה"><Input value={f.fullName} onChange={set("fullName")} autoComplete="organization" className="h-12" /></Field>
         <Field label="אימייל (לחשבונית)" required error={bad.email}><Input value={f.email} onChange={set("email")} type="email" dir="ltr" autoComplete="email" className="h-12" /></Field>
@@ -226,48 +263,55 @@ function PaySheet({ d, onClose, onPaid }) {
         <Field label="ח.פ / ע.מ / ת.ז" required error={bad.taxId} hint="מופיע בחשבונית"><Input value={f.taxId} onChange={set("taxId")} inputMode="numeric" dir="ltr" className="h-12" /></Field>
         <ErrorLine error={error} />
         <Button type="submit" size="lg" disabled={busy} className="h-12 w-full rounded-xl text-base font-bold">{busy ? "פותח את חלון התשלום..." : `לתשלום ${nis(p.sum)}`}</Button>
-        <p className="text-center text-xs text-muted-foreground">הסליקה מתבצעת בחלון מאובטח של Grow. פרטי הכרטיס לא נשמרים אצלנו.</p>
+        <p className="text-center text-xs text-muted-foreground">
+          {d.hold && <>המועד שמור עבורכם עד <span className="pa-num">{timeLabel(d.hold.until)}</span>. הזימון ליומן יישלח מיד אחרי אישור התשלום.<br /></>}
+          הסליקה מתבצעת בחלון מאובטח של Grow. פרטי הכרטיס לא נשמרים אצלנו.
+        </p>
       </form>
     </Sheet>
   );
 }
 
-// Grow confirms the payment to us through Toro a moment after the widget closes
-function WaitForPayment({ load, onPaid, onBack }) {
+// Grow confirms the payment to us through Toro a moment after the widget closes; the held time is then
+// booked and the invites go out. When the time was taken meanwhile, the client picks another one.
+function WaitForPayment({ load, onDone, onBack }) {
   const [late, setLate] = useState(false);
+  const done = useRef(onDone);
+  done.current = onDone;
   useEffect(() => {
     let stop = false;
     const started = Date.now();
     (async function poll() {
       while (!stop) {
         const v = await load();
-        if (v?.paid) return onPaid();
+        if (v?.paid && !v.bookingPending) return done.current(v);
         if (Date.now() - started > 45000) setLate(true);
         await new Promise((r) => setTimeout(r, 2500));
       }
     })();
     return () => { stop = true; };
-  }, [load, onPaid]);
+  }, [load]);
   return (
     <Sheet title="התשלום התקבל, רגע אחד">
       <div className="space-y-3 text-center">
         <div className="mx-auto h-9 w-9 animate-spin rounded-full border-4 border-primary/25 border-t-primary" />
-        <p>מאשרים את התשלום מול חברת הסליקה ופותחים את היומן.</p>
-        {late && <p className="text-sm text-muted-foreground">זה לוקח יותר מהרגיל. אפשר להשאיר את העמוד פתוח, או לחזור לאותו קישור מאוחר יותר: אחרי האישור תוכלו לקבוע מועד מכאן.</p>}
+        <p>מאשרים את התשלום מול חברת הסליקה ושולחים את הזימון ליומן.</p>
+        {late && <p className="text-sm text-muted-foreground">זה לוקח יותר מהרגיל. אפשר להשאיר את העמוד פתוח, או לחזור לאותו קישור מאוחר יותר. אחרי האישור הזימון יישלח אליכם במייל.</p>}
         {late && <Button variant="outline" onClick={onBack}>חזרה לעמוד</Button>}
       </div>
     </Sheet>
   );
 }
 
-function Schedule({ token, d, onBooked }) {
+function Schedule({ token, d, onBack, onHeld, onBooked, children }) {
   // the free days: a couple of suggested times each, and every free time under "more times"
   const [slots, setSlots] = useState(null);
   const [shownDays, setShownDays] = useState(0);
   const [moreTimes, setMoreTimes] = useState({});   // day -> showing every free time
   const [error, setError] = useState("");
-  const [pick, setPick] = useState(null);
-  const [attendees, setAttendees] = useState([]);
+  // coming back from the payment window: the held time stays picked
+  const [pick, setPick] = useState(d.hold ? { start: d.hold.start, end: d.hold.end } : null);
+  const [attendees, setAttendees] = useState(d.hold?.attendees || []);
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const top = useRef(null);
@@ -300,8 +344,11 @@ function Schedule({ token, d, onBooked }) {
     if (!d.email && !list.length) return setError("יש להזין אימייל לקבלת הזימון");
     setBusy(true);
     try {
-      const v = await api(`sales/discovery-public?token=${encodeURIComponent(token)}`, { method: "POST", body: { action: "book", start: pick.start, attendees: list } });
-      onBooked(v);
+      const v = await api(`sales/discovery-public?token=${encodeURIComponent(token)}`, { method: "POST", body: { action: "hold", start: pick.start, attendees: list } });
+      setBusy(false);
+      setAttendees(list);
+      setEmail("");
+      if (v.booked) onBooked(v); else onHeld(v);
     } catch (e) {
       setBusy(false);
       setError(errorText(e));
@@ -315,10 +362,17 @@ function Schedule({ token, d, onBooked }) {
   return (
     <Shell company={d.company}>
       <Container className="space-y-5 py-8 pb-32">
-        <div ref={top} className="rounded-2xl bg-emerald-50 p-4 text-emerald-900">
-          <p className="font-bold">התשלום התקבל, תודה.</p>
-          <p className="text-sm">חשבונית מס קבלה נשלחה למייל. עכשיו נקבע את פגישת הפתיחה.</p>
-        </div>
+        {d.paid ? (
+          <div ref={top} className="rounded-2xl bg-emerald-50 p-4 text-emerald-900">
+            <p className="font-bold">התשלום התקבל, תודה.</p>
+            <p className="text-sm">{d.paidOnline && "חשבונית מס קבלה נשלחה למייל. "}נשאר לבחור מועד לפגישת הפתיחה.</p>
+          </div>
+        ) : (
+          <div ref={top} className="flex items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">{d.showPayment ? "שלב 1 מתוך 2 · אחרי בחירת המועד עוברים לתשלום" : "הזימון ליומן יישלח מיד אחרי הבחירה"}</p>
+            <button type="button" onClick={onBack} className="text-sm font-medium text-primary underline-offset-2 hover:underline">לפרטי הספרינט</button>
+          </div>
+        )}
         <section className="pa-card p-5 sm:p-7">
           <h1 className="text-2xl font-bold">בחרו מועד לפגישת הפתיחה</h1>
           <p className="mt-1 text-muted-foreground">פגישה של {d.meetingMinutes} דקות. המועדים לפי שעון ישראל.</p>
@@ -385,10 +439,11 @@ function Schedule({ token, d, onBooked }) {
       <div className="pa-dock">
         <Container>
           <Button size="lg" disabled={!pick || busy} onClick={book} className="h-14 w-full rounded-2xl text-base font-bold shadow-lg">
-            {busy ? "קובע את הפגישה..." : pick ? `קביעת הפגישה · ${shortDay(pick.start)} · ${timeLabel(pick.start)}` : "בחרו מועד"}
+            {busy ? "רגע..." : !pick ? "בחרו מועד" : `${d.paid || !d.showPayment ? "קביעת הפגישה" : "המשך לתשלום"} · ${shortDay(pick.start)} · ${timeLabel(pick.start)}`}
           </Button>
         </Container>
       </div>
+      {children}
     </Shell>
   );
 }
@@ -415,14 +470,31 @@ function Booked({ d }) {
       <Container className="py-12">
         <section className="pa-card p-6 text-center sm:p-10">
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-100 text-emerald-700"><CalendarCheck className="h-7 w-7" /></span>
-          <h1 className="mt-4 text-2xl font-bold">הפגישה נקבעה</h1>
+          <h1 className="mt-4 text-2xl font-bold">{m ? "הפגישה נקבעה" : "התשלום התקבל"}</h1>
           {m && <p className="mt-2 text-lg font-semibold">{meetingTime(m.start)}</p>}
-          <p className="mt-2 text-muted-foreground">{m?.invited === "confirmed" ? "זימון ליומן נשלח אליכם ולמשתתפים." : "שלחנו אליכם אישור במייל עם זימון ליומן."}</p>
+          <p className="mt-2 text-muted-foreground">{!m ? "ניצור איתכם קשר לתיאום מועד הפגישה." : m.invited === "manual" ? "זה המועד שתיאמנו איתכם. אפשר להוסיף אותו ליומן." : m.invited === "confirmed" ? "זימון ליומן נשלח אליכם ולמשתתפים." : "שלחנו אליכם אישור במייל עם זימון ליומן."}</p>
           {m?.meetUrl && <p className="mt-3"><a href={m.meetUrl} className="font-semibold text-primary underline" target="_blank" rel="noreferrer">קישור לפגישה</a></p>}
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             {gcal && <Button asChild variant="outline"><a href={gcal} target="_blank" rel="noreferrer"><CalendarPlus className="ms-1 h-4 w-4" />הוספה ל-Google Calendar</a></Button>}
           </div>
-          <p className="mt-8 text-sm text-muted-foreground">כדאי להגיע עם דוגמאות לתהליך העבודה היום ועם אנשי המקצוע שמכירים אותו.</p>
+        </section>
+        <section className="pa-card mt-5 p-6 sm:p-8">
+          <h2 className="text-xl font-bold">עד הפגישה</h2>
+          <p className="mt-2">יום לפני הפגישה{d.contacts?.lead?.name ? `, ${d.contacts.lead.name}, ראש הצוות שלכם,` : " ראש הצוות שלכם"} יתקשר אליכם לשיחה קצרה. נחדד יחד את הפרטים ונוודא שהמטרה של האיפיון מוגדרת.</p>
+          <ul className="mt-4 space-y-2 text-[15px]">
+            <li><span className="font-semibold">הכינו דוגמאות מהעבודה היום:</span> קבצים, טפסים, צילומי מסך או דוחות שאתם עובדים איתם.</li>
+            <li><span className="font-semibold">הגיעו עם מטרה אחת ממוקדת:</span> הדבר שהכי חשוב לכם שהמערכת תפתור.</li>
+          </ul>
+          {["lead", "sales", "office"].some((k) => d.contacts?.[k]?.name || d.contacts?.[k]?.phone) && (
+            <dl className="mt-5 grid gap-x-6 gap-y-2 border-t border-border pt-4 text-sm sm:grid-cols-[140px_1fr]">
+              {[["ראש צוות אחראי", d.contacts.lead], ["איש מכירות", d.contacts.sales], ["מנהלת משרד", d.contacts.office]].filter(([, p]) => p?.name || p?.phone).map(([role, p]) => (
+                <React.Fragment key={role}>
+                  <dt className="text-muted-foreground">{role}</dt>
+                  <dd>{p.name && <span className="font-semibold">{p.name}</span>}{p.name && p.phone && " · "}{p.phone && <a href={`tel:${p.phone}`} className="pa-num hover:underline" dir="ltr">{p.phone}</a>}</dd>
+                </React.Fragment>
+              ))}
+            </dl>
+          )}
         </section>
       </Container>
     </Shell>

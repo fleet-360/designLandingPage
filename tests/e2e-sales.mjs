@@ -42,24 +42,36 @@ let pub = await api(`sales/discovery-public?token=${dtok}`);
 assert.equal(pub.paid, false);
 assert.equal(pub.payment.linkId, disc.id);
 assert.equal(pub.payment.sum, 1178.82);
-await api(`sales/discovery-public?token=${dtok}&slots=1`, { expect: 402 });
+assert.ok(disc.listPrice > disc.price, "the default price before discount is filled in");
+assert.equal(disc.contacts.lead.phone, "050-7215225");
 
-step("spec request: Toro reports the payment");
-await api("pay/paid", { method: "POST", body: { transactionId: `E2E-${Date.now()}`, linkId: disc.id, sum: 1178.82, fullName: "רונן לוי" } });
-pub = await api(`sales/discovery-public?token=${dtok}`);
-assert.equal(pub.paid, true);
-
-step("spec request: slots and booking");
+step("spec request: the client picks a time first (held, no invite yet)");
 const { slots, calendarConnected } = await api(`sales/discovery-public?token=${dtok}&slots=1`);
 console.log("calendar connected:", calendarConnected, "slots:", slots.length, slots.slice(0, 3).map((s) => new Date(s.start).toLocaleString("he-IL", { timeZone: "Asia/Jerusalem" })));
 assert.ok(slots.length >= 4);
-await api(`sales/discovery-public?token=${dtok}`, { method: "POST", body: { action: "book", start: "2030-01-01T10:00:00.000Z" }, expect: 409 });
-await api(`sales/discovery-public?token=${dtok}`, { method: "POST", body: { action: "book", start: slots[0].start, attendees: ["not-an-email"] }, expect: 400 });
-pub = await api(`sales/discovery-public?token=${dtok}`, { method: "POST", body: { action: "book", start: slots[0].start, attendees: ["dana@example.com"] } });
+await api(`sales/discovery-public?token=${dtok}`, { method: "POST", body: { action: "hold", start: "2030-01-01T10:00:00.000Z" }, expect: 409 });
+await api(`sales/discovery-public?token=${dtok}`, { method: "POST", body: { action: "hold", start: slots[0].start, attendees: ["not-an-email"] }, expect: 400 });
+pub = await api(`sales/discovery-public?token=${dtok}`, { method: "POST", body: { action: "hold", start: slots[1].start } });
+// changing the picked time before paying replaces the hold
+pub = await api(`sales/discovery-public?token=${dtok}`, { method: "POST", body: { action: "hold", start: slots[0].start, attendees: ["dana@example.com"] } });
+assert.equal(pub.booked, false);
+assert.equal(pub.hold.start, slots[0].start);
+assert.equal(pub.meeting, null);
+let discAdmin = await api(`sales/discovery?id=${disc.id}`);
+assert.ok(!discAdmin.mails.some((m) => m.kind === "discovery_booked"), "no invite before the payment");
+const { slots: others } = await api(`sales/discovery-public?token=${dtok}&slots=1`);
+assert.ok(others.some((s) => s.start === slots[0].start), "the client's own held time is still offered to them");
+
+step("spec request: Toro reports the payment -> the held time is booked and the invite goes out");
+await api("pay/paid", { method: "POST", body: { transactionId: `E2E-${Date.now()}`, linkId: disc.id, sum: 1178.82, fullName: "רונן לוי" } });
+pub = await api(`sales/discovery-public?token=${dtok}`);
+assert.equal(pub.paid, true);
 assert.equal(pub.booked, true);
+assert.equal(pub.meeting.start, slots[0].start);
 console.log("booked:", pub.meeting.start, "invite:", pub.meeting.invited);
-await api(`sales/discovery-public?token=${dtok}`, { method: "POST", body: { action: "book", start: slots[1].start }, expect: 409 });
-const discAdmin = await api(`sales/discovery?id=${disc.id}`);
+await api(`sales/discovery-public?token=${dtok}`, { method: "POST", body: { action: "hold", start: slots[1].start }, expect: 409 });
+discAdmin = await api(`sales/discovery?id=${disc.id}`);
+assert.ok(discAdmin.mails.some((m) => m.kind === "discovery_booked"), "the invite went out after the payment");
 console.log("events:", discAdmin.events.map((e) => e.type).join(", "));
 console.log("mails:", discAdmin.mails.map((m) => `${m.kind}:${m.status}`).join(", "));
 

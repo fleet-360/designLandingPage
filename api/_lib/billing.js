@@ -2,7 +2,7 @@
 // Toro charges the saved card token, issues the invoice and reports back (api/_routes/billing/*).
 import { query } from "./db.js";
 import { addDays, addMonths, billingDayOnOrAfter, chargeAmountAt, israelDate, withVat } from "./sales-calc.js";
-import { newToken } from "./sales.js";
+import { logEvent, newToken } from "./sales.js";
 
 const iso = (d) => (d ? new Date(d).toISOString() : null);
 const day = (d) => (d ? String(d).slice(0, 10) : null); // DATE columns arrive as strings (db.js)
@@ -90,6 +90,28 @@ export async function createSubscription(s, db = { query }) {
     [s.createdBy || null, s.dealId || null, newToken(), JSON.stringify(s.customer), s.description, s.vatRate,
       JSON.stringify(s.schedule), s.startDate ? billingDayOnOrAfter(s.startDate, s.dayOfMonth || 1) : null, s.dayOfMonth || 1]);
   return rows[0];
+}
+
+/** A signed deal's standing order for the monthly service, waiting for the card. -> the fresh deal row */
+export async function createDealSubscription(d) {
+  if (!d.data.standingOrder?.enabled || d.subscription_id) return d;
+  const so = d.data.standingOrder;
+  const s = await createSubscription({
+    dealId: d.id,
+    createdBy: d.created_by,
+    customer: {
+      name: d.client.signerName, company: d.client.companyName, taxId: d.client.taxId, email: d.client.email,
+      phone: d.client.phone, accountingEmail: d.client.accountingEmail,
+    },
+    description: `שירות חודשי · ${d.data.project.name}`,
+    vatRate: d.data.price.vatRate,
+    schedule: scheduleFromService(d.data.service),
+    startDate: so.startDate || null,
+    dayOfMonth: so.dayOfMonth || 1,
+  });
+  await query("UPDATE sales.deals SET subscription_id = $2, card_status = 'pending' WHERE id = $1", [d.id, s.id]);
+  await logEvent("subscription", s.id, "created", { dealId: d.id });
+  return (await query("SELECT * FROM sales.deals WHERE id = $1", [d.id])).rows[0];
 }
 
 // The deal's monthly service -> a standing order schedule (the included months are not charged:

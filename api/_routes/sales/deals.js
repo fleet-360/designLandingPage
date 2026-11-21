@@ -1,7 +1,9 @@
 // /api/sales/deals   deals, admin
 //   GET                    list, newest first
 //   GET    ?id=            one, with its order (live or frozen), events, emails, standing order
-//   POST   { data, client, sendEmail }           create (?preview=1: compute only, nothing saved)
+//   POST   { data, client, sendEmail, paymentNote }    create (?preview=1: compute only, nothing saved)
+//          signMode "manual": the client already signed outside the link. With signedOn, fileId (the signed
+//          contract, uploaded through /api/sales/upload), sendOrderMail, attachContract: see close_manual
 //   PATCH  ?id= { action, ... }
 //     update { data, client }        before the client approved
 //     send_email                     the invite with the link
@@ -9,15 +11,22 @@
 //     mark_project_started { date }  sets the standing order's first charge when it had none
 //     mark_delivered
 //     cancel                         the link stops working (before signing only)
+//     close_manual { signedOn, fileId, sendOrderMail, attachContract }
+//                                    signed outside the link: approved and signed as of signedOn (the order is
+//                                    frozen from then, unless the client already approved it), the standing
+//                                    order waits for the card as usual; optionally emails the order confirmation
+//     signed_file { fileId }         replaces (or removes) the signed contract of a deal closed by hand
+//     send_order { attachContract }  emails the client the order confirmation, with the signed contract or without
+//     payment_note { note }          how the client pays or paid (internal), at any time
 import { HttpError, json, origin, readJson, route } from "../../_lib/http.js";
 import { query } from "../../_lib/db.js";
 import { requireAdmin } from "../../_lib/auth.js";
 import { uuidParam } from "../../_lib/sign.js";
-import { events, getSettings, logEvent, mailsFor, newToken, sendMail, str } from "../../_lib/sales.js";
+import { events, getSettings, isEmail, logEvent, mailsFor, newToken, sendMail, str } from "../../_lib/sales.js";
 import { buildOrder, cleanClient, cleanDealData } from "../../_lib/deal.js";
-import { dealInviteMail, firstChargeDateMail } from "../../_lib/sales-mail.js";
+import { dealInviteMail, dealOrderMail, firstChargeDateMail } from "../../_lib/sales-mail.js";
 import { addMonths, billingDayOnOrAfter, israelDate } from "../../_lib/sales-calc.js";
-import { firstCharge, subscriptionRow } from "../../_lib/billing.js";
+import { createDealSubscription, firstCharge, subscriptionRow } from "../../_lib/billing.js";
 
 const iso = (d) => (d ? new Date(d).toISOString() : null);
 
@@ -45,7 +54,61 @@ export function dealRow(r, base) {
     snapshotHash: r.snapshot_hash,
     hasSignedPdf: Boolean(r.signed_pdf_file_id),
     subscriptionId: r.subscription_id,
+    signMode: r.sign_mode || "link",
+    signedOn: r.signature?.manual ? r.signature.on : null,
+    paymentNote: r.payment_note || null,
   };
+}
+
+// an uploaded file (sign.files) given as the signed contract
+async function signedFile(id) {
+  const fid = uuidParam(id);
+  if (!(await query("SELECT 1 FROM sign.files WHERE id = $1", [fid])).rows[0]) throw new HttpError(400, "bad_file");
+  return fid;
+}
+
+/** The client signed outside the link (see close_manual in the header). -> the fresh row */
+async function closeManually(d, b, user, settings) {
+  if (d.canceled_at) throw new HttpError(409, "canceled");
+  if (d.signed_at) throw new HttpError(409, "already_signed");
+  const today = israelDate();
+  const on = /^\d{4}-\d{2}-\d{2}$/.test(String(b.signedOn || "")) && b.signedOn <= today ? b.signedOn : today;
+  const fileId = b.fileId ? await signedFile(b.fileId) : null;
+  const at = on === today ? new Date() : new Date(`${on}T10:00:00Z`);   // midday in Israel
+  // an order the client already approved through the link keeps its frozen schedule
+  const order = d.snapshot?.order || buildOrder(d, settings, on);
+  const name = d.client.signerName || d.client.companyName;
+  const approval = d.approval || { name, email: d.client.email, manual: true, by: user, at: at.toISOString() };
+  const signature = { name, role: d.client.signerRole, email: d.client.email, manual: true, by: user, on, at: at.toISOString() };
+  const u = await query(
+    `UPDATE sales.deals SET approved_at = COALESCE(approved_at, $2), approval = COALESCE(approval, $3), order_status = 'approved',
+            signed_at = $2, signature = $4, agreement_status = 'signed', snapshot = $5, snapshot_hash = NULL,
+            signed_pdf_file_id = $6, sign_mode = 'manual', updated_at = now()
+      WHERE id = $1 AND signed_at IS NULL AND canceled_at IS NULL RETURNING *`,
+    [d.id, at, JSON.stringify(approval), JSON.stringify(signature),
+      JSON.stringify({ order, client: d.client, approval, signature, manual: true }), fileId]);
+  if (!u.rows[0]) throw new HttpError(409, "already_signed");
+  await logEvent("deal", d.id, "signed_manual", { by: user, on, file: Boolean(fileId) });
+  return createDealSubscription(u.rows[0]);
+}
+
+/** The order confirmation to the client (accounting and the office in copy). */
+async function sendOrder(d, settings, base, attach) {
+  if (!d.signed_at) throw new HttpError(409, "not_signed");
+  if (!isEmail(d.client.email)) throw new HttpError(400, "bad_client_email");
+  let pdf = null;
+  if (attach && d.signed_pdf_file_id) {
+    const f = (await query("SELECT name FROM sign.files WHERE id = $1", [d.signed_pdf_file_id])).rows[0];
+    pdf = { fileId: d.signed_pdf_file_id, name: f?.name || `הסכם ${d.number}.pdf` };
+  }
+  let cardUrl = null;
+  if (d.subscription_id && d.card_status === "pending") {
+    const s = (await query("SELECT card_link_token, status FROM billing.subscriptions WHERE id = $1", [d.subscription_id])).rows[0];
+    if (s && s.status === "pending_card") cardUrl = `${base}/card/${s.card_link_token}`;
+  }
+  const mail = await sendMail({ ...dealOrderMail(d, settings, { pdf, cardUrl }), entity: "deal", entityId: d.id, kind: "deal_order" });
+  await logEvent("deal", d.id, "email_sent", { kind: "order", to: d.client.email, contract: Boolean(pdf), sent: mail.sent });
+  return mail;
 }
 
 export default route(["GET", "POST", "PATCH"], async (req, res) => {
@@ -77,15 +140,22 @@ export default route(["GET", "POST", "PATCH"], async (req, res) => {
     const data = cleanDealData(b.data || {}, settings);
     const client = cleanClient(b.client || {});
     if (q.get("preview")) return json(res, 200, { order: buildOrder({ number: 0, data, client }, settings) });
-    if (!client.email) throw new HttpError(400, "bad_client_email");
+    const manual = b.signMode === "manual";
+    // a deal closed by hand needs the email only to send the order confirmation
+    if (!client.email && (!manual || b.sendOrderMail)) throw new HttpError(400, "bad_client_email");
+    if (manual && b.fileId) await signedFile(b.fileId);
     const { rows } = await query(
-      `INSERT INTO sales.deals (token, created_by, data, client, card_status)
-       VALUES ($1,$2,$3,$4,$5) RETURNING *`,
-      [newToken(), user, JSON.stringify(data), JSON.stringify(client), data.standingOrder.enabled ? "pending" : "not_required"]);
-    const d = rows[0];
-    await logEvent("deal", d.id, "created", { by: user });
+      `INSERT INTO sales.deals (token, created_by, data, client, card_status, payment_note)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      [newToken(), user, JSON.stringify(data), JSON.stringify(client), data.standingOrder.enabled ? "pending" : "not_required",
+        str(b.paymentNote, 1000) || null]);
+    let d = rows[0];
+    await logEvent("deal", d.id, "created", { by: user, ...(manual && { manual: true }) });
     let mail = null;
-    if (b.sendEmail) {
+    if (manual) {
+      d = await closeManually(d, b, user, settings);
+      if (b.sendOrderMail) mail = await sendOrder(d, settings, base, b.attachContract !== false);
+    } else if (b.sendEmail) {
       mail = await sendMail({ ...dealInviteMail(d, settings, `${base}/deal/${d.token}`), entity: "deal", entityId: d.id, kind: "deal_invite" });
       await logEvent("deal", d.id, "email_sent", { kind: "invite", to: client.email, sent: mail.sent });
     }
@@ -146,6 +216,25 @@ export default route(["GET", "POST", "PATCH"], async (req, res) => {
     case "mark_delivered":
       await query("UPDATE sales.deals SET project_status = 'delivered', updated_at = now() WHERE id = $1", [id]);
       await logEvent("deal", id, "delivered", { by: user });
+      break;
+    case "close_manual": {
+      const closed = await closeManually(d, b, user, settings);
+      if (b.sendOrderMail) await sendOrder(closed, settings, base, b.attachContract !== false);
+      break;
+    }
+    case "signed_file": {
+      if (d.sign_mode !== "manual") throw new HttpError(409, "bad_status");
+      const fileId = b.fileId ? await signedFile(b.fileId) : null;
+      await query("UPDATE sales.deals SET signed_pdf_file_id = $2, updated_at = now() WHERE id = $1", [id, fileId]);
+      await logEvent("deal", id, "signed_file", { by: user, removed: !fileId });
+      break;
+    }
+    case "send_order":
+      await sendOrder(d, settings, base, b.attachContract !== false);
+      break;
+    case "payment_note":
+      await query("UPDATE sales.deals SET payment_note = $2, updated_at = now() WHERE id = $1", [id, str(b.note, 1000) || null]);
+      await logEvent("deal", id, "payment_note", { by: user });
       break;
     case "cancel":
       if (d.signed_at) throw new HttpError(409, "already_signed");

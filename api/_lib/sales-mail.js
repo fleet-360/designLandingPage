@@ -54,16 +54,20 @@ export function dealInviteMail(deal, settings, url) {
   };
 }
 
-export function dealAccountingMail(deal, snapshot, settings) {
-  const s = snapshot.order.schedule;
-  const checks = snapshot.order.balanceMethod === "checks";
-  const rows = [["<strong>#</strong>", "<strong>מועד</strong>", "<strong>לפני מע\"מ</strong>", "<strong>כולל מע\"מ</strong>"],
-    ...s.rows.map((r) => [r.n, `${r.kind === "deposit" ? "מקדמה · " : ""}${ddmmyyyy(r.date)}${r.dateNote ? `<br><span style="color:#6B7280;font-size:13px">${esc(r.dateNote)}</span>` : ""}`, nis(r.before), nis(r.total)]),
-    ["", "<strong>סה\"כ</strong>", `<strong>${nis(s.totals.before)}</strong>`, `<strong>${nis(s.totals.total)}</strong>`]];
+// the payment schedule table and how to pay it, shared by the accounting email and the order confirmation
+const scheduleRows = (s) => [["<strong>#</strong>", "<strong>מועד</strong>", "<strong>לפני מע\"מ</strong>", "<strong>כולל מע\"מ</strong>"],
+  ...s.rows.map((r) => [r.n, `${r.kind === "deposit" ? "מקדמה · " : ""}${ddmmyyyy(r.date)}${r.dateNote ? `<br><span style="color:#6B7280;font-size:13px">${esc(r.dateNote)}</span>` : ""}`, nis(r.before), nis(r.total)]),
+  ["", "<strong>סה\"כ</strong>", `<strong>${nis(s.totals.before)}</strong>`, `<strong>${nis(s.totals.total)}</strong>`]];
+function howToPay(order, settings, number) {
   const b = settings.bank;
-  const how = checks
+  return order.balanceMethod === "checks"
     ? `<p><strong>שיקים דחויים:</strong> לפקודת ${esc(settings.checks.payee)}, שיק לכל תשלום לפי הטבלה. השיקים ייאספו בתוך ${esc(settings.checks.pickupDays)} ימי עסקים מהחתימה; נתאם איתכם את האיסוף.</p>`
-    : `<p><strong>העברה בנקאית:</strong> מוטב ${esc(b.beneficiary)}${b.bank ? `, בנק ${esc(b.bank)}` : ""}${b.branch ? `, סניף ${esc(b.branch)}` : ""}${b.account ? `, חשבון ${esc(b.account)}` : ""}. אסמכתה: מספר הזמנה ${deal.number}.</p>`;
+    : `<p><strong>העברה בנקאית:</strong> מוטב ${esc(b.beneficiary)}${b.bank ? `, בנק ${esc(b.bank)}` : ""}${b.branch ? `, סניף ${esc(b.branch)}` : ""}${b.account ? `, חשבון ${esc(b.account)}` : ""}. אסמכתה: מספר הזמנה ${number}.</p>`;
+}
+
+export function dealAccountingMail(deal, snapshot, settings) {
+  const rows = scheduleRows(snapshot.order.schedule);
+  const how = howToPay(snapshot.order, settings, deal.number);
   const signedNote = deal.agreement_status === "signed" ? "" : `<p style="color:#B45309;"><strong>לעיון:</strong> ההסכם טרם נחתם. לוח התשלומים יחייב לאחר החתימה.</p>`;
   const ac = settings.accountingContact;
   return {
@@ -90,6 +94,39 @@ export function dealSignedMail(deal, settings, pdf) {
       title: "תודה, ההסכם נחתם",
       body: `<p>מצורף עותק חתום של הסכם ההתקשרות ל<strong>${esc(deal.data.project?.name || "")}</strong>, כולל הזמנת העבודה, לוח התשלומים ונספח א'.</p>
 <p>נתחיל לעבוד עם קבלת המקדמה והחומרים שסיכמנו. נהיה בקשר בקרוב.</p>`,
+    }),
+    attachments: pdf ? [{ filename: pdf.name, fileId: pdf.fileId }] : [],
+  };
+}
+
+// The order confirmation, sent by sales at the end of a deal closed by hand (the client signed outside the
+// link): the order, the payment schedule and how to pay, with or without the signed contract attached, and
+// the card link when the standing order still waits for one.
+export function dealOrderMail(deal, settings, { pdf = null, cardUrl = null } = {}) {
+  const o = deal.snapshot.order;
+  const c = deal.client;
+  const project = deal.data.project?.name || "";
+  const service = o.service?.enabled && o.service.rows?.length
+    ? `<h2 style="margin:22px 0 4px;font-size:17px;color:#111827;">שירות חודשי</h2>${table(o.service.rows.map((r) => [esc(r.when), r.price ? `${nis(r.priceWithVat)} לחודש כולל מע"מ` : "ללא עלות"]))}`
+    : "";
+  return {
+    to: [c.email],
+    cc: [settings.officeEmail, c.accountingEmail].filter(Boolean),
+    replyTo: settings.officeEmail,
+    subject: `אישור הזמנה ${deal.number} · ${project}`,
+    html: layout({
+      preheader: "פרטי ההזמנה ולוח התשלומים",
+      title: `אישור הזמנה מס' ${deal.number}`,
+      body: `<p style="margin:0 0 10px;">${esc(c.signerName || c.companyName || "שלום")}, תודה על ההתקשרות. ריכזנו כאן את פרטי ההזמנה ל<strong>${esc(project)}</strong>.</p>
+${o.project?.summary ? `<p style="margin:0 0 10px;color:#4B5563;">${esc(o.project.summary)}</p>` : ""}
+${table([["מחיר הפרויקט", `${nis(o.price.amount)} + מע"מ`], ["כולל מע\"מ", `<strong>${nis(o.price.total)}</strong>`]])}
+<h2 style="margin:22px 0 4px;font-size:17px;color:#111827;">לוח תשלומים</h2>
+${table(scheduleRows(o.schedule))}${howToPay(o, settings, deal.number)}
+${service}
+${pdf ? "<p>מצורף עותק של ההסכם החתום.</p>" : ""}
+${cardUrl ? "<p>לשירות החודשי נשאר להגדיר כרטיס אשראי להוראת קבע. הכרטיס נשמר אצל ספק הסליקה ולא יחויב לפני מועד החיוב הראשון.</p>" : ""}`,
+      button: cardUrl ? { href: cardUrl, label: "להגדרת כרטיס" } : undefined,
+      footer: `הזמנה מס' ${deal.number} · ${esc(settings.company.name)} · ${esc(settings.company.phone)}`,
     }),
     attachments: pdf ? [{ filename: pdf.name, fileId: pdf.fileId }] : [],
   };
@@ -160,7 +197,27 @@ export function chargeFailedMail(sub, charge, settings, url, final) {
 
 // ---------------- Spec requests ----------------
 
+// the price line of a spec request; with a price before discount, that one is struck through beside it
+function discoveryPrice(d) {
+  const list = d.list_price !== null && d.list_price !== undefined && Number(d.list_price) > Number(d.price) ? Number(d.list_price) : null;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:18px 0 4px;background:#F5F7FA;border-radius:12px;">
+<tr><td style="padding:16px 18px;">
+<div style="font-size:13px;color:#6B7280;margin-bottom:4px;">המחיר</div>
+<div style="font-size:24px;font-weight:700;color:#111827;">${list ? `<span style="font-size:17px;font-weight:400;color:#9CA3AF;text-decoration:line-through;">${nis(list)}</span>&nbsp; ` : ""}${nis(d.price)} <span style="font-size:14px;font-weight:400;color:#6B7280;">+ מע"מ</span></div>
+</td></tr></table>`;
+}
+
+// how a payment sales entered by hand was made
+export const PAY_METHOD_LABELS = { transfer: "העברה בנקאית", bit: "ביט / פייבוקס", card: "כרטיס אשראי (מחוץ לעמוד)", check: "שיק", cash: "מזומן", other: "אחר" };
+
 export function discoveryInviteMail(d, settings, url) {
+  // what the page still asks of the client: sales may have left the booking or the payment off it
+  const meeting = d.meeting_start && d.booking_status !== "held";
+  const book = d.show_booking !== false && !meeting;
+  const pay = d.show_payment !== false && !d.paid_at;
+  const ask = book && pay ? "בעמוד אפשר לשלם ולקבוע מיד את פגישת הפתיחה ביומן."
+    : book ? "בעמוד אפשר לקבוע מיד את פגישת הפתיחה ביומן."
+      : pay ? "בעמוד אפשר לשלם בכרטיס אשראי." : "";
   return {
     to: [d.email],
     replyTo: settings.officeEmail,
@@ -168,8 +225,10 @@ export function discoveryInviteMail(d, settings, url) {
     html: layout({
       title: `${esc(d.client_name)}, הצעד הראשון לפרויקט`,
       body: `<p>הכנו עבורכם עמוד שמסביר איך עובד ${esc(settings.discovery.title)}: מה עושים, מה מקבלים בסוף ומה המחיר.</p>
-<p>בעמוד אפשר לשלם ולקבוע מיד את פגישת הפתיחה ביומן.</p>`,
-      button: { href: url, label: "לפרטים וקביעת פגישה" },
+${discoveryPrice(d)}
+${d.booking_status === "manual" && d.meeting_start ? `<p>פגישת הפתיחה נקבעה ל<strong>${esc(israelDateTime(d.meeting_start))}</strong> (${d.meeting_minutes} דקות).</p>` : ""}
+${ask ? `<p>${ask}</p>` : ""}`,
+      button: { href: url, label: book ? "לפרטים וקביעת פגישה" : pay ? "לפרטים ולתשלום" : "לפרטי הספרינט" },
     }),
   };
 }
@@ -180,8 +239,16 @@ export function discoveryPaidMail(d, settings, paid = null) {
     subject: `שולם: ${settings.discovery.title} · ${d.company_name || d.client_name}`,
     html: layout({
       title: "התקבל תשלום על ספרינט האיפיון",
-      body: table([["לקוח", esc(d.client_name)], ["חברה", esc(d.company_name || "")], ["סכום לפני מע\"מ", nis(d.price)], ...(paid !== null ? [["שולם (כולל מע\"מ)", nis(paid)]] : []), ["אימייל", esc(d.email || "")], ["טלפון", esc(d.phone || "")]])
-        + "<p>הלקוח מועבר עכשיו לקביעת פגישת הפתיחה ביומן.</p>",
+      body: table([["לקוח", esc(d.client_name)], ["חברה", esc(d.company_name || "")], ["סכום לפני מע\"מ", nis(d.price)], ...(paid !== null ? [["שולם (כולל מע\"מ)", nis(paid)]] : []),
+        ...(d.paid_via === "manual" ? [["אמצעי תשלום", esc(PAY_METHOD_LABELS[d.payment_method] || "סומן ידנית")]] : []), ...(d.payment_note ? [["הערה", esc(d.payment_note)]] : []),
+        ["אימייל", esc(d.email || "")], ["טלפון", esc(d.phone || "")]])
+        + (d.paid_via === "manual" ? "<p>התשלום התקבל מחוץ לעמוד ולכן לא הופקה חשבונית אוטומטית.</p>" : "")
+        + (d.booking_status === "manual" && d.meeting_start
+          ? `<p>הפגישה תואמה ידנית ל<strong>${esc(israelDateTime(d.meeting_start))}</strong>.</p>`
+          : d.meeting_start && d.booking_status !== "held"
+            ? `<p>הפגישה נקבעה ל<strong>${esc(israelDateTime(d.meeting_start))}</strong> והזימון נשלח ללקוח.</p>`
+            : d.show_booking === false ? "<p>מועד הפגישה עוד לא הוזן. אפשר להזין אותו במסך הבקשה.</p>"
+              : "<p>הלקוח עדיין לא בחר מועד. הוא יוכל לבחור אותו מאותו קישור.</p>"),
     }),
   };
 }
@@ -198,6 +265,19 @@ export function discoveryUnderpaidMail(d, settings, paid, due) {
   };
 }
 
+// the booking confirmation's "until the meeting" part and the people responsible for the request
+function discoveryPrep(d) {
+  const c = d.contacts || {};
+  const lead = c.lead?.name ? esc(c.lead.name) : "";
+  const person = (role, p) => (p?.name || p?.phone ? `<tr><td style="padding:6px 0;color:#6B7280;font-size:14px;">${role}</td><td style="padding:6px 0;font-size:15px;">${p.name ? `<strong>${esc(p.name)}</strong>` : ""}${p.name && p.phone ? " · " : ""}${p.phone ? `<a href="tel:${esc(p.phone)}" style="color:#1F2937;text-decoration:none;" dir="ltr">${esc(p.phone)}</a>` : ""}</td></tr>` : "");
+  const people = person("ראש צוות אחראי", c.lead) + person("איש מכירות", c.sales) + person("מנהלת משרד", c.office);
+  return `<h2 style="margin:22px 0 8px;font-size:17px;color:#111827;">עד הפגישה</h2>
+<p style="margin:0 0 10px;">יום לפני הפגישה${lead ? `, ${lead}, ראש הצוות שלכם,` : " ראש הצוות שלכם"} יתקשר אליכם לשיחה קצרה. נחדד יחד את הפרטים ונוודא שהמטרה של האיפיון מוגדרת.</p>
+<p style="margin:0 0 6px;"><strong>הכינו דוגמאות מהעבודה היום:</strong> קבצים, טפסים, צילומי מסך או דוחות שאתם עובדים איתם.</p>
+<p style="margin:0;"><strong>הגיעו עם מטרה אחת ממוקדת:</strong> הדבר שהכי חשוב לכם שהמערכת תפתור.</p>
+${people ? `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:18px 0 0;border-top:1px solid #EEF0F4;">${people}</table>` : ""}`;
+}
+
 export function discoveryBookedMail(d, settings, { calendarInvited }) {
   const when = israelDateTime(d.meeting_start);
   return {
@@ -209,8 +289,8 @@ export function discoveryBookedMail(d, settings, { calendarInvited }) {
       title: "הפגישה נקבעה",
       body: `<p>פגישת הפתיחה של ${esc(settings.discovery.title)} נקבעה ל<strong>${esc(when)}</strong> (${d.meeting_minutes} דקות).</p>
 ${d.meet_url ? `<p>קישור לפגישה: <a href="${esc(d.meet_url)}">${esc(d.meet_url)}</a></p>` : ""}
-<p>${calendarInvited ? "זימון ליומן נשלח לכל המשתתפים." : "מצורף זימון ליומן (קובץ ics). פתחו אותו כדי להוסיף את הפגישה ליומן."}</p>
-<p>כדאי להגיע עם דוגמאות לתהליך העבודה היום ועם אנשי המקצוע שמכירים אותו.</p>`,
+<p>${calendarInvited ? "זימון ליומן נשלח לכל המשתתפים." : "מצורף זימון ליומן (קובץ ics). פתחו אותו כדי להוסיף את הפגישה ליומן."}${d.paid_via === "grow" ? " חשבונית מס קבלה על התשלום נשלחת אליכם במייל נפרד." : ""}</p>
+${discoveryPrep(d)}`,
     }),
   };
 }

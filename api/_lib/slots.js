@@ -1,8 +1,9 @@
-// Meeting slots for a paid spec request: working days and hours from settings.calendar, minus what
-// is busy in the developers@pro-algo.com calendar (through Toro) and meetings already booked here.
+// Meeting slots for a spec request: working days and hours from settings.calendar, minus what is busy
+// in the developers@pro-algo.com calendar and meetings booked (or held for a client who is paying) here.
 // A small spread is offered (at most two a day) so the client is not faced with a wall of times.
 import { query } from "./db.js";
 import { calendarBusy } from "./calendar.js";
+import { BLOCKING } from "./discovery-book.js";
 import { addDays, isBusinessDay, israelDate } from "./sales-calc.js";
 
 const TZ = "Asia/Jerusalem";
@@ -44,7 +45,7 @@ export async function availableSlots(settings, minutes, { now = new Date(), excl
   const busy = (busyRes.ok ? busyRes.busy || [] : []).map((b) => [new Date(b.start).getTime(), new Date(b.end).getTime()]);
   const booked = await query(
     `SELECT meeting_start, meeting_end FROM sales.discovery
-      WHERE meeting_start IS NOT NULL AND canceled_at IS NULL AND meeting_end > now() AND ($1::uuid IS NULL OR id <> $1)`, [excludeId]);
+      WHERE ${BLOCKING} AND meeting_end > now() AND ($1::uuid IS NULL OR id <> $1)`, [excludeId]);
   for (const r of booked.rows) busy.push([r.meeting_start.getTime(), r.meeting_end.getTime()]);
 
   const all = [];

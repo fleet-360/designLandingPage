@@ -122,10 +122,20 @@ export default function SalesSettings() {
       </Card>
 
       <Card title="בקשת איפיון">
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <FieldRow label="כותרת"><Input {...bind("discovery.title")} /></FieldRow>
           <FieldRow label='מחיר ברירת מחדל (לפני מע"מ)'><Input {...bind("discovery.defaultPrice", true)} dir="ltr" /></FieldRow>
+          <FieldRow label="מחיר לפני הנחה, ברירת מחדל" hint="מופיע מחוק ליד המחיר. ריק = בלי"><Input {...bind("discovery.defaultListPrice", true)} dir="ltr" /></FieldRow>
           <FieldRow label="אורך פגישה (דקות)"><Input {...bind("discovery.meetingMinutes", true)} dir="ltr" /></FieldRow>
+          <FieldRow label="ראש צוות אחראי" hint="ברירת מחדל לבקשה חדשה; מופיע במייל הסיכום">
+            <div className="flex gap-2"><Input {...bind("discovery.contacts.lead.name")} aria-label="שם" /><Input {...bind("discovery.contacts.lead.phone")} dir="ltr" aria-label="טלפון" className="w-36" /></div>
+          </FieldRow>
+          <FieldRow label="איש מכירות">
+            <div className="flex gap-2"><Input {...bind("discovery.contacts.sales.name")} aria-label="שם" /><Input {...bind("discovery.contacts.sales.phone")} dir="ltr" aria-label="טלפון" className="w-36" /></div>
+          </FieldRow>
+          <FieldRow label="מנהלת משרד">
+            <div className="flex gap-2"><Input {...bind("discovery.contacts.office.name")} aria-label="שם" placeholder="שם (לא חובה)" /><Input {...bind("discovery.contacts.office.phone")} dir="ltr" aria-label="טלפון" className="w-36" /></div>
+          </FieldRow>
         </div>
       </Card>
 
