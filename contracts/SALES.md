@@ -32,6 +32,16 @@ take overlapping times. When the calendar is not connected, the confirmation ema
 instead. The calendar is reached directly from the site when `GOOGLE_CALENDAR_CREDENTIALS` is set in Vercel
 (`api/_lib/calendar.js`), otherwise through Toro.
 
+**The spec in the contract (Appendix B).** On the deal form sales attaches the Canva PDF and picks which of its
+pages go into the contract (`contracts/src/pages/sales/SpecPagePicker.jsx`). The PDF is read in the browser:
+thumbnails, plus each page's text, which Claude reads (`api/_lib/ai-spec-pages.js`, through
+`/api/sales/spec-pages`) to preselect the proposal-summary page and the hours-estimate page. Without
+`ANTHROPIC_API_KEY`, or when it fails, the first and last pages are preselected. Only the picked pages are
+uploaded (`data.project.specPages` keeps their numbers in the original, `specPageCount` its length). On signing,
+the signed PDF gets an Appendix B page that says the hours are an estimate and the price is fixed, then the
+spec pages, each with a strip added under it saying the same (`api/_lib/spec-pdf.js`); the spec file's
+SHA-256 goes on the verification page. The client's "לצפייה באפיון" link opens the same stamped pages.
+
 **Spec request arranged outside the page.** Two switches on the request (both on by default, also editable
 later under "עדכון ידני"): whether the client books the meeting on the page, and whether they pay on it.
 Booking off: sales types the date, time and length. No invite is sent. The time is shown on the client's
@@ -95,6 +105,9 @@ The site trusts Toro's calls by its IP (`api/_lib/toro.js`), the same as `/api/p
 
   The calendar is the one on the settings screen (`developers@pro-algo.com`), and its
   "בדיקת חיבור ליומן" button shows whether it works. Until then booking works with `.ics` invites.
+- **Spec pages (Claude):** in Vercel (landing-page-build → Settings → Environment Variables):
+  `ANTHROPIC_API_KEY` = a key from console.anthropic.com. Redeploy. Optional `ANTHROPIC_MODEL` replaces the
+  default model (`claude-opus-5-5`).
 - **Grow card saving:** the Grow account must allow token payments (Get Token Only and charging a saved
   token). If Grow gives a separate page code for it, set `PRO_ALGO_GROW_TOKEN_PAGE_CODE` in Toro.
 - **Settings screen:** bank account, the company signer's name and signature image, the accounting contact.

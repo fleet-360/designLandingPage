@@ -12,6 +12,7 @@ import { buildAgreement, buildOrder, cleanClient, snapshotHash } from "../../_li
 import { dealAccountingMail, dealSignedMail } from "../../_lib/sales-mail.js";
 import { parseDataUrl } from "../../_lib/sign.js";
 import { generateDealPdf } from "../../_lib/deal-pdf.js";
+import { sha256, specFile, specPageCount } from "../../_lib/spec-pdf.js";
 import { createDealSubscription, firstCharge, subscriptionRow } from "../../_lib/billing.js";
 import { israelDate } from "../../_lib/sales-calc.js";
 import { callToro, growReason } from "../../_lib/toro.js";
@@ -120,6 +121,16 @@ export default route(["GET", "POST"], async (req, res) => {
       const f = await query("SELECT content_type, data FROM sign.files WHERE id = $1", [settings.signer.signatureFileId]);
       if (f.rows[0]) companySignature = `data:${f.rows[0].content_type};base64,${f.rows[0].data.toString("base64")}`;
     }
+    // Appendix B: the spec file as approved (only the pages sales picked), identified by its hash
+    const proj = d.snapshot.order.project || {};
+    const sf = await specFile(proj.specFileId);
+    const spec = sf ? {
+      fileId: proj.specFileId,
+      pages: proj.specPages || null,
+      pageCount: proj.specPageCount || null,
+      attachedPages: await specPageCount(sf.data).catch(() => null),
+      sha256: sha256(sf.data),
+    } : null;
     const snapshot = {
       order: d.snapshot.order,
       agreement: buildAgreement(d, settings),
@@ -127,9 +138,10 @@ export default route(["GET", "POST"], async (req, res) => {
       approval: d.approval,
       signature,
       companySignature,
+      spec,
     };
     const hash = snapshotHash(snapshot);
-    const pdf = await generateDealPdf({ ...snapshot, hash });
+    const pdf = await generateDealPdf({ ...snapshot, hash }, { specBytes: sf?.data });
     const pdfName = `הסכם ${d.number} - ${(d.client.companyName || d.client.signerName || "").replace(/[\\/:*?"<>|]+/g, "-")}.pdf`;
     const pf = await query(
       "INSERT INTO sign.files (is_public, name, content_type, size, data) VALUES (false, $1, 'application/pdf', $2, $3) RETURNING id",
