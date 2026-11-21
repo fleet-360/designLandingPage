@@ -262,7 +262,7 @@ function AgreementStep({ d, post }) {
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               <Field label="שם החותם" required><Input value={name} onChange={(e) => setName(e.target.value)} className="h-11" autoComplete="name" /></Field>
               <Field label="תפקיד החותם"><Input value={role} onChange={(e) => setRole(e.target.value)} className="h-11" /></Field>
-              <Field label="תעודת זהות" hint="לא חובה"><Input value={idNumber} onChange={(e) => setIdNumber(e.target.value)} inputMode="numeric" dir="ltr" className="h-11" /></Field>
+              <Field label="תעודת זהות"><Input value={idNumber} onChange={(e) => setIdNumber(e.target.value)} inputMode="numeric" dir="ltr" className="h-11" /></Field>
             </div>
             <div className="mt-4"><SignaturePad ref={pad} /></div>
             <label className="mt-4 flex items-start gap-3 text-[15px] leading-relaxed">

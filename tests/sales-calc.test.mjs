@@ -3,7 +3,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { paymentSchedule, isBusinessDay, addBusinessDays, addMonths, chargeAmountAt, servicePeriods } from "../api/_lib/sales-calc.js";
 
-const cents = (x) => Math.round(x * 100);
+const cents = (x) => Math.round(x * 100) + 0;   // + 0: -0 is 0
 
 test("schedule rows add up exactly, 1..12 installments, odd prices", () => {
   for (const price of [10000, 12345.67, 99999.99, 1, 7, 333.33, 48000]) {
@@ -73,3 +73,20 @@ test("payments set one by one keep their dates and methods, and add up exactly",
   assert.match(f.rows[0].dateNote, /31\/12\/2026/);
   assert.equal(f.rows[1].dateNote, null);
 });
+
+test("amounts with VAT are whole shekels and still add up", () => {
+  const payments = [
+    { date: "2026-11-26", amount: 2500, method: "transfer" },
+    { date: "2026-12-01", amount: 8333, method: "check" },
+    { date: "2027-01-01", amount: 8333.5, method: "check" },
+  ];
+  const s = paymentSchedule({ price: 19166.5, vatRate: 18, payments }, "2026-11-22");
+  for (const r of s.rows) {
+    assert.equal(cents(r.total) % 100, 0, `payment ${r.n} has agorot`);
+    assert.equal(cents(r.before) + cents(r.vat), cents(r.total));
+  }
+  assert.equal(cents(s.total) % 100, 0);
+  assert.equal(cents(s.totals.total), cents(s.total));
+  assert.equal(Math.abs(cents(s.total) - Math.round(19166.5 * 118)) <= 50, true);   // within half a shekel of the exact VAT
+});
+

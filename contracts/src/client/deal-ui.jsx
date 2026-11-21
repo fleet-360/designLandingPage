@@ -65,7 +65,8 @@ export function DealHero({ order, pitch }) {
 
 // ---- the road ----
 
-// the stops from the spec to the service, from what the order holds
+// the stops from the spec to the service, from what the order holds. A road map only: what happens and
+// when, no prices (they are in the price card and the payment schedule below)
 function roadStops(o) {
   const stops = [
     { t: "איפיון", s: "הושלם", state: "done" },
@@ -76,19 +77,16 @@ function roadStops(o) {
   ];
   if (o.service?.enabled) {
     let paid = 0;
-    let prev = null;
     for (const r of o.service.rows || []) {
-      if (!r.price) stops.push({ t: "ליווי צמוד", s: "כלול במחיר", s2: r.when, icon: Headset });
+      if (!r.price) stops.push({ t: "ליווי צמוד", s: "אחרי העלייה לאוויר", s2: r.when, icon: Headset });
       else {
         stops.push({
           t: paid === 0 ? "תמיכה ותחזוקה" : "תמיכה שוטפת",
-          s: `${nis(r.price)} לחודש`,
+          s: paid === 0 ? "צוות שמכיר את המערכת שלכם" : "ממשיכים לשפר ולתחזק",
           s2: r.when,
-          drop: prev != null && r.price < prev,
           icon: paid === 0 ? LifeBuoy : HeartHandshake,
         });
         paid++;
-        prev = r.price;
       }
     }
   } else {
