@@ -282,7 +282,6 @@
                     paymentNumber: els.paymentsCount.value,
                     businessTaxId: els.businessTaxId.value,
                     linkId,
-                    wallet: new URLSearchParams(window.location.search).get('wallet') === 'sdk' ? 'sdk' : undefined,
                     successUrl: returnUrl({ paid: '1' }),
                     cancelUrl: returnUrl({})
                 })

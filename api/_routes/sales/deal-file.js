@@ -36,6 +36,7 @@ async function sendVideo(req, res, v) {
   res.end(body);
 }
 
+
 export default route(["GET"], async (req, res) => {
   const q = new URL(req.url, "http://x").searchParams;
   let d;
@@ -70,8 +71,10 @@ export default route(["GET"], async (req, res) => {
   }
   // the spec opens as Appendix B: each page with the strip that says the hours in it are estimates
   if (kind === "spec" && f.content_type === "application/pdf") {
-    try { const pr = d.snapshot?.spec || { pages: (d.snapshot?.order?.project || d.data.project)?.specPages, pageCount: (d.snapshot?.order?.project || d.data.project)?.specPageCount };
-      f.data = await stampedSpecPdf(f.data, { number: d.number, pages: pr.pages, pageCount: pr.pageCount }); } catch (e) { console.error("[deal-file] spec stamp failed:", e?.message); }
+    try {
+      const pr = d.snapshot?.spec || { pages: (d.snapshot?.order?.project || d.data.project)?.specPages, pageCount: (d.snapshot?.order?.project || d.data.project)?.specPageCount };
+      f.data = await stampedSpecPdf(f.data, { number: d.number, pages: pr.pages, pageCount: pr.pageCount });
+    } catch (e) { console.error("[deal-file] spec stamp failed:", e?.message); }
   }
   res.statusCode = 200;
   res.setHeader("Content-Type", f.content_type);

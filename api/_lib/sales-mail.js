@@ -202,15 +202,83 @@ export function chargeFailedMail(sub, charge, settings, url, final) {
 
 // ---------------- Spec requests ----------------
 
-// the price line of a spec request; with a price before discount, that one is struck through beside it
-function discoveryPrice(d) {
+// ---- The spec request emails: the boarding-pass design of the client's page (mint, tomato, cream) ----
+
+const SITE = "https://www.pro-algo.com";
+const PV = { page: "#E9DFC4", hero: "#9ED9C3", heroMuted: "#4F3324", ink: "#3A2418", muted: "#6A4330", tk: "#FFF9EC", line: "#E3D6B8", acc: "#E0432F", cream: "#F4ECD6", ok: "#1F7A55" };
+// Rubik where the mail client loads web fonts (Apple Mail, iOS, Outlook for Mac), Arial elsewhere (Gmail)
+const PV_FONT = "Rubik,Heebo,Arial,sans-serif";
+const PV_FONT_LINK = '<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">';
+// the client logos of the site (assets/img/clients), trimmed, with their size in the email
+const MAIL_CLIENTS = [["idf", 'צה"ל', 41, 38], ["mod", "משרד הביטחון", 32, 38], ["rafael", "רפאל", 88, 19], ["mafat", 'מפא"ת', 31, 37],
+  ["tau", "אוניברסיטת תל אביב", 49, 31], ["bar-ilan", "אוניברסיטת בר-אילן", 73, 27], ["acb", "התאחדות הקבלנים בוני הארץ", 51, 31], ["pekerman", "פקרמן הנדסה ואדריכלות", 70, 16],
+  ["redmark", "רדמרק אדריכלות וניהול פרויקטים", 75, 22], ["aspire-home", "אספייר הום", 70, 25], ["mydesk", "myDESK", 29, 32]];
+
+const withVatOf = (d) => Math.round(Number(d.price) * (1 + Number(d.vat_rate) / 100) * 100) / 100;
+function dealOf(d) {
   const list = d.list_price !== null && d.list_price !== undefined && Number(d.list_price) > Number(d.price) ? Number(d.list_price) : null;
-  return `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:18px 0 4px;background:#F5F7FA;border-radius:12px;">
-<tr><td style="padding:16px 18px;">
-<div style="font-size:13px;color:#6B7280;margin-bottom:4px;">המחיר</div>
-<div style="font-size:24px;font-weight:700;color:#111827;">${list ? `<span style="font-size:17px;font-weight:400;color:#9CA3AF;text-decoration:line-through;">${nis(list)}</span>&nbsp; ` : ""}${nis(d.price)} <span style="font-size:14px;font-weight:400;color:#6B7280;">+ מע"מ</span></div>
-</td></tr></table>`;
+  return { list, price: Number(d.price), save: list ? Math.round((list - Number(d.price)) * 100) / 100 : 0 };
 }
+const tbl = (inner, style = "") => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0"${style ? ` style="${style}"` : ""}>${inner}</table>`;
+const fieldCell = (label, value) => `<td width="33%" style="padding:0 0 12px;vertical-align:top;"><div style="font-size:11.5px;color:${PV.muted};font-weight:700;">${label}</div><div style="font-size:15px;font-weight:800;color:${PV.ink};">${value}</div></td>`;
+const footerOf = (settings) => `${esc(settings.company.name)}${settings.company.phone ? ` · <span dir="ltr">${esc(settings.company.phone)}</span>` : ""} · pro-algo.com`;
+
+function passMail({ preheader, title, text, rows, footer }) {
+  return `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8">${PV_FONT_LINK}</head><body style="margin:0;background:${PV.page};">
+<span style="display:none;max-height:0;overflow:hidden">${esc(preheader)}</span>
+${tbl(`<tr><td align="center" style="padding:28px 12px 36px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;font-family:${PV_FONT};direction:rtl;text-align:right;color:${PV.ink};">
+<tr><td style="background:${PV.hero};border-radius:18px 18px 0 0;padding:22px 28px;">${tbl(`<tr><td><img src="${SITE}/pay-assets/all-dark-logo.png" width="150" alt="Pro Algorithm" style="display:block;width:150px;height:auto;border:0;"></td>
+<td style="text-align:left;font-size:13px;font-weight:700;color:${PV.heroMuted};">כרטיס עלייה לפרויקט</td></tr>`)}</td></tr>
+<tr><td style="background:${PV.hero};padding:6px 28px 26px;color:${PV.ink};"><div style="font-size:28px;font-weight:900;line-height:1.25;">${title}</div>
+<div style="font-size:16px;line-height:1.65;margin-top:10px;">${text}</div></td></tr>
+${rows}
+<tr><td style="padding:20px 8px 0;font-size:12.5px;line-height:1.7;color:${PV.muted};text-align:center;">${footer}</td></tr>
+</table></td></tr>`, `background:${PV.page};`)}</body></html>`;
+}
+
+// the benefit band (or the plain price when there is no price before discount)
+function benefitRow(d) {
+  const p = dealOf(d);
+  return `<tr><td style="background:${PV.acc};color:#FFFFFF;padding:18px 28px;">${tbl(`<tr><td style="font-size:${p.list ? 44 : 34}px;font-weight:900;line-height:1;">${p.list ? "הטבה" : "המחיר"}</td>
+<td style="font-size:17px;font-weight:800;text-align:left;line-height:1.45;">${p.list ? `מחיר מלא <span style="text-decoration:line-through;">${nis(p.list)}</span><br>ההטבה שלכם ` : ""}<span style="font-size:26px;font-weight:900;">${nis(p.price)}</span> + מע"מ${p.list ? `<br>חוסכים ${nis(p.save)}` : ""}</td></tr>`)}</td></tr>`;
+}
+
+function clientsRow() {
+  const cells = MAIL_CLIENTS.map(([key, name, w, h]) => `<td width="25%" height="70" align="center" valign="middle" style="padding:6px;"><img src="${SITE}/pay-assets/clients/${key}.png" width="${w}" height="${h}" alt="${esc(name)}" style="display:block;width:${w}px;height:${h}px;border:0;"></td>`);
+  while (cells.length % 4) cells.push('<td width="25%">&nbsp;</td>');
+  const rows = [];
+  for (let i = 0; i < cells.length; i += 4) rows.push(`<tr>${cells.slice(i, i + 4).join("")}</tr>`);
+  return `<tr><td style="background:#FFFFFF;padding:22px 22px 16px;border-bottom:2px solid ${PV.line};"><div style="text-align:center;font-size:19px;font-weight:900;color:#1A1A1A;">בין לקוחותינו</div>
+<div style="text-align:center;font-size:13.5px;color:#4A4A4A;margin-top:2px;">ארגונים שבוחרים לעבוד איתנו</div>${tbl(rows.join(""), "margin-top:8px;")}</td></tr>`;
+}
+
+// the pass: from "רעיון" to "דמו עובד", its fields, and a stub on the side
+function passRow(fields, stub) {
+  const grid = [];
+  for (let i = 0; i < fields.length; i += 3) {
+    const row = fields.slice(i, i + 3);
+    grid.push(`<tr>${row.map(([l, v]) => fieldCell(l, v)).join("")}${'<td width="33%"></td>'.repeat(3 - row.length)}</tr>`);
+  }
+  return `<tr><td style="background:${PV.tk};padding:0;">${tbl(`<tr>
+<td style="padding:22px 24px 8px;vertical-align:top;">${tbl(`<tr><td style="font-size:12px;color:${PV.muted};font-weight:700;">מוצא</td><td></td><td style="font-size:12px;color:${PV.muted};font-weight:700;text-align:left;">יעד</td></tr>
+<tr><td style="font-size:28px;font-weight:900;color:${PV.ink};white-space:nowrap;">רעיון</td><td style="text-align:center;color:${PV.acc};font-size:14px;letter-spacing:2px;white-space:nowrap;">· · <img src="${SITE}/pay-assets/plane-left.png" width="22" height="22" alt="" style="display:inline-block;width:22px;height:22px;border:0;vertical-align:middle;"> · ·</td><td style="font-size:28px;font-weight:900;color:${PV.ink};text-align:left;white-space:nowrap;">דמו עובד</td></tr>`)}
+${tbl(`<tr><td colspan="3" style="height:12px;font-size:0;">&nbsp;</td></tr>${grid.join("")}`, `margin-top:12px;border-top:1px solid ${PV.line};`)}</td>
+<td width="180" style="width:180px;border-right:2px dashed ${PV.line};padding:20px 18px;vertical-align:top;">${stub}</td></tr>`)}</td></tr>`;
+}
+
+function dealStub(d) {
+  const p = dealOf(d);
+  return p.list
+    ? `<div style="display:inline-block;background:${PV.acc};color:#FFFFFF;font-weight:900;font-size:17px;border-radius:10px;padding:5px 12px;">הטבה</div>
+<div style="font-size:13px;color:${PV.muted};font-weight:700;margin-top:10px;">מחיר מלא <span style="text-decoration:line-through;color:${PV.ink};font-size:16px;">${nis(p.list)}</span></div>
+<div style="font-size:13px;font-weight:800;color:${PV.ink};margin-top:6px;">ההטבה שלכם</div><div style="font-size:36px;font-weight:900;color:${PV.ink};line-height:1.05;white-space:nowrap;">${nis(p.price)}</div>
+<div style="font-size:13px;color:${PV.muted};font-weight:700;">+ מע"מ</div><div style="font-size:15px;font-weight:900;color:${PV.acc};margin-top:8px;">חוסכים ${nis(p.save)}</div>`
+    : `<div style="font-size:13px;font-weight:800;color:${PV.ink};">המחיר</div><div style="font-size:36px;font-weight:900;color:${PV.ink};line-height:1.05;white-space:nowrap;">${nis(p.price)}</div>
+<div style="font-size:13px;color:${PV.muted};font-weight:700;">+ מע"מ</div>`;
+}
+
+const GETS = ["פגישת איפיון עם מומחה תוכנה", "דמו עובד של המערכת שלכם", "מסמך אפיון מלא", "פגישת הצגת הדמו"];
 
 // how a payment sales entered by hand was made
 export const PAY_METHOD_LABELS = { transfer: "העברה בנקאית", bit: "ביט / פייבוקס", card: "כרטיס אשראי (מחוץ לעמוד)", check: "שיק", cash: "מזומן", other: "אחר" };
@@ -220,20 +288,27 @@ export function discoveryInviteMail(d, settings, url) {
   const meeting = d.meeting_start && d.booking_status !== "held";
   const book = d.show_booking !== false && !meeting;
   const pay = d.show_payment !== false && !d.paid_at;
-  const ask = book && pay ? "בעמוד אפשר לשלם ולקבוע מיד את פגישת הפתיחה ביומן."
-    : book ? "בעמוד אפשר לקבוע מיד את פגישת הפתיחה ביומן."
-      : pay ? "בעמוד אפשר לשלם בכרטיס אשראי." : "";
+  const ask = book && pay ? "בוחרים מועד ומשלמים בעמוד." : book ? "בוחרים מועד בעמוד." : pay ? "התשלום בכרטיס אשראי בעמוד." : "";
+  const manual = d.booking_status === "manual" && d.meeting_start;
+  const p = dealOf(d);
+  const fields = [["על שם", esc(d.client_name)], ...(d.company_name ? [["חברה", esc(d.company_name)]] : []), ["עם", "מומחה תוכנה"],
+    ["שער", "Google Meet"], ["משך", `${d.meeting_minutes} דקות`], ["מועד", meeting ? esc(israelDateTime(d.meeting_start)) : "בוחרים בעמוד"]];
+  const label = book ? "שריינו את הדמו שלכם" : pay ? "לפרטים ולתשלום" : "לפרטי הספרינט";
+  const gets = GETS.map((b) => `<tr><td width="28" style="vertical-align:top;padding:5px 0;color:${PV.acc};font-size:17px;font-weight:900;">✓</td><td style="padding:5px 0;font-size:15.5px;line-height:1.5;font-weight:700;color:${PV.ink};">${b}</td></tr>`).join("");
   return {
     to: [d.email],
     replyTo: settings.officeEmail,
     subject: `${settings.discovery.title} · ${d.company_name || d.client_name}`,
-    html: layout({
-      title: `${esc(d.client_name)}, הצעד הראשון לפרויקט`,
-      body: `<p>הכנו עבורכם עמוד שמסביר איך עובד ${esc(settings.discovery.title)}: מה עושים, מה מקבלים בסוף ומה המחיר.</p>
-${discoveryPrice(d)}
-${d.booking_status === "manual" && d.meeting_start ? `<p>פגישת הפתיחה נקבעה ל<strong>${esc(israelDateTime(d.meeting_start))}</strong> (${d.meeting_minutes} דקות).</p>` : ""}
-${ask ? `<p>${ask}</p>` : ""}`,
-      button: { href: url, label: book ? "לפרטים וקביעת פגישה" : pay ? "לפרטים ולתשלום" : "לפרטי הספרינט" },
+    html: passMail({
+      preheader: p.list ? `הטבה: ${nis(p.price)} במקום ${nis(p.list)}. דמו עובד של המערכת שלכם.` : "רואים את המערכת לפני שמפתחים אותה",
+      title: `${esc(d.client_name)}, רואים את המערכת לפני שמפתחים אותה`,
+      text: `פגישה אחת עם מומחה תוכנה, ובסופה דמו עובד של המערכת שלכם.${manual ? `<br><strong>פגישת הפתיחה נקבעה ל${esc(israelDateTime(d.meeting_start))}</strong> (${d.meeting_minutes} דקות).` : ""}`,
+      footer: footerOf(settings),
+      rows: benefitRow(d) + clientsRow() + passRow(fields, dealStub(d))
+        + `<tr><td style="background:${PV.tk};padding:4px 24px 6px;border-top:2px dashed ${PV.line};">${tbl(gets, "margin-top:8px;")}</td></tr>
+<tr><td style="background:${PV.tk};padding:10px 24px 26px;color:${PV.ink};border-radius:0 0 18px 18px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:6px;"><tr><td style="background:${PV.acc};border-radius:14px;"><a href="${esc(url)}" style="display:inline-block;padding:16px 30px;font-size:19px;font-weight:900;color:#FFFFFF;text-decoration:none;">${label}</a></td></tr></table>
+${ask ? `<div style="font-size:14px;color:${PV.muted};margin-top:12px;font-weight:600;">${ask}</div>` : ""}</td></tr>`,
     }),
   };
 }
@@ -270,32 +345,46 @@ export function discoveryUnderpaidMail(d, settings, paid, due) {
   };
 }
 
-// the booking confirmation's "until the meeting" part and the people responsible for the request
-function discoveryPrep(d) {
+// the booking confirmation: the meeting on the pass, what to prepare, and the people responsible for the request
+export function discoveryBookedMail(d, settings, { calendarInvited }) {
+  const tz = { timeZone: "Asia/Jerusalem" };
+  const at = new Date(d.meeting_start);
+  const when = israelDateTime(d.meeting_start);
+  const dateOnly = at.toLocaleDateString("he-IL", { ...tz, day: "numeric", month: "long" });
+  const day = at.toLocaleDateString("he-IL", { ...tz, weekday: "short", day: "numeric", month: "numeric" });
+  const time = at.toLocaleTimeString("he-IL", { ...tz, hour: "2-digit", minute: "2-digit" });
+  const others = (d.attendees || []).filter((a) => a && a !== d.email);
   const c = d.contacts || {};
   const lead = c.lead?.name ? esc(c.lead.name) : "";
-  const person = (role, p) => (p?.name || p?.phone ? `<tr><td style="padding:6px 0;color:#6B7280;font-size:14px;">${role}</td><td style="padding:6px 0;font-size:15px;">${p.name ? `<strong>${esc(p.name)}</strong>` : ""}${p.name && p.phone ? " · " : ""}${p.phone ? `<a href="tel:${esc(p.phone)}" style="color:#1F2937;text-decoration:none;" dir="ltr">${esc(p.phone)}</a>` : ""}</td></tr>` : "");
-  const people = person("ראש צוות אחראי", c.lead) + person("איש מכירות", c.sales) + person("מנהלת משרד", c.office);
-  return `<h2 style="margin:22px 0 8px;font-size:17px;color:#111827;">עד הפגישה</h2>
-<p style="margin:0 0 10px;">יום לפני הפגישה${lead ? `, ${lead}, ראש הצוות שלכם,` : " ראש הצוות שלכם"} יתקשר אליכם לשיחה קצרה. נחדד יחד את הפרטים ונוודא שהמטרה של האיפיון מוגדרת.</p>
-<p style="margin:0 0 6px;"><strong>הכינו דוגמאות מהעבודה היום:</strong> קבצים, טפסים, צילומי מסך או דוחות שאתם עובדים איתם.</p>
-<p style="margin:0;"><strong>הגיעו עם מטרה אחת ממוקדת:</strong> הדבר שהכי חשוב לכם שהמערכת תפתור.</p>
-${people ? `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:18px 0 0;border-top:1px solid #EEF0F4;">${people}</table>` : ""}`;
-}
-
-export function discoveryBookedMail(d, settings, { calendarInvited }) {
-  const when = israelDateTime(d.meeting_start);
+  const paidStub = d.paid_at
+    ? `<div style="display:inline-block;background:${PV.ok};color:#FFFFFF;font-weight:900;font-size:15px;border-radius:10px;padding:5px 12px;">✓ שולם · מאושר</div>
+<div style="font-size:12px;color:${PV.muted};font-weight:700;margin-top:12px;">שולם, כולל מע"מ</div><div style="font-size:24px;font-weight:900;color:${PV.ink};white-space:nowrap;">${nis(withVatOf(d))}</div>
+${d.paid_via === "grow" ? `<div style="font-size:12.5px;color:${PV.muted};margin-top:2px;">חשבונית נשלחת בנפרד</div>` : ""}`
+    : `<div style="display:inline-block;background:${PV.ok};color:#FFFFFF;font-weight:900;font-size:15px;border-radius:10px;padding:5px 12px;">✓ מאושר</div>`;
+  const prep = [["שיחה יום לפני", `יום לפני הפגישה${lead ? `, ${lead}, ראש הצוות שלכם,` : " ראש הצוות שלכם"} יתקשר אליכם לשיחה קצרה. נחדד יחד את הפרטים ונוודא שהמטרה של האיפיון מוגדרת.`],
+    ["דוגמאות מהעבודה היום", "הכינו דוגמאות מהעבודה היום: קבצים, טפסים, צילומי מסך או דוחות שאתם עובדים איתם."],
+    ["מטרה אחת ממוקדת", "הגיעו עם מטרה אחת ממוקדת: הדבר שהכי חשוב לכם שהמערכת תפתור."]];
+  const team = [["ראש צוות אחראי", c.lead], ["איש מכירות אחראי", c.sales], ["לכל שאלה", c.office && { ...c.office, name: c.office.name || "מנהלת משרד" }]]
+    .filter(([, x]) => x?.name || x?.phone);
+  const teamCells = team.map(([role, x], i) => `${i ? '<td width="2%">&nbsp;</td>' : ""}<td width="32%" style="vertical-align:top;padding:14px;background:${PV.cream};border-radius:12px;"><div style="font-size:12px;color:${PV.muted};font-weight:700;">${role}</div>
+<div style="font-size:16px;font-weight:900;color:${PV.ink};margin-top:2px;">${esc(x.name || "")}</div>${x.phone ? `<a href="tel:${esc(String(x.phone).replace(/[^\d+]/g, ""))}" dir="ltr" style="font-size:15px;color:${PV.ink};font-weight:800;text-decoration:underline;">${esc(x.phone)}</a>` : ""}</td>`).join("");
+  const prepRows = prep.map(([b, t], i) => `<tr><td width="44" style="vertical-align:top;padding:14px 0;"><div style="width:32px;height:32px;border-radius:50%;border:2px solid ${PV.acc};color:${PV.acc};text-align:center;line-height:32px;font-weight:900;font-size:15px;">${i + 1}</div></td>
+<td style="padding:12px 0;${i < prep.length - 1 ? `border-bottom:1px solid ${PV.line};` : ""}"><div style="font-size:16px;font-weight:900;color:${PV.ink};">${b}</div><div style="font-size:14.5px;line-height:1.65;color:${PV.ink};margin-top:2px;">${t}</div></td></tr>`).join("");
+  const sentTo = others.length ? ` ואל ${others.map((a) => `<span dir="ltr">${esc(a)}</span>`).join(", ")}` : "";
   return {
     to: [d.email, ...(d.attendees || [])],
     cc: [settings.officeEmail, ...(settings.calendar.invitees || []), settings.calendar.user],
     replyTo: settings.officeEmail,
     subject: `נקבעה פגישת פתיחה · ${settings.discovery.title}`,
-    html: layout({
-      title: "הפגישה נקבעה",
-      body: `<p>פגישת הפתיחה של ${esc(settings.discovery.title)} נקבעה ל<strong>${esc(when)}</strong> (${d.meeting_minutes} דקות).</p>
-${d.meet_url ? `<p>קישור לפגישה: <a href="${esc(d.meet_url)}">${esc(d.meet_url)}</a></p>` : ""}
-<p>${calendarInvited ? "זימון ליומן נשלח לכל המשתתפים." : "מצורף זימון ליומן (קובץ ics). פתחו אותו כדי להוסיף את הפגישה ליומן."}${d.paid_via === "grow" ? " חשבונית מס קבלה על התשלום נשלחת אליכם במייל נפרד." : ""}</p>
-${discoveryPrep(d)}`,
+    html: passMail({
+      preheader: `הפגישה נקבעה ל${when}`,
+      title: `הפגישה נקבעה. נתראה ב-${esc(dateOnly)}`,
+      text: `${d.paid_at ? "התשלום התקבל. " : ""}${calendarInvited ? `זימון ליומן${d.meet_url ? " עם קישור ל-Meet" : ""} נשלח אליכם${sentTo}.` : "מצורף זימון ליומן (קובץ ics). פתחו אותו כדי להוסיף את הפגישה ליומן."}`,
+      footer: footerOf(settings),
+      rows: passRow([["מועד", esc(day)], ["שעה", `<span dir="ltr">${esc(time)}</span>`], ["משך", `${d.meeting_minutes} דקות`], ["שער", "Google Meet"], ["עם", "מומחה תוכנה"], ["זימון", calendarInvited ? "נשלח ליומן" : "מצורף למייל"]], paidStub)
+        + (d.meet_url ? `<tr><td style="background:${PV.tk};padding:0 24px 16px;color:${PV.ink};font-size:14.5px;">קישור לפגישה: <a href="${esc(d.meet_url)}" dir="ltr" style="color:${PV.ink};font-weight:800;">${esc(String(d.meet_url).replace(/^https?:\/\//, ""))}</a></td></tr>` : "")
+        + `<tr><td style="background:${PV.tk};padding:20px 24px 6px;border-top:2px dashed ${PV.line};"><div style="font-size:21px;font-weight:900;color:${PV.ink};">עד הפגישה</div>${tbl(prepRows)}</td></tr>
+<tr><td style="background:${PV.tk};padding:10px 24px 26px;border-radius:0 0 18px 18px;">${team.length ? `<div style="font-size:17px;font-weight:900;color:${PV.ink};margin-bottom:10px;">הצוות שלכם</div>${tbl(`<tr>${teamCells}</tr>`)}` : ""}</td></tr>`,
     }),
   };
 }
