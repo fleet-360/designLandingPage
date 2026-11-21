@@ -530,6 +530,10 @@ function Schedule({ token, d, paying, onBack, onChange, onHeld, onBooked, onPaid
   const [busy, setBusy] = useState(false);
   const panel = useRef(null);
   const top = useRef(null);
+  const go = useRef(null);
+  // the button under the times is off screen on a phone (and below the fold on a laptop): once a time is
+  // picked, a bar with the same button comes up from the bottom until the real one scrolls into view
+  const [goSeen, setGoSeen] = useState(true);
   const payNext = d.showPayment && !d.paid;
 
   const loadSlots = useCallback(() => {
@@ -544,6 +548,15 @@ function Schedule({ token, d, paying, onBack, onChange, onHeld, onBooked, onPaid
   useEffect(loadSlots, [loadSlots]);
   // on a phone the payment form is below the times: bring it into view once the time is held
   useEffect(() => { if (paying) panel.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }, [paying]);
+  useEffect(() => {
+    const el = go.current;
+    if (!el || typeof IntersectionObserver === "undefined") return undefined;
+    const io = new IntersectionObserver(([e]) => setGoSeen(e.isIntersecting), { threshold: 0.6 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [paying]);
+  // an error shows in the panel: bring it into view when the bottom bar was used
+  const fail = (msg) => { setError(msg); panel.current?.scrollIntoView({ behavior: "smooth", block: "start" }); };
 
   const addAttendee = () => {
     const e = email.trim().toLowerCase();
@@ -557,9 +570,9 @@ function Schedule({ token, d, paying, onBack, onChange, onHeld, onBooked, onPaid
   const book = async () => {
     setError("");
     const pending = email.trim();
-    if (pending && !isEmail(pending)) return setError("כתובת האימייל של המשתתף לא תקינה");
+    if (pending && !isEmail(pending)) return fail("כתובת האימייל של המשתתף לא תקינה");
     const list = pending && !attendees.includes(pending.toLowerCase()) ? [...attendees, pending.toLowerCase()] : attendees;
-    if (!d.email && !list.length) return setError("יש להזין אימייל לקבלת הזימון");
+    if (!d.email && !list.length) return fail("יש להזין אימייל לקבלת הזימון");
     setBusy(true);
     try {
       const v = await api(`sales/discovery-public?token=${encodeURIComponent(token)}`, { method: "POST", body: { action: "hold", start: pick.start, attendees: list } });
@@ -569,8 +582,8 @@ function Schedule({ token, d, paying, onBack, onChange, onHeld, onBooked, onPaid
       if (v.booked) onBooked(v); else onHeld(v);
     } catch (e) {
       setBusy(false);
-      setError(errorText(e));
-      if (e.code === "slot_taken") { setPick(null); loadSlots(); top.current?.scrollIntoView({ behavior: "smooth" }); }
+      if (e.code === "slot_taken") { setError(errorText(e)); setPick(null); loadSlots(); top.current?.scrollIntoView({ behavior: "smooth" }); }
+      else fail(errorText(e));
     }
   };
 
@@ -668,7 +681,7 @@ function Schedule({ token, d, paying, onBack, onChange, onHeld, onBooked, onPaid
               {payNext && <Receipt d={d} />}
               <div className="frm">
                 {error && <p className="err" role="alert">{error}</p>}
-                <button type="button" className="btn" disabled={!pick || busy} onClick={book} style={{ width: "100%", marginTop: 4, fontSize: 19 }}>{action}</button>
+                <button ref={go} type="button" className="btn" disabled={!pick || busy} onClick={book} style={{ width: "100%", marginTop: 4, fontSize: 19 }}>{action}</button>
                 <p className="fine">{payNext ? "המועד נשמר לכם לחצי שעה בזמן התשלום. הזימון ליומן יוצא רק אחרי אישור התשלום." : "הזימון ליומן נשלח מיד אחרי הבחירה."}</p>
               </div>
             </>
@@ -676,6 +689,16 @@ function Schedule({ token, d, paying, onBack, onChange, onHeld, onBooked, onPaid
         </div>
       </div>
       <p className="foot">{d.company.name}{d.company.phone && <> · <Num>{d.company.phone}</Num></>}</p>
+      {pick && !paying && <div className="pdock-space" aria-hidden="true" />}
+      <div className={`pdock${pick && !paying && !goSeen ? " up" : ""}`} aria-hidden={!(pick && !paying && !goSeen)}>
+        <div className="wrap">
+          <div className="pk"><small>המועד שבחרתם</small><b>{pick && <>{dayLabel(pick.start)} · <Num>{timeLabel(pick.start)}</Num></>}</b></div>
+          <button type="button" className="btn" disabled={!pick || busy} onClick={book} tabIndex={pick && !paying && !goSeen ? 0 : -1}>
+            {payNext ? <CreditCard className="h-5 w-5" aria-hidden="true" /> : <CalendarCheck className="h-5 w-5" aria-hidden="true" />}
+            {busy ? "רגע..." : payNext ? "המשך לתשלום" : "קביעת הפגישה"}
+          </button>
+        </div>
+      </div>
       {children}
     </Page>
   );
