@@ -273,10 +273,7 @@ function dealStub(d) {
 <div style="font-size:13px;color:${PV.muted};font-weight:700;">+ מע"מ</div>`;
 }
 
-const GETS = [["דמו עובד של המערכת", "לוחצים, רואים ומבינים איך המערכת שלכם תעבוד, עוד לפני שמתחילים לפתח."],
-  ["פגישת איפיון עם מומחה תוכנה", "עוברים יחד על התהליך שלכם ומחליטים מה המערכת צריכה לעשות. אפשר לצרף אנשי מקצוע מהצוות."],
-  ["מסמך אפיון מלא למערכת מלאה", "כל מה שהמערכת המלאה צריכה לעשות: מסכים, תהליכים, משתמשים ונתונים. מסמך שאפשר לפתח לפיו."],
-  ["פגישת הגשת הדמו", "מציגים לכם את הדמו, מסבירים איך הוא עובד ומה הפתרון שאנחנו ממליצים עליו להמשך הפיתוח."]];
+const GETS = ["פגישת איפיון עם מומחה תוכנה", "דמו עובד של המערכת שלכם", "מסמך אפיון מלא", "פגישת הצגת הדמו"];
 
 // how a payment sales entered by hand was made
 export const PAY_METHOD_LABELS = { transfer: "העברה בנקאית", bit: "ביט / פייבוקס", card: "כרטיס אשראי (מחוץ לעמוד)", check: "שיק", cash: "מזומן", other: "אחר" };
@@ -286,15 +283,13 @@ export function discoveryInviteMail(d, settings, url) {
   const meeting = d.meeting_start && d.booking_status !== "held";
   const book = d.show_booking !== false && !meeting;
   const pay = d.show_payment !== false && !d.paid_at;
-  const ask = book && pay ? "בוחרים מועד בעמוד, התשלום בסוף. הזימון ליומן יוצא רק אחרי אישור התשלום."
-    : book ? "בוחרים מועד בעמוד, והזימון ליומן יוצא מיד."
-      : pay ? "התשלום בכרטיס אשראי, בעמוד עצמו." : "";
+  const ask = book && pay ? "בוחרים מועד ומשלמים בעמוד." : book ? "בוחרים מועד בעמוד." : pay ? "התשלום בכרטיס אשראי בעמוד." : "";
   const manual = d.booking_status === "manual" && d.meeting_start;
   const p = dealOf(d);
   const fields = [["על שם", esc(d.client_name)], ...(d.company_name ? [["חברה", esc(d.company_name)]] : []), ["עם", "מומחה תוכנה"],
     ["שער", "Google Meet"], ["משך", `${d.meeting_minutes} דקות`], ["מועד", meeting ? esc(israelDateTime(d.meeting_start)) : "בוחרים בעמוד"]];
   const label = book ? "שריינו את הדמו שלכם" : pay ? "לפרטים ולתשלום" : "לפרטי הספרינט";
-  const gets = GETS.map(([b, t]) => `<tr><td width="30" style="vertical-align:top;padding:8px 0;color:${PV.acc};font-size:17px;font-weight:900;">✓</td><td style="padding:8px 0;font-size:15.5px;line-height:1.55;color:${PV.ink};"><b>${b}</b>. ${t}</td></tr>`).join("");
+  const gets = GETS.map((b) => `<tr><td width="28" style="vertical-align:top;padding:5px 0;color:${PV.acc};font-size:17px;font-weight:900;">✓</td><td style="padding:5px 0;font-size:15.5px;line-height:1.5;font-weight:700;color:${PV.ink};">${b}</td></tr>`).join("");
   return {
     to: [d.email],
     replyTo: settings.officeEmail,
@@ -302,12 +297,12 @@ export function discoveryInviteMail(d, settings, url) {
     html: passMail({
       preheader: p.list ? `הטבה: ${nis(p.price)} במקום ${nis(p.list)}. דמו עובד של המערכת שלכם.` : "רואים את המערכת לפני שמפתחים אותה",
       title: `${esc(d.client_name)}, רואים את המערכת לפני שמפתחים אותה`,
-      text: `יושבים עם מומחה תוכנה, משרטטים יחד את המסכים והתהליכים, ומקבלים דמו עובד של המערכת שלכם.${manual ? `<br><strong>פגישת הפתיחה נקבעה ל${esc(israelDateTime(d.meeting_start))}</strong> (${d.meeting_minutes} דקות).` : ""}`,
+      text: `פגישה אחת עם מומחה תוכנה, ובסופה דמו עובד של המערכת שלכם.${manual ? `<br><strong>פגישת הפתיחה נקבעה ל${esc(israelDateTime(d.meeting_start))}</strong> (${d.meeting_minutes} דקות).` : ""}`,
       footer: footerOf(settings),
       rows: benefitRow(d) + clientsRow() + passRow(fields, dealStub(d))
         + `<tr><td style="background:${PV.tk};padding:4px 24px 6px;border-top:2px dashed ${PV.line};">${tbl(gets, "margin-top:8px;")}</td></tr>
-<tr><td style="background:${PV.tk};padding:10px 24px 26px;color:${PV.ink};border-radius:0 0 18px 18px;"><div style="font-size:21px;font-weight:900;">כל זה ב-${nis(p.price)} בלבד <span style="font-size:13px;font-weight:700;color:${PV.muted};">+ מע"מ</span></div>
-<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:16px;"><tr><td style="background:${PV.acc};border-radius:14px;"><a href="${esc(url)}" style="display:inline-block;padding:16px 30px;font-size:19px;font-weight:900;color:#FFFFFF;text-decoration:none;">${label}</a></td></tr></table>
+<tr><td style="background:${PV.tk};padding:10px 24px 26px;color:${PV.ink};border-radius:0 0 18px 18px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:6px;"><tr><td style="background:${PV.acc};border-radius:14px;"><a href="${esc(url)}" style="display:inline-block;padding:16px 30px;font-size:19px;font-weight:900;color:#FFFFFF;text-decoration:none;">${label}</a></td></tr></table>
 ${ask ? `<div style="font-size:14px;color:${PV.muted};margin-top:12px;font-weight:600;">${ask}</div>` : ""}</td></tr>`,
     }),
   };
