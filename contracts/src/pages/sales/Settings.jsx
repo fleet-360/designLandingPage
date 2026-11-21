@@ -7,9 +7,11 @@ import { Card, FieldRow, LoadError, PageHeader, Spinner, run, useApi } from "./A
 
 const DAYS = ["א'", "ב'", "ג'", "ד'", "ה'", "ו'", "ש'"];
 
+// deep set by path; keeps arrays as arrays ("hourlyRates.0.rate")
 const setIn = (obj, path, v) => {
   const [k, ...rest] = path.split(".");
-  return { ...obj, [k]: rest.length ? setIn(obj[k] || {}, rest.join("."), v) : v };
+  const val = rest.length ? setIn(obj?.[k] || {}, rest.join("."), v) : v;
+  return Array.isArray(obj) ? Object.assign([...obj], { [k]: val }) : { ...obj, [k]: val };
 };
 
 export default function SalesSettings() {
@@ -27,7 +29,8 @@ export default function SalesSettings() {
 
   const save = async () => {
     setBusy(true);
-    const clean = setIn(s, "service.includes", (s.service?.includes || []).map((y) => y.trim()).filter(Boolean));
+    let clean = setIn(s, "service.includes", (s.service?.includes || []).map((y) => y.trim()).filter(Boolean));
+    clean = setIn(clean, "hourlyRates", (s.hourlyRates || []).map((r) => ({ role: String(r.role || "").trim(), rate: Number(r.rate) })).filter((r) => r.role && r.rate > 0));
     const r = await run(() => api("sales/settings", { method: "PUT", body: { settings: clean } }), "ההגדרות נשמרו");
     if (r) setS(r.settings);
     setBusy(false);
@@ -95,6 +98,29 @@ export default function SalesSettings() {
         </div>
       </Card>
 
+      <Card title="איש קשר מטעמנו (נספח א' בכל עסקה)">
+        <div className="grid gap-3 sm:grid-cols-4">
+          <Input {...bind("companyContact.name")} placeholder="שם" />
+          <Input {...bind("companyContact.role")} placeholder="תפקיד" />
+          <Input {...bind("companyContact.phone")} placeholder="טלפון" dir="ltr" />
+          <Input {...bind("companyContact.email")} placeholder="אימייל" dir="ltr" />
+        </div>
+      </Card>
+
+      <Card title='תעריפי שעה (לפני מע"מ)'>
+        <p className="mb-2 text-sm text-muted-foreground">ברירת המחדל לכל עסקה חדשה. איש המכירות יכול לשנות בעסקה.</p>
+        <div className="space-y-2">
+          {(s.hourlyRates || []).map((r, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <Input {...bind(`hourlyRates.${i}.role`)} placeholder="תפקיד" className="w-40" />
+              <Input {...bind(`hourlyRates.${i}.rate`)} placeholder="₪ לשעה" inputMode="decimal" dir="ltr" className="w-28" />
+              <Button type="button" size="sm" variant="ghost" onClick={() => setS((x) => setIn(x, "hourlyRates", x.hourlyRates.filter((_, j) => j !== i)))}>הסרה</Button>
+            </div>
+          ))}
+          <Button type="button" size="sm" variant="outline" onClick={() => setS((x) => setIn(x, "hourlyRates", [...(x.hourlyRates || []), { role: "", rate: "" }]))}>הוספת תפקיד</Button>
+        </div>
+      </Card>
+
       <Card title="בקשת איפיון">
         <div className="grid gap-3 sm:grid-cols-3">
           <FieldRow label="כותרת"><Input {...bind("discovery.title")} /></FieldRow>
@@ -128,8 +154,8 @@ export default function SalesSettings() {
         </div>
       </Card>
 
-      <Card title="השירות החודשי כולל">
-        <FieldRow label="רשימה, שורה לכל רכיב">
+      <Card title="אפשרויות לשירות החודשי">
+        <FieldRow label="שורה לכל רכיב" hint="בכל עסקה איש המכירות מסמן מתוך הרשימה מה כלול">
           <textarea value={(s.service?.includes || []).join("\n")} onChange={(e) => setS((x) => setIn(x, "service.includes", e.target.value.split("\n")))} rows={5}
             className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
         </FieldRow>

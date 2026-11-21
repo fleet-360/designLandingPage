@@ -169,20 +169,15 @@ export async function generateDealPdf(snapshot) {
   }
   w.text(`תקופת בדיקה: ${ap.testPeriodDays} ימי עסקים.`);
   w.text("ד. תשלום (סעיפים 5 ו-9 להסכם)", { size: 11, bold: true });
-  if (ap.hourlyRate) w.text(`תעריף שעה – לחישוב שווי העבודה בביטול (סעיף 9.2) ולתמחור שינויים (סעיף 8): ${nis(ap.hourlyRate)}, לא כולל מע"מ.`);
+  const rates = ap.hourlyRates || (ap.hourlyRate ? [{ role: "", rate: ap.hourlyRate }] : []);
+  if (rates.length) w.text(`תעריפי שעה – לחישוב שווי העבודה בביטול (סעיף 9.2) ולתמחור שינויים (סעיף 8), לא כולל מע"מ: ${rates.map((r) => `${r.role ? `${r.role} ` : ""}${nis(r.rate)}`).join(" · ")}`);
   w.text(`אמצעי תשלום היתרה: ${ap.balanceMethod === "checks" ? "שיקים דחויים" : "העברות בנקאיות"}.${ap.bankAccount && ap.balanceMethod !== "checks" ? ` חשבון הבנק של החברה: ${ap.bankAccount}.` : ""}`);
   if (order.service?.enabled) {
     w.text("ה. שירות חודשי (סעיף 6 להסכם)", { size: 11, bold: true });
-    if (ap.serviceComponents.length) w.text(`רכיבי השירות: ${ap.serviceComponents.join(", ")}${ap.backupFrequency ? ` (גיבויים: ${ap.backupFrequency})` : ""}.`);
-    if (ap.hostingDependent) w.text(`יכולות התלויות באירוח או ברישיון חיצוני: ${ap.hostingDependent}`);
-    if (ap.liabilityCapIncluded) w.text(`תקרת אחריות בחודשים הכלולים (סעיף 12.3): ${nis(ap.liabilityCapIncluded)}`);
+    if (ap.serviceComponents?.length) w.text(`רכיבי השירות: ${ap.serviceComponents.join(", ")}.`);
+    if (ap.liabilityCapIncluded) w.text(`תקרת אחריות עד תחילת החיוב החודשי (סעיף 12.3): ${nis(ap.liabilityCapIncluded)}`);
   }
-  if (ap.thirdParty.length) {
-    w.text("ו. עלויות צד שלישי (סעיף 5.8 להסכם)", { size: 11, bold: true });
-    w.table([150, 110, 130, 113], ap.thirdParty.map((t) => [t.component, t.payer === "company" ? "החברה, בחיוב הלקוח" : "הלקוח ישירות", t.nature, t.approval]),
-      { head: ["רכיב / ספק", "מי משלם", "אופי החיוב", "אופן האישור"] });
-  }
-  w.text("ז. הפעלה, רישיונות ומידע", { size: 11, bold: true });
+  w.text("ו. הפעלה ורישיון", { size: 11, bold: true });
   w.table([200, 303], ap.operation);
   w.text("חתימת הצדדים על נספח זה מהווה אישור מחייב להזמנת העבודה, לאפיון המאושר ולתנאים המפורטים בנספח.", { color: [107, 114, 128] });
 

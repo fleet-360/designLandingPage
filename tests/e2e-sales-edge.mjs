@@ -57,18 +57,20 @@ assert.ok([a.status, b.status].includes(409));
 // clean up the meeting so later runs have the slot
 for (const d of [disc, disc2]) await api(`sales/discovery?id=${d.id}`, { method: "PATCH", body: { action: "cancel" } }).catch(() => {});
 
-step("a deal's standing-order start date moves to the billing day");
+step("a deal's charge day comes from its first charge date");
 const deal = {
   project: { name: "בדיקת קצה", summary: "בדיקה", specName: "אפיון", specVersion: "1", specDate: today, targetWeeks: 4, kickoffNeeds: "" },
   price: { amount: 10000, installments: 1, installmentDay: 1, balanceMethod: "transfer" },
-  service: { enabled: true, includedMonths: 0, periods: [{ months: null, price: 500 }] },
+  service: { enabled: true, periods: [{ months: null, price: 500 }] },
   standingOrder: { enabled: true, startDate: "2026-12-25", dayOfMonth: 1 },
-  appendix: { authorizedContact: { name: "א", role: "", phone: "", email: "a@example.com" }, companyContact: { name: "צח", role: "", phone: "", email: "" }, stages: [], hourlyRate: 350, serviceComponents: [], environment: "cloud" },
+  appendix: { stages: [] },
 };
 const client = { companyName: "קצה בע\"מ", taxId: "515555555", address: "א", signerName: "א", signerRole: "", email: "a@example.com", phone: "0500000000" };
 const created = (await api("sales/deals", { method: "POST", body: { data: deal, client } })).item;
-assert.equal(created.data.standingOrder.startDate, "2027-01-01");
-console.log("start date 25/12 with billing day 1 ->", created.data.standingOrder.startDate);
+// the charge day comes from the first charge date (PR #22)
+assert.equal(created.data.standingOrder.startDate, "2026-12-25");
+assert.equal(created.data.standingOrder.dayOfMonth, 25);
+console.log("first charge 25/12 -> charge day", created.data.standingOrder.dayOfMonth);
 await api(`sales/deals?id=${created.id}`, { method: "PATCH", body: { action: "cancel" } });
 
 step("after a long pause the next charge is next month, not tomorrow");

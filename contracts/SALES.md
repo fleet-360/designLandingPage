@@ -72,6 +72,13 @@ The site trusts Toro's calls by its IP (`api/_lib/toro.js`), the same as `/api/p
   token). If Grow gives a separate page code for it, set `PRO_ALGO_GROW_TOKEN_PAGE_CODE` in Toro.
 - **Settings screen:** bank account, the company signer's name and signature image, the accounting contact.
 
+## Agreement versions
+
+The agreement text is `api/_lib/agreement-v1.js` (from the Word file) and `agreement-v2.js` (current), which
+`tools/sales/agreement_v2_from_v1.py` builds from v1 by exact replacements, so that script is the full list of
+differences. A deal shows the current version until it is signed; the signed text is frozen in its snapshot.
+In v2, clause 6.2 names the first charge date that sales sets on the deal ("{{firstChargeDate}}").
+
 ## Database
 
 `db/migrations/004_sales.sql` (`sales.*`), `005_billing.sql` (`billing.*`) and `006_outbox_retry.sql`, run by
