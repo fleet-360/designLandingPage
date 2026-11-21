@@ -10,6 +10,7 @@ import { api, dateTime, dmy, errorText, FIELD_ERRORS, fileToDataUrl, isEmail, mo
 import { Card, FieldRow, History, Info, LinkBox, LoadError, PageHeader, Pill, Spinner, run, useApi } from "./AdminUi.jsx";
 import { Confirm } from "./Discovery.jsx";
 import SpecPagePicker from "./SpecPagePicker.jsx";
+import DealFilm from "./DealFilm.jsx";
 
 const todayIL = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Jerusalem" });
 const MAX_UPLOAD = 3 * 1024 * 1024;
@@ -473,6 +474,8 @@ export function DealDetail() {
       <Card title="הקישור ללקוח" actions={!x.status.canceled && <Button size="sm" variant="outline" onClick={() => act({ action: "send_email" }, "המייל נשלח לתור")}>שליחה במייל</Button>}>
         <LinkBox url={x.url} phone={x.client.phone} message={`היי ${x.client.signerName || ""}, מצורף הקישור להזמנת העבודה ולהסכם של ${x.data.project.name}:`} />
       </Card>
+
+      {!x.status.canceled && <DealFilm id={id} project={x.data.project.name} />}
 
       <div className="grid gap-5 md:grid-cols-2">
         <Card title="מצב">

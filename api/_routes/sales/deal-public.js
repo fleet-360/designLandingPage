@@ -50,6 +50,14 @@ async function view(d, settings, base) {
       spec: d.data.project?.specFileId ? `${base}/api/sales/deal-file?token=${d.token}&kind=spec` : null,
       signedPdf: d.signed_pdf_file_id ? `${base}/api/sales/deal-file?token=${d.token}&kind=signed` : null,
     },
+    // the demo film above the price (api/_lib/demo-film.js), once sales published it
+    // a ready video, when one was uploaded, takes the film's place
+    film: d.film?.published && (d.film.video || (d.film.script && d.film.demoFileId)) ? {
+      video: d.film.video ? `${base}/api/sales/deal-file?token=${d.token}&kind=video&v=${encodeURIComponent(d.film.video.parts[0].slice(0, 8))}` : null,
+      demo: d.film.video ? null : `${base}/api/sales/deal-file?token=${d.token}&kind=demo&v=${encodeURIComponent(d.film.demoFileId.slice(0, 8))}`,
+      logo: d.film.logoFileId ? `${base}/api/sales/deal-file?token=${d.token}&kind=logo&v=${encodeURIComponent(d.film.logoFileId.slice(0, 8))}` : null,
+      script: d.film.video ? null : d.film.script,
+    } : null,
     company: { name: settings.company.name, phone: settings.company.phone, email: settings.officeEmail },
     officeEmail: settings.officeEmail,
   };
