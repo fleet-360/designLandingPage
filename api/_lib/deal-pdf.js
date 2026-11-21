@@ -4,6 +4,8 @@
 import { jsPDF } from "jspdf";
 import { query } from "./db.js";
 import { HEBREW_RE, loadFonts, RTL_OPTIONS, rtlText } from "./sign-pdf.js";
+import { payInstructions } from "./deal.js";
+import { PAYMENT_METHODS } from "./sales-calc.js";
 import { HOURS_NOTE, insertSpec, specFile } from "./spec-pdf.js";
 
 const nis = (n) => `${Number(n).toLocaleString("en-US", { minimumFractionDigits: Number(n) % 1 ? 2 : 0, maximumFractionDigits: 2 })} ₪`;
@@ -124,11 +126,15 @@ export async function generateDealPdf(snapshot, { specBytes } = {}) {
   if (snapshot.spec) w.text(HOURS_NOTE, { size: 9.5, color: [107, 114, 128], after: 8 });
   w.text("מחיר ותנאי תשלום", { size: 12, bold: true });
   w.text(`מחיר הפרויקט: ${nis(order.price.amount)} לפני מע"מ (${nis(order.price.total)} כולל מע"מ). המחיר קבוע וסגור לתכולה שבאפיון המאושר.`);
-  w.text(`מקדמה של ${order.price.depositPercent}% משולמת בתוך 3 ימי עסקים מהאישור. היתרה משולמת בתאריכים הקבועים בטבלה, ואינם תלויים באבני דרך. אמצעי תשלום היתרה: ${order.balanceMethod === "checks" ? "שיקים דחויים" : "העברה בנקאית"}.`, { after: 6 });
-  w.table([30, 175, 100, 100, 98],
-    order.schedule.rows.map((r) => [r.n, `${r.kind === "deposit" ? `מקדמה (${order.price.depositPercent}%) · ` : ""}${dmy(r.date)}${r.dateNote ? ` · ${r.dateNote}` : ""}`, nis(r.before), nis(r.vat), nis(r.total)])
-      .concat([["", "סה\"כ", nis(order.schedule.totals.before), nis(order.schedule.totals.vat), nis(order.schedule.totals.total)]]),
-    { head: ["#", "מועד", "לפני מע\"מ", "מע\"מ", "כולל מע\"מ"] });
+  const how = payInstructions(order);
+  w.text(how
+    ? "התשלומים משולמים בתאריכים ובאמצעי התשלום הקבועים בטבלה, ואינם תלויים באבני דרך. הראשון הוא המקדמה."
+    : `מקדמה של ${order.price.depositPercent}% משולמת בתוך 3 ימי עסקים מהאישור. היתרה משולמת בתאריכים הקבועים בטבלה, ואינם תלויים באבני דרך. אמצעי תשלום היתרה: ${order.balanceMethod === "checks" ? "שיקים דחויים" : "העברה בנקאית"}.`, { after: 6 });
+  w.table([26, 145, 76, 85, 80, 91],
+    order.schedule.rows.map((r) => [r.n, `${r.kind === "deposit" ? `מקדמה (${order.price.depositPercent}%) · ` : ""}${dmy(r.date)}${r.dateNote ? ` · ${r.dateNote}` : ""}`, PAYMENT_METHODS[r.method] || "", nis(r.before), nis(r.vat), nis(r.total)])
+      .concat([["", "סה\"כ", "", nis(order.schedule.totals.before), nis(order.schedule.totals.vat), nis(order.schedule.totals.total)]]),
+    { head: ["#", "מועד", "אמצעי תשלום", "לפני מע\"מ", "מע\"מ", "כולל מע\"מ"] });
+  for (const l of how || []) w.text(l, { size: 9.5 });
   if (order.service?.enabled && order.service.rows.length) {
     w.text("שירות חודשי", { size: 12, bold: true });
     w.table([170, 170, 163], order.service.rows.map((r) => [r.label, r.when, r.price ? `${nis(r.price)} + מע"מ (${nis(r.priceWithVat)})` : "כלול"]), { head: ["תקופה", "מתי", "לחודש"] });
@@ -174,7 +180,8 @@ export async function generateDealPdf(snapshot, { specBytes } = {}) {
   w.text("ד. תשלום (סעיפים 5 ו-9 להסכם)", { size: 11, bold: true });
   const rates = ap.hourlyRates || (ap.hourlyRate ? [{ role: "", rate: ap.hourlyRate }] : []);
   if (rates.length) w.text(`תעריפי שעה – לחישוב שווי העבודה בביטול (סעיף 9.2) ולתמחור שינויים (סעיף 8), לא כולל מע"מ: ${rates.map((r) => `${r.role ? `${r.role} ` : ""}${nis(r.rate)}`).join(" · ")}`);
-  w.text(`אמצעי תשלום היתרה: ${ap.balanceMethod === "checks" ? "שיקים דחויים" : "העברות בנקאיות"}.${ap.bankAccount && ap.balanceMethod !== "checks" ? ` חשבון הבנק של החברה: ${ap.bankAccount}.` : ""}`);
+  if (how) w.text("התשלומים, מועדיהם ואמצעי התשלום של כל אחד: לפי לוח התשלומים שבהזמנת העבודה.");
+  else w.text(`אמצעי תשלום היתרה: ${ap.balanceMethod === "checks" ? "שיקים דחויים" : "העברות בנקאיות"}.${ap.bankAccount && ap.balanceMethod !== "checks" ? ` חשבון הבנק של החברה: ${ap.bankAccount}.` : ""}`);
   if (order.service?.enabled) {
     w.text("ה. שירות חודשי (סעיף 6 להסכם)", { size: 11, bold: true });
     if (ap.serviceComponents?.length) w.text(`רכיבי השירות: ${ap.serviceComponents.join(", ")}.`);
@@ -192,7 +199,7 @@ export async function generateDealPdf(snapshot, { specBytes } = {}) {
   w.text(`החברה: ${order.company.name}${cs.name ? ` · ${cs.name}${cs.role ? `, ${cs.role}` : ""}` : ""}`, { bold: true });
   if (snapshot.companySignature) w.image(snapshot.companySignature, 150, 52);
   w.text(`תאריך: ${dmy(String(signature.at).slice(0, 10))}`, { color: [107, 114, 128], after: 10 });
-  w.text(`הלקוח: ${c.companyName || ""} · ${signature.name}${signature.role ? `, ${signature.role}` : ""}`, { bold: true });
+  w.text(`הלקוח: ${c.companyName || ""} · ${signature.name}${signature.role ? `, ${signature.role}` : ""}${signature.idNumber ? ` · ת.ז ${signature.idNumber}` : ""}`, { bold: true });
   w.image(await fileDataUrl(signature.fileId), 180, 63);
   w.text(`תאריך: ${dmy(String(signature.at).slice(0, 10))}`, { color: [107, 114, 128] });
 
@@ -218,7 +225,7 @@ export async function generateDealPdf(snapshot, { specBytes } = {}) {
   const rec = (title, x) => {
     w.text(title, { size: 11, bold: true });
     w.table([170, 333], [
-      ["שם", x.name || "—"], ["תפקיד", x.role || "—"], ["אימייל", x.email || "—"],
+      ["שם", x.name || "—"], ["תפקיד", x.role || "—"], ...(x.idNumber ? [["ת.ז", x.idNumber]] : []), ["אימייל", x.email || "—"],
       ["מועד (שעון ישראל)", ilTime(x.at)], ["מועד (UTC)", new Date(x.at).toISOString()],
       ["כתובת IP", x.ip || "—"], ["דפדפן", x.userAgent || "—"],
     ], { size: 8.5 });

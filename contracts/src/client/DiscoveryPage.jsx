@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { CalendarCheck, CalendarDays, CalendarPlus, Check, ChevronRight, Clock, CreditCard, FileText, Gift, Lock, MousePointerClick, Phone, PlaneTakeoff, Plus, Presentation, Ticket, UserRoundCheck, Video, X } from "lucide-react";
-import { api, dayLabel, errorText, FIELD_ERRORS, fullNameOk, isEmail, meetingTime, mobileIL, nis, taxIdIL, timeLabel } from "@/sales/lib";
+import { api, dayLabel, errorText, FIELD_ERRORS, fullNameOk, getWithRetry, isEmail, meetingTime, mobileIL, nis, taxIdIL, timeLabel } from "@/sales/lib";
 import { createPayment, openWidget, warmUp } from "@/sales/grow";
-import { Loading, Notice, Shell } from "./ui.jsx";
+import { Loading, LoadFailed, Notice, Shell } from "./ui.jsx";
 import { DEMO_MOCK, HOLOGRAM_SVG } from "./discoveryArt.js";
 import "./discovery.css";
 
@@ -37,13 +37,15 @@ export default function DiscoveryPage({ token }) {
   // Sales may take either part off the page: a meeting time they set is shown, and a payment made outside
   // the page is not asked for.
   const [stage, setStage] = useState("view"); // view | schedule | pay | waiting | done
+  // d: undefined while loading, null when the link is not active (404), "failed" when the page could not load.
+  // A failed reload once the page is up (the payment polling) keeps what is on screen.
   const load = useCallback(async () => {
     try {
-      const v = await api(`sales/discovery-public?token=${encodeURIComponent(token)}`);
+      const v = await getWithRetry(`sales/discovery-public?token=${encodeURIComponent(token)}`);
       setD(v);
       return v;
-    } catch {
-      setD(null);
+    } catch (err) {
+      setD((cur) => (err.status === 404 ? null : cur && cur !== "failed" ? cur : "failed"));
       return null;
     }
   }, [token]);
@@ -63,6 +65,7 @@ export default function DiscoveryPage({ token }) {
 
   if (d === undefined) return <Shell><Loading /></Shell>;
   if (d === null) return <Shell><Notice title="הקישור אינו פעיל" text="ייתכן שההצעה בוטלה או שהקישור הועתק חלקית. נשמח לשלוח קישור חדש." /></Shell>;
+  if (d === "failed") return <Shell><LoadFailed /></Shell>;
 
   if (stage === "done") return <Booked d={d} />;
   const back = d.showBooking ? "schedule" : "view";

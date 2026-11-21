@@ -1,6 +1,9 @@
 // Emails of the sales system (queued with sales.js sendMail, sent by Toro from info@pro-algo.com).
 // Hebrew, RTL, inline styles (mail clients ignore <style>). Every value from a person is escaped.
 
+import { payInstructions } from "./deal.js";
+import { PAYMENT_METHODS } from "./sales-calc.js";
+
 // the colors of the client pages: a mint header, tomato buttons, cream around, coffee ink
 const BRAND = "#9ED9C3";
 const ACCENT = "#E0432F";
@@ -59,9 +62,11 @@ export function dealInviteMail(deal, settings, url) {
 
 // the payment schedule table and how to pay it, shared by the accounting email and the order confirmation
 const scheduleRows = (s) => [["<strong>#</strong>", "<strong>מועד</strong>", "<strong>לפני מע\"מ</strong>", "<strong>כולל מע\"מ</strong>"],
-  ...s.rows.map((r) => [r.n, `${r.kind === "deposit" ? "מקדמה · " : ""}${ddmmyyyy(r.date)}${r.dateNote ? `<br><span style="color:#6B7280;font-size:13px">${esc(r.dateNote)}</span>` : ""}`, nis(r.before), nis(r.total)]),
+  ...s.rows.map((r) => [r.n, `${r.kind === "deposit" ? "מקדמה · " : ""}${ddmmyyyy(r.date)}${r.method ? ` · ${esc(PAYMENT_METHODS[r.method] || "")}` : ""}${r.dateNote ? `<br><span style="color:#6B7280;font-size:13px">${esc(r.dateNote)}</span>` : ""}`, nis(r.before), nis(r.total)]),
   ["", "<strong>סה\"כ</strong>", `<strong>${nis(s.totals.before)}</strong>`, `<strong>${nis(s.totals.total)}</strong>`]];
 function howToPay(order, settings, number) {
+  const lines = payInstructions(order);
+  if (lines) return lines.map((l) => { const [head, ...rest] = l.split(": "); return `<p><strong>${esc(head)}:</strong> ${esc(rest.join(": "))}</p>`; }).join("");
   const b = settings.bank;
   return order.balanceMethod === "checks"
     ? `<p><strong>שיקים דחויים:</strong> לפקודת ${esc(settings.checks.payee)}, שיק לכל תשלום לפי הטבלה. השיקים ייאספו בתוך ${esc(settings.checks.pickupDays)} ימי עסקים מהחתימה; נתאם איתכם את האיסוף.</p>`

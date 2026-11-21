@@ -49,6 +49,16 @@ export function Notice({ title, text, children }) {
   );
 }
 
+// The page did not load and the link is not the reason (no network, a server error): offer to load it again.
+export function LoadFailed() {
+  return (
+    <Notice title="העמוד לא נטען" text="כנראה תקלה רגעית בחיבור. נסו לטעון את העמוד שוב.">
+      <button type="button" onClick={() => window.location.reload()}
+        className="mt-6 rounded-lg bg-primary px-5 py-2.5 font-semibold text-primary-foreground">טעינה מחדש</button>
+    </Notice>
+  );
+}
+
 export function Section({ title, children, className = "" }) {
   return (
     <section className={`pa-card p-5 sm:p-7 ${className}`}>
@@ -94,8 +104,13 @@ export function PriceCard({ price }) {
   );
 }
 
+export const METHOD_NAMES = { transfer: "העברה בנקאית", check: "שיק", card: "כרטיס אשראי" };
+
 export function ScheduleTable({ schedule, depositPercent }) {
   const label = (r) => (r.kind === "deposit" ? `מקדמה ${depositPercent}%` : `תשלום ${r.n - 1}`);
+  // deals made before each payment had its own method: the deposit's date was "by", 3 business days on
+  const when = (r) => (r.kind === "deposit" && !r.method ? `עד ${dmy(r.date)}` : dmy(r.date));
+  const methods = schedule.rows.some((r) => r.method);
   return (
     <div>
       {/* phone: stacked cards */}
@@ -107,7 +122,7 @@ export function ScheduleTable({ schedule, depositPercent }) {
               <span className="font-bold pa-num">{nis(r.total)}</span>
             </div>
             <div className="mt-1 flex items-center justify-between text-sm text-muted-foreground">
-              <span>{r.kind === "deposit" ? `עד ${dmy(r.date)}` : dmy(r.date)}</span>
+              <span>{when(r)}{r.method && ` · ${METHOD_NAMES[r.method]}`}</span>
               <span><span className="pa-num">{nis(r.before)}</span> + מע"מ</span>
             </div>
             {r.dateNote && <p className="mt-1 text-xs text-muted-foreground">{r.dateNote}</p>}
@@ -123,6 +138,7 @@ export function ScheduleTable({ schedule, depositPercent }) {
           <tr className="border-b border-border text-muted-foreground">
             <th className="py-2 text-start font-medium">#</th>
             <th className="py-2 text-start font-medium">מועד</th>
+            {methods && <th className="py-2 text-start font-medium">אמצעי תשלום</th>}
             <th className="py-2 text-start font-medium">לפני מע"מ</th>
             <th className="py-2 text-start font-medium">כולל מע"מ</th>
           </tr>
@@ -131,13 +147,14 @@ export function ScheduleTable({ schedule, depositPercent }) {
           {schedule.rows.map((r) => (
             <tr key={r.n} className="border-b border-border/70">
               <td className="py-2.5">{label(r)}</td>
-              <td className="py-2.5">{r.kind === "deposit" ? `עד ${dmy(r.date)}` : dmy(r.date)}{r.dateNote && <div className="text-xs text-muted-foreground">{r.dateNote}</div>}</td>
+              <td className="py-2.5">{when(r)}{r.dateNote && <div className="text-xs text-muted-foreground">{r.dateNote}</div>}</td>
+              {methods && <td className="py-2.5">{METHOD_NAMES[r.method] || ""}</td>}
               <td className="py-2.5 pa-num">{nis(r.before)}</td>
               <td className="py-2.5 font-semibold pa-num">{nis(r.total)}</td>
             </tr>
           ))}
           <tr className="font-bold">
-            <td className="py-2.5" colSpan={2}>סה"כ</td>
+            <td className="py-2.5" colSpan={methods ? 3 : 2}>סה"כ</td>
             <td className="py-2.5 pa-num">{nis(schedule.totals.before)}</td>
             <td className="py-2.5 pa-num">{nis(schedule.totals.total)}</td>
           </tr>

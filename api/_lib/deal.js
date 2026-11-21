@@ -5,12 +5,17 @@
 import { createHash } from "node:crypto";
 import { AGREEMENT as AGREEMENT_V1 } from "./agreement-v1.js";
 import { AGREEMENT as AGREEMENT_V2 } from "./agreement-v2.js";
-import { chargeDayOf, israelDate, paymentSchedule, servicePeriods, withVat } from "./sales-calc.js";
+import { AGREEMENT as AGREEMENT_V3 } from "./agreement-v3.js";
+import { chargeDayOf, israelDate, PAYMENT_METHODS, paymentSchedule, servicePeriods, withVat } from "./sales-calc.js";
 import { HttpError } from "./http.js";
 import { str } from "./sales.js";
 
-export const AGREEMENTS = { v1: AGREEMENT_V1, v2: AGREEMENT_V2 };
-export const CURRENT_AGREEMENT = "v2";
+export const AGREEMENTS = { v1: AGREEMENT_V1, v2: AGREEMENT_V2, v3: AGREEMENT_V3 };
+export const CURRENT_AGREEMENT = "v3";
+
+// v3 describes payments set one by one (date, amount, method each). Deals made before that keep the
+// deposit % and equal monthly installments, which v2 describes.
+export const agreementVersionFor = (deal) => (deal.data?.price?.payments?.length ? CURRENT_AGREEMENT : "v2");
 
 const num = (v, d = 0) => (Number.isFinite(Number(v)) ? Number(v) : d);
 const contact = (c = {}) => ({ name: str(c.name, 100), role: str(c.role, 100), phone: str(c.phone, 30), email: str(c.email, 160) });
@@ -47,6 +52,17 @@ export function cleanDealData(b, settings) {
       installments: Math.min(36, Math.max(1, Math.trunc(num(pr.installments, 1)))),
       installmentDay: Math.min(28, Math.max(1, Math.trunc(num(pr.installmentDay, 1)))),
       balanceMethod: pr.balanceMethod === "checks" ? "checks" : "transfer",
+      // every payment with its exact date, amount (before VAT) and method; the first is the deposit.
+      // When set, it replaces the formula above (kept for deals made before it).
+      ...(Array.isArray(pr.payments) && {
+        payments: pr.payments.slice(0, 36).map((x) => ({
+          date: /^\d{4}-\d{2}-\d{2}$/.test(String(x?.date || "")) ? x.date : "",
+          amount: Math.round(num(x?.amount) * 100) / 100,
+          method: PAYMENT_METHODS[x?.method] ? x.method : "",
+        })),
+        // checks: the day a courier collects them (optional)
+        checksPickupDate: /^\d{4}-\d{2}-\d{2}$/.test(String(pr.checksPickupDate || "")) ? pr.checksPickupDate : "",
+      }),
     },
     service: {
       enabled: sv.enabled !== false,
@@ -79,6 +95,16 @@ export function cleanDealData(b, settings) {
   };
   if (!data.project.name) throw new HttpError(400, "bad_project_name");
   if (!(data.price.amount > 0)) throw new HttpError(400, "bad_price");
+  const pays = data.price.payments;
+  if (pays) {
+    if (!pays.length) throw new HttpError(400, "bad_payments");
+    if (pays.some((x) => !x.date)) throw new HttpError(400, "bad_payment_date");
+    if (pays.some((x) => !(x.amount > 0))) throw new HttpError(400, "bad_payment_amount");
+    if (pays.some((x) => !x.method)) throw new HttpError(400, "bad_payment_method");
+    const sum = pays.reduce((a, x) => a + Math.round(x.amount * 100), 0);
+    if (sum !== Math.round(data.price.amount * 100)) throw new HttpError(400, "bad_payments_sum");
+    if (!pays.some((x) => x.method === "check")) data.price.checksPickupDate = "";
+  }
   if (data.service.enabled && !data.service.periods.length) throw new HttpError(400, "bad_service_periods");
   // the agreement (clause 6.2) names the date the monthly charge starts
   if (data.service.enabled && !data.standingOrder.startDate) throw new HttpError(400, "bad_first_charge_date");
@@ -107,16 +133,34 @@ export function buildOrder(deal, settings, from = israelDate()) {
   const schedule = paymentSchedule({
     price: d.price.amount, vatRate: d.price.vatRate, depositPercent: d.price.depositPercent,
     installments: d.price.installments, installmentDay: d.price.installmentDay, balanceMethod: d.price.balanceMethod,
+    payments: d.price.payments,
   }, from);
+  // with payments set one by one, the deposit's share is what its amount comes to
+  const depositPercent = d.price.payments?.length && d.price.amount > 0
+    ? Math.round((schedule.rows[0].before / d.price.amount) * 1000) / 10
+    : d.price.depositPercent;
+  const methods = new Set(schedule.rows.map((r) => r.method));
+  const checks = schedule.rows.filter((r) => r.method === "check");
   return {
     number: deal.number,
     date: from,
     company: settings.company,
     client: deal.client,
     project: d.project,
-    price: { amount: d.price.amount, vatRate: d.price.vatRate, total: withVat(d.price.amount, d.price.vatRate), depositPercent: d.price.depositPercent },
+    price: { amount: d.price.amount, vatRate: d.price.vatRate, total: withVat(d.price.amount, d.price.vatRate), depositPercent },
     balanceMethod: d.price.balanceMethod,
     schedule,
+    // how to pay, frozen with the order: the bank account for transfers, and for checks how many, to whom,
+    // and when the courier collects them (the client prepares each one at its amount including VAT)
+    payInfo: {
+      transfer: methods.has("transfer") || (!d.price.payments && d.price.balanceMethod !== "checks")
+        ? { beneficiary: settings.bank.beneficiary, bank: settings.bank.bank, branch: settings.bank.branch, account: settings.bank.account }
+        : null,
+      checks: checks.length || (!d.price.payments && d.price.balanceMethod === "checks")
+        ? { payee: settings.checks.payee, count: checks.length, pickupDate: d.price.checksPickupDate || "", pickupDays: settings.checks.pickupDays }
+        : null,
+      card: methods.has("card"),
+    },
     service: {
       ...d.service,
       rows: servicePeriods(d.service, d.price.vatRate, d.standingOrder?.startDate),
@@ -126,8 +170,29 @@ export function buildOrder(deal, settings, from = israelDate()) {
   };
 }
 
+// How to pay, as plain lines for the PDF and the emails (the client page says the same in its own layout).
+// Orders frozen before payInfo existed get null, and their old wording stays.
+export function payInstructions(order) {
+  const p = order.payInfo;
+  if (!p) return null;
+  const dmy = (iso) => String(iso).slice(0, 10).split("-").reverse().join("/");
+  const nis = (n) => `${Number(n).toLocaleString("en-US", { minimumFractionDigits: Number(n) % 1 ? 2 : 0, maximumFractionDigits: 2 })} ₪`;
+  const lines = [];
+  if (p.transfer) {
+    const b = p.transfer;
+    lines.push(`העברה בנקאית: מוטב ${b.beneficiary}${b.bank ? `, בנק ${b.bank}` : ""}${b.branch ? `, סניף ${b.branch}` : ""}${b.account ? `, חשבון ${b.account}` : ""}. אסמכתה: מספר הזמנה ${order.number}.`);
+  }
+  if (p.checks) {
+    const checks = order.schedule.rows.filter((r) => r.method === "check");
+    lines.push(`שיקים: נא להכין מראש ${checks.length === 1 ? "שיק אחד" : `${checks.length} שיקים`} לפקודת ${p.checks.payee}, כל שיק על הסכום כולל מע"מ ובתאריך שבטבלה: ${checks.map((r) => `${dmy(r.date)} · ${nis(r.total)}`).join("; ")}.`
+      + (p.checks.pickupDate ? ` שליח יאסוף את השיקים ב-${dmy(p.checks.pickupDate)}.` : ` נתאם איתכם את איסוף השיקים בתוך ${p.checks.pickupDays} ימי עסקים מהחתימה.`));
+  }
+  if (p.card) lines.push("כרטיס אשראי: לקראת מועד התשלום נשלח אליכם קישור מאובטח לתשלום.");
+  return lines;
+}
+
 // The agreement with its parties and Appendix A, ready to render
-export function buildAgreement(deal, settings, version = CURRENT_AGREEMENT) {
+export function buildAgreement(deal, settings, version = agreementVersionFor(deal)) {
   const c = deal.client;
   const a = deal.data.appendix;
   const start = deal.data.standingOrder?.startDate;

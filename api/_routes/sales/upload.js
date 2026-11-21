@@ -1,5 +1,5 @@
-// POST /api/sales/upload { name, data_url }   admin: a spec PDF for a deal, or the company's
-// signature image (PNG) for the settings -> { fileId }. Stored private in sign.files.
+// POST /api/sales/upload { name, data_url }   admin: a spec PDF for a deal, the client's logo for the demo
+// film (PNG, JPEG, WebP), or the company's signature image (PNG) for the settings -> { fileId }. Stored private in sign.files.
 import { json, readJson, route } from "../../_lib/http.js";
 import { query } from "../../_lib/db.js";
 import { requireAdmin } from "../../_lib/auth.js";

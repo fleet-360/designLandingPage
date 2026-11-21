@@ -36,6 +36,9 @@
 .pa-hero [class*="text-white"] { color: #3A2418; }
 .pa-hero [class*="text-white/"] { color: #4F3324; }
 
+/* the selling bands of the deal page (hero, the road): cream, like the spec request pages */
+.pa-cream { background: #f3f0e9; }
+
 .pa-card {
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));

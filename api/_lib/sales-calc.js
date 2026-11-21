@@ -85,48 +85,58 @@ function allocate(total, weights) {
   return out;
 }
 
+// How each payment is made. The deal form sets one per payment, the deposit included.
+export const PAYMENT_METHODS = { transfer: "העברה בנקאית", check: "שיק", card: "כרטיס אשראי" };
+
+const bankDayNote = (date) => {
+  if (isBusinessDay(date)) return null;
+  return `יום עסקים בנקאי קודם: ${previousBusinessDay(date).split("-").reverse().join("/")}`;
+};
+
 /**
- * deal: { price (before VAT), vatRate, depositPercent (30), installments (N>=1), installmentDay (1),
- *         balanceMethod ('transfer'|'checks') }
- * from: the date the order is approved ("2026-11-22"); defaults to today in Israel.
- * -> { price, vat, total, rows: [{ n, kind: 'deposit'|'installment', date, dateNote, before, vat, total }],
+ * deal: { price (before VAT), vatRate, payments: [{ date, amount (before VAT), method }] }: every payment
+ * as sales set it, the first one being the deposit. Deals made before that have instead
+ * { depositPercent (30), installments (N>=1), installmentDay (1), balanceMethod ('transfer'|'checks') },
+ * and their dates are counted from `from`, the date the order is approved (default: today in Israel).
+ * -> { price, vat, total, rows: [{ n, kind: 'deposit'|'installment', date, dateNote, method, before, vat, total }],
  *      totals: { before, vat, total } }
  */
 export function paymentSchedule(deal, from = israelDate()) {
   const rate = Number(deal.vatRate);
   const priceA = agorot(deal.price);
   const vatA = Math.round((priceA * rate) / 100);
-  const depositA = Math.round((priceA * Number(deal.depositPercent ?? 30)) / 100);
-  const n = Math.max(1, Math.trunc(Number(deal.installments) || 1));
-  const day = Math.min(28, Math.max(1, Math.trunc(Number(deal.installmentDay) || 1)));
-  const balanceA = priceA - depositA;
-  const each = Math.floor(balanceA / n);
-  const befores = [depositA, ...Array.from({ length: n }, (_, i) => (i === n - 1 ? balanceA - each * (n - 1) : each))];
+  const explicit = Array.isArray(deal.payments) && deal.payments.length > 0;
+  let befores;
+  let when;
+  if (explicit) {
+    befores = deal.payments.map((p) => agorot(p.amount));
+    when = deal.payments.map((p) => ({ date: p.date, method: p.method, dateNote: p.method === "transfer" ? bankDayNote(p.date) : null }));
+  } else {
+    const depositA = Math.round((priceA * Number(deal.depositPercent ?? 30)) / 100);
+    const n = Math.max(1, Math.trunc(Number(deal.installments) || 1));
+    const day = Math.min(28, Math.max(1, Math.trunc(Number(deal.installmentDay) || 1)));
+    const balanceA = priceA - depositA;
+    const each = Math.floor(balanceA / n);
+    const method = deal.balanceMethod === "checks" ? "check" : "transfer";
+    befores = [depositA, ...Array.from({ length: n }, (_, i) => (i === n - 1 ? balanceA - each * (n - 1) : each))];
+    when = befores.map((_, i) => {
+      if (i === 0) return { date: addBusinessDays(from, 3), method: null, dateNote: "תוך 3 ימי עסקים מהאישור" };
+      const date = addMonths(from, i, day);
+      return { date, method, dateNote: method === "transfer" ? bankDayNote(date) : null };
+    });
+  }
   const vats = allocate(vatA, befores);
 
-  const rows = befores.map((before, i) => {
-    let date;
-    let dateNote = null;
-    if (i === 0) {
-      date = addBusinessDays(from, 3);
-      dateNote = "תוך 3 ימי עסקים מהאישור";
-    } else {
-      date = addMonths(from, i, day);
-      if (deal.balanceMethod !== "checks" && !isBusinessDay(date)) {
-        const prev = previousBusinessDay(date);
-        dateNote = `יום עסקים בנקאי קודם: ${prev.split("-").reverse().join("/")}`;
-      }
-    }
-    return {
-      n: i + 1,
-      kind: i === 0 ? "deposit" : "installment",
-      date,
-      dateNote,
-      before: shekels(before),
-      vat: shekels(vats[i]),
-      total: shekels(before + vats[i]),
-    };
-  });
+  const rows = befores.map((before, i) => ({
+    n: i + 1,
+    kind: i === 0 ? "deposit" : "installment",
+    date: when[i].date,
+    dateNote: when[i].dateNote,
+    method: when[i].method,
+    before: shekels(before),
+    vat: shekels(vats[i]),
+    total: shekels(before + vats[i]),
+  }));
   return {
     price: shekels(priceA),
     vat: shekels(vatA),

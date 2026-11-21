@@ -60,8 +60,12 @@ email, which says no invoice was issued automatically. A manual payment can be s
 payment can't. With booking on and payment off, the client's chosen time is booked at once (no hold). Moving
 the payment off the page while the client holds a time books that time.
 
-**Deal.** Sales enters the client, project, price, installments, monthly service and standing order, and
-Appendix A. The client approves the order, which freezes the schedule from that day and emails the
+**Deal.** Sales enters the client, project, price, every payment (exact date, amount before VAT and method:
+transfer, check or card; the first is the deposit; a quick split fills the table and the form shows what is
+missing or over the price), the day a courier collects the checks, monthly service and standing order, and
+Appendix A. The client page shows each payment with its method, the bank details, and for checks how many to
+prepare, for what amounts including VAT, and the pickup date. The signer may add an ID number (optional). Deals
+made before this keep their deposit % and equal installments counted from the approval date. The client approves the order, which freezes the schedule from that day and emails the
 payment details to their accounting. The client then signs. The PDF is generated and stored with a
 SHA-256 of everything signed, a copy is emailed, and the standing order is created waiting for a card.
 Saving the card is a separate last step, so the signed agreement is kept even if the client stops there.
@@ -135,9 +139,11 @@ The site trusts Toro's calls by its IP (`api/_lib/toro.js`), the same as `/api/p
 
 ## Agreement versions
 
-The agreement text is `api/_lib/agreement-v1.js` (from the Word file) and `agreement-v2.js` (current), which
-`tools/sales/agreement_v2_from_v1.py` builds from v1 by exact replacements, so that script is the full list of
-differences. A deal shows the current version until it is signed; the signed text is frozen in its snapshot.
+The agreement text is `api/_lib/agreement-v1.js` (from the Word file), `agreement-v2.js`, which
+`tools/sales/agreement_v2_from_v1.py` builds from v1 by exact replacements, and `agreement-v3.js` (current), which
+`tools/sales/agreement_v3_from_v2.py` builds from v2 the same way, so each script is the full list of differences.
+v3 (clauses 5.2–5.4, 9.2א) describes payments set one by one: each with its date, amount and method, checks
+collected on the pickup day in the order. Deals made before that (deposit % and equal installments) keep v2. A deal shows the current version until it is signed; the signed text is frozen in its snapshot.
 In v2, clause 6.2 names the first charge date that sales sets on the deal ("{{firstChargeDate}}").
 
 ## Database

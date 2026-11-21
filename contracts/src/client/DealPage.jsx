@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { CalendarClock, CheckCircle2, ChevronDown, Download, FileText, PenLine, Rocket, Wrench } from "lucide-react";
+import { CalendarClock, CheckCircle2, ChevronDown, Download, FileText, PenLine, Rocket, Truck, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import SignaturePad from "@/components/sign/SignaturePad";
-import { api, dmy, dateTime, errorText, FIELD_ERRORS, fileToDataUrl, fullNameOk, isEmail, mobileIL, nis, taxIdIL } from "@/sales/lib";
-import { Container, ErrorLine, Field, Loading, Notice, PriceCard, ScheduleTable, Section, ServiceTimeline, Shell, Stepper } from "./ui.jsx";
+import { api, dmy, dateTime, errorText, FIELD_ERRORS, fileToDataUrl, fullNameOk, getWithRetry, isEmail, mobileIL, nis, taxIdIL } from "@/sales/lib";
+import { Container, ErrorLine, Field, Loading, LoadFailed, METHOD_NAMES, Notice, PriceCard, ScheduleTable, Section, ServiceTimeline, Shell, Stepper } from "./ui.jsx";
+import { DealHero, JourneyRoad, PayHow } from "./deal-ui.jsx";
 import CardSetup from "./CardSetup.jsx";
 import DemoFilm, { ClientsStrip, VideoFilm } from "./DemoFilm.jsx";
 
@@ -13,12 +14,13 @@ export default function DealPage({ token }) {
   const [d, setD] = useState(undefined);
   const [skipCard, setSkipCard] = useState(false);
   const url = `sales/deal-public?token=${encodeURIComponent(token)}`;
-  const load = useCallback(() => api(url).then((v) => { setD(v); return v; }), [url]);
-  useEffect(() => { load().catch(() => setD(null)); }, [load]);
+  const load = useCallback(() => getWithRetry(url).then((v) => { setD(v); return v; }), [url]);
+  useEffect(() => { load().catch((err) => setD(err.status === 404 ? null : "failed")); }, [load]);
   useEffect(() => { window.scrollTo(0, 0); }, [d?.status?.order, d?.status?.agreement, skipCard]);
 
   if (d === undefined) return <Shell><Loading /></Shell>;
   if (d === null) return <Shell><Notice title="הקישור אינו פעיל" text="ייתכן שההזמנה בוטלה או שהקישור הועתק חלקית. נשמח לשלוח קישור חדש." /></Shell>;
+  if (d === "failed") return <Shell><LoadFailed /></Shell>;
 
   const so = d.order.standingOrder;
   const needsCard = Boolean(so?.enabled);
@@ -92,18 +94,12 @@ function OrderStep({ d, post }) {
 
   return (
     <>
-      <header className="pa-hero">
-        <Container className="py-10 sm:py-14">
-          <p className="text-sm font-medium text-white/80">הזמנת עבודה מס' <span className="pa-num">{o.number}</span> · {o.client.companyName || o.client.signerName}</p>
-          <h1 className="mt-2 text-3xl font-extrabold leading-tight sm:text-4xl">{o.project.name}</h1>
-          {o.project.summary && <p className="mt-3 max-w-2xl whitespace-pre-line text-[17px] leading-relaxed text-white/90">{o.project.summary}</p>}
-        </Container>
-      </header>
+      <DealHero order={o} />
       {d.film && <FilmBand film={d.film} order={o} />}
-      <Container className={`space-y-5 ${d.film ? "pt-2" : "py-6"} pb-16`}>
+      <Container className={`${d.film ? "" : "-mt-4 "}space-y-5 pb-10`}>
         <PriceCard price={o.price} />
 
-        <Section title="מה בונים">
+        <Section title="מה בונים לכם">
           <ul className="space-y-3">
             {o.project.specName && (
               <li className="flex gap-3"><FileText className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
@@ -129,21 +125,20 @@ function OrderStep({ d, post }) {
           </ul>
         </Section>
 
+      </Container>
+
+      <JourneyRoad order={o} note={so(o)} />
+
+      <Container className="space-y-5 py-8 pb-16">
         <Section title="לוח התשלומים">
           <p className="mb-3 text-sm text-muted-foreground">
-            מקדמה של {o.price.depositPercent}% בתוך 3 ימי עסקים מהאישור, והיתרה בתאריכים קבועים שאינם תלויים באבני דרך.
-            {" "}אמצעי תשלום היתרה: {o.balanceMethod === "checks" ? "שיקים דחויים" : "העברה בנקאית"}.
+            {o.payInfo
+              ? "כל תשלום בתאריך ובאמצעי התשלום שלו. התאריכים קבועים ואינם תלויים באבני דרך. התשלום הראשון הוא המקדמה, ואיתה מתחילים לעבוד."
+              : `מקדמה של ${o.price.depositPercent}% בתוך 3 ימי עסקים מהאישור, והיתרה בתאריכים קבועים שאינם תלויים באבני דרך.`}
           </p>
           <ScheduleTable schedule={o.schedule} depositPercent={o.price.depositPercent} />
+          <PayHow order={o} />
         </Section>
-
-        {o.service?.enabled && (
-          <Section title="שירות ותחזוקה אחרי העלייה לאוויר">
-            <ServiceTimeline rows={o.service.rows} />
-            {o.service.includes?.length > 0 && <p className="mt-3 text-sm text-muted-foreground">כולל: {o.service.includes.join(" · ")}</p>}
-            {so(o) && <p className="mt-2 text-sm">{so(o)}</p>}
-          </Section>
-        )}
 
         <Section title="פרטי ההתקשרות">
           {!edit ? (
@@ -186,7 +181,7 @@ function OrderStep({ d, post }) {
             </label>
             <ErrorLine error={error} />
             <Button size="lg" disabled={busy} onClick={approve} className="h-12 w-full rounded-xl text-base font-bold">
-              {busy ? "שומר..." : "אישור והמשך להסכם"}
+              {busy ? "שומר..." : "מאשרים ויוצאים לדרך"}
             </Button>
             <p className="text-center text-xs text-muted-foreground">בשלב הבא: קריאה וחתימה על הסכם ההתקשרות.</p>
           </div>
@@ -209,6 +204,7 @@ function AgreementStep({ d, post }) {
   const pad = useRef(null);
   const [name, setName] = useState(d.approval?.name || d.client.signerName || "");
   const [role, setRole] = useState(d.client.signerRole || "");
+  const [idNumber, setIdNumber] = useState("");
   const [accept, setAccept] = useState(false);
   const [openAll, setOpenAll] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -217,12 +213,13 @@ function AgreementStep({ d, post }) {
   const sign = async () => {
     setError("");
     if (name.trim().length < 2) return setError("יש להזין שם מלא");
+    if (idNumber.trim() && !taxIdIL(idNumber)) return setError("מספר תעודת הזהות לא תקין. אפשר גם להשאיר ריק");
     if (pad.current.isEmpty()) return setError("יש לחתום בתיבת החתימה");
     if (!accept) return setError("יש לסמן את תיבת האישור");
     setBusy(true);
     try {
       const signature = await fileToDataUrl(await pad.current.toBlob());
-      await post({ action: "sign", name: name.trim(), role: role.trim(), signature, accept: true });
+      await post({ action: "sign", name: name.trim(), role: role.trim(), idNumber: idNumber.trim() ? taxIdIL(idNumber) : undefined, signature, accept: true });
     } catch (e) { setBusy(false); setError(errorText(e)); }
   };
 
@@ -262,9 +259,10 @@ function AgreementStep({ d, post }) {
 
           <section id="sign" className="pa-card scroll-mt-4 p-5 sm:p-7">
             <h2 className="flex items-center gap-2 text-lg font-bold"><PenLine className="h-5 w-5 text-primary" />חתימה</h2>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
               <Field label="שם החותם" required><Input value={name} onChange={(e) => setName(e.target.value)} className="h-11" autoComplete="name" /></Field>
               <Field label="תפקיד החותם"><Input value={role} onChange={(e) => setRole(e.target.value)} className="h-11" /></Field>
+              <Field label="תעודת זהות" hint="לא חובה"><Input value={idNumber} onChange={(e) => setIdNumber(e.target.value)} inputMode="numeric" dir="ltr" className="h-11" /></Field>
             </div>
             <div className="mt-4"><SignaturePad ref={pad} /></div>
             <label className="mt-4 flex items-start gap-3 text-[15px] leading-relaxed">
@@ -344,8 +342,9 @@ function Appendix({ d }) {
         <p className="mb-3 text-[15px]">מחיר הפרויקט: <span className="pa-num font-semibold">{nis(o.price.amount)}</span> לפני מע"מ (<span className="pa-num">{nis(o.price.total)}</span> כולל מע"מ).
           {ap.hourlyRates?.length > 0 && <> תעריפי שעה לשינויים ולחישוב בביטול, לפני מע"מ: {ap.hourlyRates.map((r, i) => <span key={i}>{i > 0 && " · "}{r.role} <span className="pa-num">{nis(r.rate)}</span></span>)}.</>}
           {!ap.hourlyRates && ap.hourlyRate ? <> תעריף שעה לשינויים ולחישוב בביטול: <span className="pa-num">{nis(ap.hourlyRate)}</span> לפני מע"מ.</> : null}
-          {" "}אמצעי תשלום היתרה: {ap.balanceMethod === "checks" ? "שיקים דחויים" : "העברות בנקאיות"}{ap.bankAccount && ap.balanceMethod !== "checks" ? ` (${ap.bankAccount})` : ""}.</p>
+          {o.payInfo ? " כל תשלום בתאריך ובאמצעי התשלום שבטבלה." : <> אמצעי תשלום היתרה: {ap.balanceMethod === "checks" ? "שיקים דחויים" : "העברות בנקאיות"}{ap.bankAccount && ap.balanceMethod !== "checks" ? ` (${ap.bankAccount})` : ""}.</>}</p>
         <ScheduleTable schedule={o.schedule} depositPercent={o.price.depositPercent} />
+        {o.payInfo && <PayHow order={o} />}
       </div>
       {o.service?.enabled && (
         <div>
@@ -388,8 +387,19 @@ function Done({ d }) {
           {deposit && (
             <li className="flex gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-secondary text-sm font-bold">1</span>
               <div>
-                <p className="font-semibold">תשלום המקדמה: <span className="pa-num">{nis(deposit.total)}</span> עד {dmy(deposit.date)}</p>
+                <p className="font-semibold">תשלום המקדמה: <span className="pa-num">{nis(deposit.total)}</span> {deposit.method ? `ב-${dmy(deposit.date)} · ${METHOD_NAMES[deposit.method]}` : `עד ${dmy(deposit.date)}`}</p>
                 <p className="text-sm text-muted-foreground">{d.signature?.manual ? "פרטי התשלום מופיעים באישור ההזמנה." : "הנהלת החשבונות שלכם קיבלה את פרטי התשלום במייל."}</p>
+              </div>
+            </li>
+          )}
+          {o.payInfo?.checks && (
+            <li className="flex gap-3"><Truck className="mt-1 h-5 w-5 shrink-0 text-primary" />
+              <div>
+                <p className="font-semibold">להכין את השיקים</p>
+                <p className="text-sm text-muted-foreground">
+                  {o.schedule.rows.filter((r) => r.method === "check").map((r) => `${dmy(r.date)} · ${nis(r.total)}`).join("  |  ")}.{" "}
+                  {o.payInfo.checks.pickupDate ? `שליח יגיע לאסוף אותם ב-${dmy(o.payInfo.checks.pickupDate)}.` : "נתאם איתכם את האיסוף."}
+                </p>
               </div>
             </li>
           )}

@@ -26,6 +26,19 @@ export async function api(path, { method = "GET", body } = {}) {
   return data;
 }
 
+// A GET for a client's page: a passing failure (no network, a server error while the server wakes up) is tried
+// again before the page gives up. A 4xx is the answer itself (404: the link is not active).
+export async function getWithRetry(path, tries = 3) {
+  for (let i = 1; ; i++) {
+    try {
+      return await api(path);
+    } catch (err) {
+      if (i >= tries || (err.status >= 400 && err.status < 500)) throw err;
+      await new Promise((r) => setTimeout(r, 800 * i));
+    }
+  }
+}
+
 export const nis = (n, { decimals } = {}) =>
   n == null || n === "" ? "" :
     `₪\u00a0${Number(n).toLocaleString("en-US", { minimumFractionDigits: decimals ?? (Number(n) % 1 ? 2 : 0), maximumFractionDigits: 2 })}`;
@@ -122,6 +135,11 @@ const ERRORS = {
   too_large: "הקובץ גדול מדי",
   bad_meeting_start: "יש להזין תאריך ושעה לפגישה",
   bad_payment_method: "יש לבחור אמצעי תשלום",
+  bad_payments: "יש להזין לפחות תשלום אחד",
+  bad_payment_date: "יש להזין תאריך לכל תשלום",
+  bad_payment_amount: "יש להזין סכום לכל תשלום",
+  bad_payments_sum: "סכום התשלומים צריך להיות שווה למחיר הפרויקט",
+  bad_id_number: "מספר תעודת הזהות לא תקין",
   bad_payment_status: "מצב התשלום לא תקין",
   booking_manual: "מועד הפגישה נקבע איתכם ישירות. לשינוי צרו קשר.",
   bad_file: "הקובץ לא נמצא. העלו אותו שוב",

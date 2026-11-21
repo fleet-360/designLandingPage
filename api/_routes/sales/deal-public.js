@@ -1,7 +1,7 @@
 // /api/sales/deal-public?token=   the client's deal page (no sign-in; the token is the key)
 //   GET  -> everything the three steps show; the first visit marks the order viewed
 //   POST { action: "approve", client, approverName, accept }          step 1: work order and payments
-//   POST { action: "sign", name, role, signature (PNG data URL), accept }  step 2: the agreement
+//   POST { action: "sign", name, role, idNumber (optional), signature (PNG data URL), accept }  step 2: the agreement
 //   POST { action: "card" }  step 3: opens Grow's card page (through Toro) -> { authCode, url }
 // Each step stands on its own: signing does not need the card, and the signed agreement is kept
 // even if the client stops before step 3.
@@ -119,11 +119,14 @@ export default route(["GET", "POST"], async (req, res) => {
     if (b.accept !== true) throw new HttpError(400, "not_accepted");
     const name = str(b.name, 120);
     if (name.length < 2) throw new HttpError(400, "bad_name");
+    // the signer's ID number is optional; when given it must be a valid one
+    const idNumber = String(b.idNumber || "").trim() ? taxIdIL(b.idNumber) : "";
+    if (String(b.idNumber || "").trim() && !idNumber) throw new HttpError(400, "bad_id_number");
     const img = parseDataUrl(b.signature, { allowed: ["image/png"], maxBytes: 1024 * 1024 });
     const sigFile = await query(
       "INSERT INTO sign.files (is_public, name, content_type, size, data) VALUES (false, 'deal-signature.png', 'image/png', $1, $2) RETURNING id",
       [img.bytes.length, img.bytes]);
-    const signature = who(req, { name, role: str(b.role, 80), email: d.client.email, fileId: sigFile.rows[0].id });
+    const signature = who(req, { name, role: str(b.role, 80), ...(idNumber && { idNumber }), email: d.client.email, fileId: sigFile.rows[0].id });
     let companySignature = null;
     if (settings.signer.signatureFileId) {
       const f = await query("SELECT content_type, data FROM sign.files WHERE id = $1", [settings.signer.signatureFileId]);
