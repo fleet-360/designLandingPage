@@ -61,6 +61,8 @@ export async function createPayment(p) {
     body: JSON.stringify({
       fullName: p.fullName, email: p.email, phone: String(p.phone || "").replace(/[^\d+]/g, "").replace(/^\+?972/, "0"),
       sum: Number(p.sum), description: p.description, paymentNumber: 1, businessTaxId: p.taxId || "", linkId: p.linkId,
+      // Grow sends the customer back here after paying (e.g. from the Bit app); Toro accepts only our pages
+      successUrl: p.successUrl, cancelUrl: p.cancelUrl,
     }),
   });
   const data = await r.json().catch(() => ({}));

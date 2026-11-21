@@ -150,6 +150,14 @@
         els.invalid.hidden = false;
     }
 
+    /* this page's address with extra query values, for Grow to return to */
+    function returnUrl(extra) {
+        const u = new URL(window.location.href);
+        u.searchParams.delete('paid');
+        Object.entries(extra).forEach(([k, v]) => u.searchParams.set(k, v));
+        return u.toString();
+    }
+
     function showSuccess() {
         const amount = currentAmount();
         els.content.hidden = true;
@@ -264,7 +272,10 @@
                     description: currentDescription(),
                     paymentNumber: els.paymentsCount.value,
                     businessTaxId: els.businessTaxId.value,
-                    linkId
+                    linkId,
+                    wallet: new URLSearchParams(window.location.search).get('wallet') === 'sdk' ? 'sdk' : undefined,
+                    successUrl: returnUrl({ paid: '1' }),
+                    cancelUrl: returnUrl({})
                 })
             ]);
 
@@ -424,6 +435,8 @@
         const params = await resolveParams();
         if (params === undefined) return; /* an error state is already on screen */
         applyParams(params);
+        /* back from Grow's page after paying (e.g. from the Bit app) */
+        if (new URLSearchParams(window.location.search).get('paid') === '1') { showSuccess(); return; }
 
         syncDefaultDescription();
         initAmountField();
