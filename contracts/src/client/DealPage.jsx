@@ -27,7 +27,7 @@ export default function DealPage({ token }) {
   const steps = [
     { label: "הזמנת העבודה", done: Boolean(d.approvedAt) },
     { label: "חתימה", done: Boolean(d.signedAt) },
-    ...(needsCard ? [{ label: "הוראת קבע", done: Boolean(d.subscription?.card) }] : []),
+    ...(needsCard ? [{ label: "יצאנו לדרך", done: Boolean(d.subscription?.card) }] : []),
   ];
   const current = !d.approvedAt ? 0 : !d.signedAt ? 1 : needsCard && d.subscription && !d.subscription.card && d.subscription.status !== "canceled" && !skipCard ? 2 : 3;
   const post = async (body) => { const v = await api(url, { method: "POST", body }); setD(v); return v; };
