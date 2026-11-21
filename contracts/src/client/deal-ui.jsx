@@ -4,19 +4,19 @@ import { dmy, nis } from "@/sales/lib";
 import { Container } from "./ui.jsx";
 
 // The deal page's selling parts: the hero, the road from the spec to the monthly service, and how to pay.
-// Cream and deep indigo, like the spec request pages.
+// Mint, cream, coffee and tomato, like the spec request page (discovery.css).
 
-const INK = "#1c1a4f";
+const INK = "#3A2418";
 
 // soft wavy lines in the background of the cream bands
-function Waves({ className = "" }) {
+function Waves({ className = "", stroke = "#E3D6B8" }) {
   const lines = Array.from({ length: 9 }, (_, i) => {
     const y = 30 + i * 70;
     return `M -50 ${y} C 250 ${y - 40}, 450 ${y + 40}, 750 ${y} S 1250 ${y - 30}, 1450 ${y}`;
   });
   return (
     <svg className={`pointer-events-none absolute inset-0 h-full w-full ${className}`} viewBox="0 0 1400 640" preserveAspectRatio="none" aria-hidden="true">
-      {lines.map((d) => <path key={d} d={d} fill="none" stroke="#e4dfd2" strokeWidth="1.4" vectorEffect="non-scaling-stroke" />)}
+      {lines.map((d) => <path key={d} d={d} fill="none" stroke={stroke} strokeWidth="1.4" vectorEffect="non-scaling-stroke" />)}
     </svg>
   );
 }
@@ -30,21 +30,21 @@ export function DealHero({ order }) {
     included ? `ליווי ותחזוקה כלולים ${included.when}` : null,
   ].filter(Boolean);
   return (
-    <header className="pa-cream relative overflow-hidden">
-      <Waves />
+    <header className="pa-mint relative overflow-hidden">
+      <Waves stroke="#86C9B0" />
       <Container className="relative py-10 sm:py-16">
-        <p className="flex items-center gap-1.5 text-sm font-medium text-[#5b5870]">
+        <p className="flex items-center gap-1.5 text-sm font-medium text-[#4F3324]">
           <MapPin className="h-4 w-4" />הזמנת עבודה מס' <span className="pa-num">{o.number}</span> · הוכנה עבור {o.client.companyName || o.client.signerName}
         </p>
         <h1 className="mt-4 text-[44px] font-black leading-[1.02] sm:text-7xl" style={{ color: INK }}>
           מוכנים לעשות<br />היסטוריה?
         </h1>
-        <p className="mt-6 text-xl font-extrabold text-[#2d2a8f] sm:text-2xl">{o.project.name}</p>
-        {o.project.summary && <p className="mt-2 max-w-2xl whitespace-pre-line text-[17px] leading-relaxed text-[#3f3d56]">{o.project.summary}</p>}
+        <p className="mt-6 text-xl font-extrabold text-[#C2311E] sm:text-2xl">{o.project.name}</p>
+        {o.project.summary && <p className="mt-2 max-w-2xl whitespace-pre-line text-[17px] leading-relaxed text-[#4F3324]">{o.project.summary}</p>}
         <ul className="mt-6 flex flex-wrap gap-2">
           {facts.map((f) => (
-            <li key={f} className="flex items-center gap-1.5 rounded-full border border-[#d9d3c4] bg-white/70 px-3 py-1.5 text-sm font-medium" style={{ color: INK }}>
-              <Check className="h-4 w-4 text-[#2d2a8f]" />{f}
+            <li key={f} className="flex items-center gap-1.5 rounded-full border border-[#DCCFB0] bg-white/70 px-3 py-1.5 text-sm font-medium" style={{ color: INK }}>
+              <Check className="h-4 w-4 text-[#6A4330]" />{f}
             </li>
           ))}
         </ul>
@@ -105,29 +105,29 @@ function smooth(pts) {
 function Node({ stop }) {
   const Icon = stop.icon;
   if (stop.state === "done") {
-    return <span className="grid h-10 w-10 place-items-center rounded-full border-[5px] border-[#2d2a8f] bg-[#2d2a8f] text-white shadow-sm"><Check className="h-4 w-4" strokeWidth={3} /></span>;
+    return <span className="grid h-10 w-10 place-items-center rounded-full border-[5px] border-[#6A4330] bg-[#6A4330] text-white shadow-sm"><Check className="h-4 w-4" strokeWidth={3} /></span>;
   }
   if (stop.state === "here") {
     return (
       <span className="relative grid h-10 w-10 place-items-center">
-        <span className="absolute inset-0 animate-ping rounded-full bg-[#e0603a]/30" />
-        <span className="relative h-10 w-10 rounded-full border-[6px] border-[#e0603a] bg-white shadow-sm" />
+        <span className="absolute inset-0 animate-ping rounded-full bg-[#E0432F]/30" />
+        <span className="relative h-10 w-10 rounded-full border-[6px] border-[#E0432F] bg-white shadow-sm" />
       </span>
     );
   }
   if (stop.state === "value") {
     return <span className="grid h-10 w-10 place-items-center rounded-full border-[5px] border-emerald-600 bg-emerald-500 text-white shadow-sm">{Icon && <Icon className="h-4 w-4" strokeWidth={2.5} />}</span>;
   }
-  return <span className="grid h-10 w-10 place-items-center rounded-full border-[5px] border-[#2d2a8f] bg-white text-[#2d2a8f] shadow-sm">{Icon && <Icon className="h-4 w-4" strokeWidth={2.5} />}</span>;
+  return <span className="grid h-10 w-10 place-items-center rounded-full border-[5px] border-[#6A4330] bg-white text-[#6A4330] shadow-sm">{Icon && <Icon className="h-4 w-4" strokeWidth={2.5} />}</span>;
 }
 
 function Label({ stop, className = "", style }) {
   const here = stop.state === "here";
   return (
     <div className={className} style={style}>
-      <p className={`text-[15px] font-extrabold leading-tight ${here ? "text-[#e0603a]" : ""}`} style={here ? undefined : { color: INK }}>{stop.t}</p>
-      <p className={`mt-0.5 text-[13px] leading-snug ${stop.state === "value" ? "font-semibold text-emerald-700" : stop.s.includes("₪") ? "font-bold text-[#2d2a8f]" : "text-[#6b6880]"}`}>{stop.s}</p>
-      {stop.s2 && <p className="text-[12px] leading-snug text-[#6b6880]">{stop.s2}</p>}
+      <p className={`text-[15px] font-extrabold leading-tight ${here ? "text-[#E0432F]" : ""}`} style={here ? undefined : { color: INK }}>{stop.t}</p>
+      <p className={`mt-0.5 text-[13px] leading-snug ${stop.state === "value" ? "font-semibold text-emerald-700" : stop.s.includes("₪") ? "font-bold text-[#6A4330]" : "text-[#6A4330]"}`}>{stop.s}</p>
+      {stop.s2 && <p className="text-[12px] leading-snug text-[#6A4330]">{stop.s2}</p>}
       {stop.drop && <p className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-1.5 text-[11px] font-semibold text-emerald-700"><TrendingDown className="h-3 w-3" />המחיר יורד</p>}
     </div>
   );
@@ -148,7 +148,7 @@ function RoadWide({ stops }) {
   return (
     <div className="relative hidden md:block" style={{ height: H }}>
       <svg className="absolute inset-0 h-full w-full" viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" aria-hidden="true">
-        <path d={smooth(pts.map(([x, y]) => [x, y]))} fill="none" stroke="#2d2a8f" strokeWidth="8" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        <path d={smooth(pts.map(([x, y]) => [x, y]))} fill="none" stroke="#6A4330" strokeWidth="8" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
       </svg>
       {stops.map((s, i) => {
         const [x, y] = pts[i];
@@ -175,7 +175,7 @@ function RoadTall({ stops }) {
   return (
     <div className="relative md:hidden" style={{ height: H }}>
       <svg className="absolute inset-0 h-full w-full" viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" aria-hidden="true">
-        <path d={smooth(pts)} fill="none" stroke="#2d2a8f" strokeWidth="7" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        <path d={smooth(pts)} fill="none" stroke="#6A4330" strokeWidth="7" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
       </svg>
       {stops.map((s, i) => {
         const [x, y] = pts[i];
@@ -198,17 +198,17 @@ export function JourneyRoad({ order, note }) {
       <Waves />
       <div className="relative mx-auto max-w-5xl px-4">
         <h2 className="text-3xl font-black sm:text-4xl" style={{ color: INK }}>הדרך מכאן</h2>
-        <p className="mt-2 max-w-2xl text-[17px] text-[#3f3d56]">
+        <p className="mt-2 max-w-2xl text-[17px] text-[#4F3324]">
           האיפיון והדמו כבר מאחורינו. עכשיו מפתחים, עולים לאוויר, ואנחנו נשארים איתכם גם אחרי: צוות שמכיר את המערכת שלכם עונה, מתקן ומשפר.
         </p>
         <div className="mt-8"><RoadWide stops={stops} /><RoadTall stops={stops} /></div>
         {includes.length > 0 && (
-          <div className="mt-6 rounded-2xl border border-[#e4dfd2] bg-white/80 p-4">
-            <p className="flex items-center gap-2 text-sm font-bold" style={{ color: INK }}><Headset className="h-4 w-4 text-[#2d2a8f]" />מה כולל השירות החודשי</p>
+          <div className="mt-6 rounded-2xl border border-[#E3D6B8] bg-white/80 p-4">
+            <p className="flex items-center gap-2 text-sm font-bold" style={{ color: INK }}><Headset className="h-4 w-4 text-[#6A4330]" />מה כולל השירות החודשי</p>
             <ul className="mt-2 flex flex-wrap gap-1.5">
-              {includes.map((x) => <li key={x} className="rounded-full bg-[#f3f0e9] px-2.5 py-1 text-[13px]" style={{ color: INK }}>{x}</li>)}
+              {includes.map((x) => <li key={x} className="rounded-full bg-[#F4ECD6] px-2.5 py-1 text-[13px]" style={{ color: INK }}>{x}</li>)}
             </ul>
-            {note && <p className="mt-3 text-sm text-[#3f3d56]">{note}</p>}
+            {note && <p className="mt-3 text-sm text-[#4F3324]">{note}</p>}
           </div>
         )}
       </div>
