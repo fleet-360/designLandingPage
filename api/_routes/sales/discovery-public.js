@@ -40,7 +40,8 @@ function view(d, settings) {
       linkId: d.id,
       sum: withVat(d.price, d.vat_rate),
       description: `${settings.discovery.title} - ${d.company_name || d.client_name}`.slice(0, 120),
-      fullName: d.client_name,
+      // the customer name on the charge, which Toro's invoice uses: the company when sales entered one
+      fullName: d.company_name || d.client_name,
       email: d.email || "",
       phone: d.phone || "",
       taxId: d.tax_id || "",

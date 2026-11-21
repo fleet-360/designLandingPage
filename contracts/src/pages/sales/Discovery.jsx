@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { api, dateTime, errorText, isEmail, meetingTime, nis } from "@/sales/lib";
+import { api, dateTime, errorText, FIELD_ERRORS, isEmail, meetingTime, mobileIL, nis, taxIdIL } from "@/sales/lib";
 import { Card, FieldRow, History, Info, LinkBox, LoadError, PageHeader, Pill, Spinner, run, useApi } from "./AdminUi.jsx";
 
 export const discoveryStatus = (x) => {
@@ -73,6 +73,9 @@ export function DiscoveryNew() {
     setError("");
     if (!f.clientName.trim()) return setError("יש להזין את שם הלקוח");
     if (f.email && !isEmail(f.email)) return setError("כתובת האימייל לא תקינה");
+    // optional here (the client fills them when paying), but Grow refuses invalid ones
+    if (f.phone.trim() && !mobileIL(f.phone)) return setError(FIELD_ERRORS.phone);
+    if (f.taxId.trim() && !taxIdIL(f.taxId)) return setError(FIELD_ERRORS.taxId);
     if (f.sendEmail && !f.email) return setError("כדי לשלוח מייל צריך אימייל של הלקוח");
     setBusy(true);
     try {

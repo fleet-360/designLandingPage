@@ -149,10 +149,11 @@ export function ServiceTimeline({ rows }) {
   );
 }
 
-export const Field = ({ label, children, hint, required }) => (
-  <label className="block space-y-1.5">
+export const Field = ({ label, children, hint, required, error }) => (
+  <label className={`block space-y-1.5 ${error ? "[&_input]:border-destructive" : ""}`}>
     <span className="text-sm font-medium">{label}{required && <span className="text-destructive"> *</span>}</span>
     {children}
-    {hint && <span className="block text-xs text-muted-foreground">{hint}</span>}
+    {error ? <span role="alert" className="block text-xs font-medium text-destructive">{error}</span>
+      : hint && <span className="block text-xs text-muted-foreground">{hint}</span>}
   </label>
 );

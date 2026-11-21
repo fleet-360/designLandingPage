@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { CalendarCheck, CalendarDays, CalendarPlus, Clock, Cpu, FileText, Map as MapIcon, PiggyBank, Plus, ShieldCheck, Target, Users, Workflow, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { api, dayLabel, errorText, isEmail, meetingTime, nis, timeLabel } from "@/sales/lib";
+import { api, dayLabel, errorText, FIELD_ERRORS, fullNameOk, isEmail, meetingTime, mobileIL, nis, taxIdIL, timeLabel } from "@/sales/lib";
 import { createPayment, openWidget, warmUp } from "@/sales/grow";
 import { Container, ErrorLine, Field, Loading, Notice, Shell } from "./ui.jsx";
 
@@ -169,17 +169,26 @@ function PaySheet({ d, onClose, onPaid }) {
   const [f, setF] = useState({ fullName: p.fullName, email: p.email, phone: p.phone, taxId: p.taxId });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
+  const [bad, setBad] = useState({});
+  const set = (k) => (e) => { setF((s) => ({ ...s, [k]: e.target.value })); setBad((b) => ({ ...b, [k]: "" })); };
 
   const pay = async (e) => {
     e.preventDefault();
     setError("");
-    if (f.fullName.trim().split(/\s+/).length < 2) return setError("יש להזין שם מלא (שם פרטי ומשפחה)");
-    if (!isEmail(f.email)) return setError("יש להזין אימייל תקין לקבלת החשבונית");
-    if (!/^0\d{8,9}$/.test(f.phone.replace(/[^\d]/g, "").replace(/^972/, "0"))) return setError("יש להזין מספר טלפון נייד תקין");
+    // Grow refuses these without saying why, so they are checked here first
+    const phone = mobileIL(f.phone);
+    const taxId = taxIdIL(f.taxId);
+    const errs = {
+      fullName: fullNameOk(f.fullName) ? "" : FIELD_ERRORS.fullName,
+      email: isEmail(f.email) ? "" : FIELD_ERRORS.email,
+      phone: phone ? "" : FIELD_ERRORS.phone,
+      taxId: taxId ? "" : FIELD_ERRORS.taxId,
+    };
+    setBad(errs);
+    if (Object.values(errs).some(Boolean)) return setError("יש לתקן את השדות המסומנים");
     setBusy(true);
     try {
-      const proc = await createPayment({ ...p, ...f, sum: p.sum });
+      const proc = await createPayment({ ...p, ...f, fullName: f.fullName.trim(), email: f.email.trim(), phone, taxId, sum: p.sum });
       if (proc.authCode) {
         const opened = await openWidget(proc.authCode, {
           onSuccess: () => onPaid(),
@@ -192,9 +201,11 @@ function PaySheet({ d, onClose, onPaid }) {
       } else {
         throw new Error("no_checkout");
       }
-    } catch {
+    } catch (err) {
       setBusy(false);
-      setError("לא הצלחנו להתחיל את התשלום. נסו שוב בעוד רגע.");
+      // Grow's own explanation when there is one (it answers in Hebrew)
+      const why = String(err?.message || "").replace(/^Grow:\s*/, "");
+      setError(/[\u0590-\u05FF]/.test(why) ? `התשלום לא נפתח: ${why}` : "לא הצלחנו להתחיל את התשלום. בדקו את הפרטים ונסו שוב בעוד רגע.");
     }
   };
 
@@ -205,10 +216,10 @@ function PaySheet({ d, onClose, onPaid }) {
           <span className="font-medium">{d.title}</span>
           <span className="font-bold pa-num">{nis(p.sum)}</span>
         </div>
-        <Field label="שם מלא" required><Input value={f.fullName} onChange={set("fullName")} autoComplete="name" className="h-12" /></Field>
-        <Field label="אימייל (לחשבונית)" required><Input value={f.email} onChange={set("email")} type="email" dir="ltr" autoComplete="email" className="h-12" /></Field>
-        <Field label="טלפון נייד" required><Input value={f.phone} onChange={set("phone")} type="tel" dir="ltr" autoComplete="tel" className="h-12" /></Field>
-        <Field label="ח.פ / ע.מ" hint="לחשבונית על שם החברה"><Input value={f.taxId} onChange={set("taxId")} inputMode="numeric" dir="ltr" className="h-12" /></Field>
+        <Field label="שם הלקוח לחשבונית" required error={bad.fullName} hint="שם החברה, או שם פרטי ושם משפחה"><Input value={f.fullName} onChange={set("fullName")} autoComplete="organization" className="h-12" /></Field>
+        <Field label="אימייל (לחשבונית)" required error={bad.email}><Input value={f.email} onChange={set("email")} type="email" dir="ltr" autoComplete="email" className="h-12" /></Field>
+        <Field label="טלפון נייד" required error={bad.phone}><Input value={f.phone} onChange={set("phone")} type="tel" dir="ltr" autoComplete="tel" className="h-12" /></Field>
+        <Field label="ח.פ / ע.מ / ת.ז" required error={bad.taxId} hint="מופיע בחשבונית"><Input value={f.taxId} onChange={set("taxId")} inputMode="numeric" dir="ltr" className="h-12" /></Field>
         <ErrorLine error={error} />
         <Button type="submit" size="lg" disabled={busy} className="h-12 w-full rounded-xl text-base font-bold">{busy ? "פותח את חלון התשלום..." : `לתשלום ${nis(p.sum)}`}</Button>
         <p className="text-center text-xs text-muted-foreground">הסליקה מתבצעת בחלון מאובטח של Grow. פרטי הכרטיס לא נשמרים אצלנו.</p>
