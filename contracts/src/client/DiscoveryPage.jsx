@@ -43,6 +43,8 @@ export default function DiscoveryPage({ token }) {
       if (!v) return;
       if (v.booked) setStage("done");
       else if (v.paid) setStage("schedule");
+      // back from Grow's page after paying (e.g. from the Bit app): wait for the payment report
+      else if (new URLSearchParams(window.location.search).get("paid") === "1") setStage("waiting");
     });
     warmUp();
   }, [load]);
@@ -188,7 +190,8 @@ function PaySheet({ d, onClose, onPaid }) {
     if (Object.values(errs).some(Boolean)) return setError("יש לתקן את השדות המסומנים");
     setBusy(true);
     try {
-      const proc = await createPayment({ ...p, ...f, fullName: f.fullName.trim(), email: f.email.trim(), phone, taxId, sum: p.sum });
+      const here = `${window.location.origin}${window.location.pathname}`;
+      const proc = await createPayment({ ...p, ...f, fullName: f.fullName.trim(), email: f.email.trim(), phone, taxId, sum: p.sum, successUrl: `${here}?paid=1`, cancelUrl: here });
       if (proc.authCode) {
         const opened = await openWidget(proc.authCode, {
           onSuccess: () => onPaid(),
