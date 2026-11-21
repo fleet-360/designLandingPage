@@ -21,8 +21,9 @@ out as for any payment. The amount comes from the browser, so a payment below th
 is not marked paid: the office gets a "תשלום חלקי" email and can mark it paid by hand. The page then offers free slots. These are the configured hours, minus busy
 times in the `developers@` calendar (when connected) and booked meetings, at most two per day. Bookings are taken one at a time, so two clients cannot book
 overlapping times. Booking
-creates the event with a Meet link and invitations through Toro. When the calendar is not connected, the
-confirmation email carries an `.ics` invite instead.
+creates the event with a Meet link, and Google sends the invitations. When the calendar is not connected,
+the confirmation email carries an `.ics` invite instead. The calendar is reached directly from the site
+when `GOOGLE_CALENDAR_CREDENTIALS` is set in Vercel (`api/_lib/calendar.js`), otherwise through Toro.
 
 **Deal.** Sales enters the client, project, price, installments, monthly service and standing order, and
 Appendix A. The client approves the order, which freezes the schedule from that day and emails the
@@ -49,18 +50,24 @@ The site trusts Toro's calls by its IP (`api/_lib/toro.js`), the same as `/api/p
 | Toro endpoint | Does |
 |---|---|
 | `POST /proAlgoSales/mail { id }` | fetches `/api/outbox/item`, sends through Brevo, reports to `/api/outbox/result` |
-| `POST /proAlgoSales/calendar/busy`, `GET /calendar/status` | free/busy of `developers@` |
-| `POST /proAlgoSales/calendar/book { bookingId }` | creates the event (Meet link, invitations) |
+| `POST /proAlgoSales/calendar/busy`, `GET /calendar/status` | free/busy of `developers@` (only while `GOOGLE_CALENDAR_CREDENTIALS` is not set) |
+| `POST /proAlgoSales/calendar/book { bookingId }` | creates the event (the same, only without the key) |
 | `POST /proAlgoSales/card/createProcess { subscriptionId }` | Grow page that saves a card without charging |
 | `POST /proAlgoSales/grow/notifyCard` | Grow's callback → `/api/billing/card` |
 | `POST /proAlgoSales/billing/run` | charges what `/api/billing/due` hands out, invoices, reports to `/api/billing/result` (also the 08:00 cron) |
 
 ## What has to be set up once
 
-- **Calendar:** the service account Toro uses for Drive (`CLIENT_EMAIL_FOR_DRIVE`) needs Google Workspace
-  domain-wide delegation for `https://www.googleapis.com/auth/calendar` (Admin console → Security → API
-  controls → Domain-wide delegation). Until then booking works with `.ics` invites. The admin settings
-  screen has a "בדיקת חיבור ליומן" button.
+- **Calendar (directly from the site):**
+  1. In Google Cloud, in a project of Pro Algo's own account: enable the Google Calendar API, create a
+     service account, and download its JSON key.
+  2. In the pro-algo.com Google Workspace admin console (Security → API controls → Domain-wide
+     delegation): add the service account's client id with the scope `https://www.googleapis.com/auth/calendar`.
+  3. In Vercel (landing-page-build → Settings → Environment Variables): `GOOGLE_CALENDAR_CREDENTIALS` =
+     the whole JSON file. Redeploy.
+
+  The calendar is the one on the settings screen (`developers@pro-algo.com`), and its
+  "בדיקת חיבור ליומן" button shows whether it works. Until then booking works with `.ics` invites.
 - **Grow card saving:** the Grow account must allow token payments (Get Token Only and charging a saved
   token). If Grow gives a separate page code for it, set `PRO_ALGO_GROW_TOKEN_PAGE_CODE` in Toro.
 - **Settings screen:** bank account, the company signer's name and signature image, the accounting contact.

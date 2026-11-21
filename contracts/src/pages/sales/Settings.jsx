@@ -107,7 +107,7 @@ export default function SalesSettings() {
         {cal && cal !== "checking" && (
           <p className={`mb-3 flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${cal.connected ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-900"}`}>
             {cal.connected ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
-            {cal.connected ? "היומן מחובר: המועדים מסוננים לפי היומן והפגישות נכנסות אליו עם זימון." : `היומן לא מחובר (${cal.error}). הפגישות נקבעות לפי שעות הפעילות בלבד, והזימון נשלח במייל כקובץ יומן.`}
+            {cal.connected ? `היומן ${cal.user || ""} מחובר${cal.via === "google" ? " ישירות לגוגל" : cal.via === "toro" ? " דרך טורו" : ""}: המועדים מסוננים לפי היומן והפגישות נכנסות אליו עם זימון.` : `היומן לא מחובר (${cal.error}). הפגישות נקבעות לפי שעות הפעילות בלבד, והזימון נשלח במייל כקובץ יומן.`}
           </p>
         )}
         <div className="grid gap-3 sm:grid-cols-3">
