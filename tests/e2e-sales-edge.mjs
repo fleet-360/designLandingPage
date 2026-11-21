@@ -57,6 +57,26 @@ assert.ok([a.status, b.status].includes(409));
 // clean up the meeting so later runs have the slot
 for (const d of [disc, disc2]) await api(`sales/discovery?id=${d.id}`, { method: "PATCH", body: { action: "cancel" } }).catch(() => {});
 
+step("two unpaid clients cannot hold overlapping times; a hold is booked when paid");
+const h1 = (await api("sales/discovery", { method: "POST", body: { clientName: "בדיקת קצה 3", email: "edge3@example.com", price: 999 } })).item;
+const h2 = (await api("sales/discovery", { method: "POST", body: { clientName: "בדיקת קצה 4", email: "edge4@example.com", price: 999 } })).item;
+const { slots: hs } = await api(`sales/discovery-public?token=${tokenOf(h1.url)}&slots=1`);
+const hFirst = hs[0].start;
+const hHalf = new Date(new Date(hFirst).getTime() + 30 * 60000).toISOString();
+const [c, e] = await Promise.all([
+  fetch(`${BASE}/api/sales/discovery-public?token=${tokenOf(h1.url)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "hold", start: hFirst }) }),
+  fetch(`${BASE}/api/sales/discovery-public?token=${tokenOf(h2.url)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "hold", start: hHalf }) }),
+]);
+console.log("hold statuses:", c.status, e.status);
+assert.equal([c.status, e.status].filter((x) => x === 200).length, 1, "exactly one of two overlapping holds succeeds");
+const winner = c.status === 200 ? h1 : h2;
+const { slots: forLoser } = await api(`sales/discovery-public?token=${tokenOf((winner === h1 ? h2 : h1).url)}&slots=1`);
+assert.ok(!forLoser.some((x) => x.start === (winner === h1 ? hFirst : hHalf)), "a held time is not offered to others");
+await api(`sales/discovery?id=${winner.id}`, { method: "PATCH", body: { action: "mark_paid" } });
+const wPub = await api(`sales/discovery-public?token=${tokenOf(winner.url)}`);
+assert.equal(wPub.booked, true, "marking paid books the held time");
+for (const d of [h1, h2]) await api(`sales/discovery?id=${d.id}`, { method: "PATCH", body: { action: "cancel" } }).catch(() => {});
+
 step("a deal's standing-order start date moves to the billing day");
 const deal = {
   project: { name: "בדיקת קצה", summary: "בדיקה", specName: "אפיון", specVersion: "1", specDate: today, targetWeeks: 4, kickoffNeeds: "" },

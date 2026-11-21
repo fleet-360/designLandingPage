@@ -355,7 +355,7 @@ function SignedBanner({ d }) {
     <div className="flex items-start gap-3 rounded-2xl bg-emerald-50 p-4 text-emerald-900">
       <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
       <div>
-        <p className="font-semibold">ההסכם נחתם{d.signature?.at && ` ב-${dateTime(d.signature.at)}`}. עותק חתום נשלח אליכם במייל.</p>
+        <p className="font-semibold">{d.signature?.manual ? "ההסכם נחתם." : <>ההסכם נחתם{d.signature?.at && ` ב-${dateTime(d.signature.at)}`}. עותק חתום נשלח אליכם במייל.</>}</p>
         {d.links.signedPdf && <a href={d.links.signedPdf} className="text-sm font-semibold underline">הורדת ההסכם החתום</a>}
       </div>
     </div>
@@ -370,7 +370,7 @@ function Done({ d }) {
       <section className="pa-card p-6 text-center sm:p-10">
         <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-100 text-emerald-700"><CheckCircle2 className="h-7 w-7" /></span>
         <h1 className="mt-4 text-2xl font-bold">ההסכם נחתם. מתחילים.</h1>
-        <p className="mt-2 text-muted-foreground">עותק חתום של ההסכם נשלח אליכם במייל{d.signature?.at && `, ${dateTime(d.signature.at)}`}.</p>
+        {!d.signature?.manual && <p className="mt-2 text-muted-foreground">עותק חתום של ההסכם נשלח אליכם במייל{d.signature?.at && `, ${dateTime(d.signature.at)}`}.</p>}
         {d.links.signedPdf && <Button asChild variant="outline" className="mt-5"><a href={d.links.signedPdf}><Download className="ms-2 h-4 w-4" />הורדת ההסכם החתום (PDF)</a></Button>}
       </section>
       <Section title="מה עכשיו">
@@ -379,7 +379,7 @@ function Done({ d }) {
             <li className="flex gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-secondary text-sm font-bold">1</span>
               <div>
                 <p className="font-semibold">תשלום המקדמה: <span className="pa-num">{nis(deposit.total)}</span> עד {dmy(deposit.date)}</p>
-                <p className="text-sm text-muted-foreground">הנהלת החשבונות שלכם קיבלה את פרטי התשלום במייל.</p>
+                <p className="text-sm text-muted-foreground">{d.signature?.manual ? "פרטי התשלום מופיעים באישור ההזמנה." : "הנהלת החשבונות שלכם קיבלה את פרטי התשלום במייל."}</p>
               </div>
             </li>
           )}

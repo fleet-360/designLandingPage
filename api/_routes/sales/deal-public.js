@@ -12,7 +12,7 @@ import { buildAgreement, buildOrder, cleanClient, snapshotHash } from "../../_li
 import { dealAccountingMail, dealSignedMail } from "../../_lib/sales-mail.js";
 import { parseDataUrl } from "../../_lib/sign.js";
 import { generateDealPdf } from "../../_lib/deal-pdf.js";
-import { createSubscription, firstCharge, scheduleFromService, subscriptionRow } from "../../_lib/billing.js";
+import { createDealSubscription, firstCharge, subscriptionRow } from "../../_lib/billing.js";
 import { israelDate } from "../../_lib/sales-calc.js";
 import { callToro, growReason } from "../../_lib/toro.js";
 
@@ -43,7 +43,7 @@ async function view(d, settings, base) {
     approvedAt: iso(d.approved_at),
     approval: d.approval ? { name: d.approval.name, at: d.approval.at } : null,
     signedAt: iso(d.signed_at),
-    signature: d.signature ? { name: d.signature.name, role: d.signature.role, at: d.signature.at } : null,
+    signature: d.signature ? { name: d.signature.name, role: d.signature.role, at: d.signature.at, manual: Boolean(d.signature.manual) } : null,
     subscription,
     links: {
       spec: d.data.project?.specFileId ? `${base}/api/sales/deal-file?token=${d.token}&kind=spec` : null,
@@ -142,25 +142,7 @@ export default route(["GET", "POST"], async (req, res) => {
     await logEvent("deal", d.id, "signed", { name, ip: signature.ip, hash });
 
     // the standing order for the monthly service, waiting for the card (step 3)
-    if (d.data.standingOrder?.enabled && !d.subscription_id) {
-      const so = d.data.standingOrder;
-      const s = await createSubscription({
-        dealId: d.id,
-        createdBy: d.created_by,
-        customer: {
-          name: d.client.signerName, company: d.client.companyName, taxId: d.client.taxId, email: d.client.email,
-          phone: d.client.phone, accountingEmail: d.client.accountingEmail,
-        },
-        description: `שירות חודשי · ${d.data.project.name}`,
-        vatRate: d.data.price.vatRate,
-        schedule: scheduleFromService(d.data.service),
-        startDate: so.startDate || null,
-        dayOfMonth: so.dayOfMonth || 1,
-      });
-      await query("UPDATE sales.deals SET subscription_id = $2, card_status = 'pending' WHERE id = $1", [d.id, s.id]);
-      await logEvent("subscription", s.id, "created", { dealId: d.id });
-      d = (await query("SELECT * FROM sales.deals WHERE id = $1", [d.id])).rows[0];
-    }
+    d = await createDealSubscription(d);
 
     const mail = await sendMail({ ...dealSignedMail(d, settings, { fileId: pf.rows[0].id, name: pdfName }), entity: "deal", entityId: d.id, kind: "deal_signed" });
     await logEvent("deal", d.id, "email_sent", { kind: "signed", to: d.client.email, sent: mail.sent });

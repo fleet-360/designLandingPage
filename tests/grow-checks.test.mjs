@@ -5,9 +5,9 @@ import { mobileIL, taxIdIL } from "../api/_lib/sales.js";
 import { growReason } from "../api/_lib/toro.js";
 
 test("mobile numbers", () => {
-  assert.equal(mobileIL("052-6247267"), "0526247267");
-  assert.equal(mobileIL("+972 52 624 7267"), "0526247267");
-  assert.equal(mobileIL("052624726"), "");   // 9 digits
+  assert.equal(mobileIL("053-9462842"), "0539462842");
+  assert.equal(mobileIL("+972 53 946 2842"), "0539462842");
+  assert.equal(mobileIL("053946284"), "");   // 9 digits
   assert.equal(mobileIL("04-8123456"), "");   // a landline
 });
 

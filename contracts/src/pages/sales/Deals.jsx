@@ -5,9 +5,59 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { toast } from "@/components/ui/use-toast";
 import { api, dateTime, dmy, errorText, FIELD_ERRORS, fileToDataUrl, isEmail, mobileIL, nis, taxIdIL } from "@/sales/lib";
 import { Card, FieldRow, History, Info, LinkBox, LoadError, PageHeader, Pill, Spinner, run, useApi } from "./AdminUi.jsx";
 import { Confirm } from "./Discovery.jsx";
+
+const todayIL = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Jerusalem" });
+const MAX_UPLOAD = 3 * 1024 * 1024;
+
+// the signed contract (PDF or a photo) -> { fileId, name }, or null when it was not uploaded
+async function uploadContract(file) {
+  if (!file) return null;
+  if (file.size > MAX_UPLOAD) { toast({ title: errorText({ code: "file_too_large" }), variant: "destructive" }); return null; }
+  const r = await run(async () => api("sales/upload", { method: "POST", body: { name: file.name, data_url: await fileToDataUrl(file) } }), "החוזה הועלה");
+  return r ? { fileId: r.fileId, name: file.name } : null;
+}
+
+function ContractUpload({ file, onFile, label = "העלאת החוזה החתום" }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm hover:bg-secondary">
+      <Upload className="h-4 w-4" />{busy ? "מעלה..." : file ? `${file.name} · החלפה` : label}
+      <input type="file" accept="application/pdf,image/png,image/jpeg" className="hidden" disabled={busy}
+        onChange={async (e) => { const f = e.target.files?.[0]; e.target.value = ""; setBusy(true); const r = await uploadContract(f); setBusy(false); if (r) onFile(r); }} />
+    </label>
+  );
+}
+
+// signed outside the link: when, the signed contract, and the order confirmation to send at the end
+function ManualClose({ m, setM }) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      <FieldRow label="תאריך החתימה" hint="לוח התשלומים מחושב מהתאריך הזה"><Input type="date" value={m.signedOn} max={todayIL()} onChange={(e) => setM({ ...m, signedOn: e.target.value })} /></FieldRow>
+      <FieldRow label="החוזה החתום" hint="PDF או תמונה, עד 3MB. אפשר להעלות גם אחר כך">
+        <div><ContractUpload file={m.file} onFile={(file) => setM({ ...m, file, attachContract: true })} /></div>
+      </FieldRow>
+    </div>
+  );
+}
+
+function OrderMailOptions({ m, setM, hasFile }) {
+  return (
+    <div className="space-y-2">
+      <label className="flex items-center gap-2 text-sm"><Switch checked={m.sendOrderMail} onCheckedChange={(v) => setM({ ...m, sendOrderMail: v })} />לשלוח ללקוח אישור הזמנה במייל</label>
+      {m.sendOrderMail && (
+        <label className={`flex items-center gap-2 text-sm ${hasFile ? "" : "text-muted-foreground"}`}>
+          <Switch checked={hasFile && m.attachContract} disabled={!hasFile} onCheckedChange={(v) => setM({ ...m, attachContract: v })} />לצרף את החוזה החתום{!hasFile && " (לא הועלה)"}
+        </label>
+      )}
+    </div>
+  );
+}
+const blankManual = () => ({ on: false, signedOn: todayIL(), file: null, sendOrderMail: true, attachContract: true });
+const manualPayload = (m) => ({ signedOn: m.signedOn, fileId: m.file?.fileId || undefined, sendOrderMail: m.sendOrderMail, attachContract: Boolean(m.file) && m.attachContract });
 
 export function dealStatus(x) {
   if (x.status.canceled) return ["gray", "בוטלה"];
@@ -93,6 +143,8 @@ export function DealForm() {
   const existing = useApi(id ? `sales/deals?id=${id}` : null);
   const [f, setF] = useState(null);
   const [sendEmail, setSendEmail] = useState(true);
+  const [manual, setManual] = useState(blankManual);
+  const [paymentNote, setPaymentNote] = useState("");
   const [preview, setPreview] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -130,7 +182,8 @@ export function DealForm() {
     if (!f.data.project.name.trim()) return setError("יש להזין שם לפרויקט");
     if (!(Number(f.data.price.amount) > 0)) return setError("יש להזין מחיר");
     if (!f.client.companyName.trim() && !f.client.signerName.trim()) return setError("יש להזין שם חברה או שם החותם");
-    if (!isEmail(f.client.email)) return setError("יש להזין אימייל תקין של הלקוח");
+    // a deal signed outside the link needs the email only for the order confirmation
+    if ((!manual.on || manual.sendOrderMail || f.client.email.trim()) && !isEmail(f.client.email)) return setError("יש להזין אימייל תקין של הלקוח");
     // the client can still correct them on the page, but Grow (invoices, card) refuses invalid ones
     if (f.client.phone.trim() && !mobileIL(f.client.phone)) return setError(`טלפון הלקוח: ${FIELD_ERRORS.phone}`);
     if (f.client.taxId.trim() && !taxIdIL(f.client.taxId)) return setError(`ח.פ הלקוח: ${FIELD_ERRORS.taxId}`);
@@ -140,7 +193,7 @@ export function DealForm() {
         await api(`sales/deals?id=${id}`, { method: "PATCH", body: { action: "update", ...f } });
         navigate(`/sales/deals/${id}`);
       } else {
-        const r = await api("sales/deals", { method: "POST", body: { ...f, sendEmail } });
+        const r = await api("sales/deals", { method: "POST", body: { ...f, sendEmail, paymentNote, ...(manual.on && { signMode: "manual", ...manualPayload(manual) }) } });
         navigate(`/sales/deals/${r.item.id}`);
       }
     } catch (e) { setBusy(false); setError(errorText(e)); }
@@ -157,9 +210,23 @@ export function DealForm() {
   return (
     <div>
       <Link to={id ? `/sales/deals/${id}` : "/sales/deals"} className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowRight className="h-4 w-4" />{id ? "חזרה לעסקה" : "עסקאות"}</Link>
-      <PageHeader title={id ? `עריכת עסקה ${existing.data?.item.number || ""}` : "עסקה חדשה"} subtitle="הלקוח יקבל קישור: סיכום ההזמנה, ההסכם לחתימה, ואז כרטיס להוראת קבע" />
+      <PageHeader title={id ? `עריכת עסקה ${existing.data?.item.number || ""}` : "עסקה חדשה"}
+        subtitle={manual.on ? "הלקוח כבר חתם: מזינים את פרטי ההזמנה, מעלים את החוזה החתום ושולחים לו אישור הזמנה" : "הלקוח יקבל קישור: סיכום ההזמנה, ההסכם לחתימה, ואז כרטיס להוראת קבע"} />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0 space-y-5">
+          {!id && (
+            <Card title="איך נסגרת העסקה">
+              <label className="flex items-center gap-3 text-sm font-medium">
+                <Switch checked={!manual.on} onCheckedChange={(v) => setManual((m) => ({ ...m, on: !v }))} />הלקוח מאשר את ההזמנה וחותם על ההסכם דרך הקישור
+              </label>
+              {manual.on && (
+                <div className="mt-4 space-y-3">
+                  <p className="text-sm text-muted-foreground">תהליך מקוצר: ההזמנה נשמרת כמאושרת וחתומה, בלי נספח א' ובלי מסך החתימה. אם יש הוראת קבע, הלקוח יגדיר כרטיס דרך הקישור שבאישור ההזמנה.</p>
+                  <ManualClose m={manual} setM={setManual} />
+                </div>
+              )}
+            </Card>
+          )}
           <Card title="הלקוח">
             <div className="grid gap-3 sm:grid-cols-2">
               <FieldRow label="שם החברה"><Input {...bind("client.companyName")} /></FieldRow>
@@ -205,6 +272,11 @@ export function DealForm() {
                   <option value="transfer">העברה בנקאית</option><option value="checks">שיקים דחויים</option>
                 </select>
               </FieldRow>
+              {!id && (
+                <FieldRow label="איך הלקוח משלם או שילם (פנימי)" className="sm:col-span-3" hint="למשל: המקדמה הועברה ב-12/11, השירות החודשי בהעברה. אפשר לעדכן בהמשך במסך העסקה">
+                  <Textarea value={paymentNote} onChange={(e) => setPaymentNote(e.target.value)} rows={2} />
+                </FieldRow>
+              )}
             </div>
           </Card>
 
@@ -226,7 +298,8 @@ export function DealForm() {
                   <p className="text-xs text-muted-foreground">תקופה בלי מספר חודשים נמשכת עד שמפסיקים. התקופה האחרונה היא בדרך כלל כזו.</p>
                 </div>
                 <div className="rounded-xl bg-secondary/60 p-3">
-                  <label className="flex items-center gap-2 text-sm font-medium"><Switch checked={f.data.standingOrder.enabled} onCheckedChange={(x) => setF((s) => setIn(s, "data.standingOrder.enabled", x))} />גבייה בהוראת קבע בכרטיס אשראי</label>
+                  <label className="flex items-center gap-2 text-sm font-medium"><Switch checked={f.data.standingOrder.enabled} onCheckedChange={(x) => setF((s) => setIn(s, "data.standingOrder.enabled", x))} />גבייה בהוראת קבע בכרטיס אשראי (הלקוח מגדיר כרטיס דרך הקישור)</label>
+                  {!f.data.standingOrder.enabled && <p className="mt-2 text-xs text-muted-foreground">{id ? "בלי הוראת קבע בכרטיס. את אופן התשלום על השירות רושמים במסך העסקה." : "בלי הוראת קבע בכרטיס. כתבו למעלה, באופן התשלום, איך ישולם השירות החודשי."}</p>}
                   {f.data.standingOrder.enabled && (
                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
                       <FieldRow label="תאריך החיוב הראשון" hint={f.data.standingOrder.startDate ? `החיובים הבאים ב-${Number(f.data.standingOrder.startDate.slice(8, 10))} בכל חודש` : "ריק: ייקבע כשתסמנו שהפרויקט התחיל (תחילת עבודה + החודשים הכלולים)"}><Input {...bind("data.standingOrder.startDate")} type="date" /></FieldRow>
@@ -238,7 +311,7 @@ export function DealForm() {
             ) : <p className="text-sm text-muted-foreground">ללא שירות חודשי.</p>}
           </Card>
 
-          <Card title="נספח א'">
+          {!manual.on && <Card title="נספח א'">
             <div className="space-y-5">
               <div className="grid gap-4 sm:grid-cols-3">
                 {[["authorizedContact", "איש קשר מוסמך (לקוח)"], ["accountingContact", "הנהלת חשבונות (לקוח)"], ["companyContact", "איש קשר מטעמנו"]].map(([k, l]) => (
@@ -304,7 +377,7 @@ export function DealForm() {
               </div>
               <label className="flex items-center gap-2 text-sm"><Switch checked={ap.personalData === "attached"} onCheckedChange={(x) => setF((s) => setIn(s, "data.appendix.personalData", x ? "attached" : "na"))} />מצורף נספח עיבוד מידע אישי (סעיף 11.5)</label>
             </div>
-          </Card>
+          </Card>}
         </div>
 
         <aside className="min-w-0 space-y-4 lg:sticky lg:top-20 lg:self-start">
@@ -333,9 +406,10 @@ export function DealForm() {
             )}
           </Card>
           <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
-            {!id && <label className="flex items-center gap-2 text-sm"><Switch checked={sendEmail} onCheckedChange={setSendEmail} />לשלוח ללקוח מייל עם הקישור</label>}
+            {!id && !manual.on && <label className="flex items-center gap-2 text-sm"><Switch checked={sendEmail} onCheckedChange={setSendEmail} />לשלוח ללקוח מייל עם הקישור</label>}
+            {!id && manual.on && <OrderMailOptions m={manual} setM={setManual} hasFile={Boolean(manual.file)} />}
             {error && <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
-            <Button className="w-full" disabled={busy} onClick={save}>{busy ? "שומר..." : id ? "שמירת השינויים" : "יצירת העסקה"}</Button>
+            <Button className="w-full" disabled={busy} onClick={save}>{busy ? "שומר..." : id ? "שמירת השינויים" : manual.on ? "שמירת העסקה החתומה" : "יצירת העסקה"}</Button>
           </div>
         </aside>
       </div>
@@ -348,6 +422,9 @@ export function DealDetail() {
   const { data, error, reload } = useApi(`sales/deals?id=${id}`);
   const [confirm, setConfirm] = useState(null);
   const [startDate, setStartDate] = useState("");
+  const [closing, setClosing] = useState(null);     // the manual close form
+  const [attach, setAttach] = useState(true);       // the order confirmation: with the signed contract
+  const [note, setNote] = useState(null);           // editing the payment note
   if (error) return <LoadError error={error} reload={reload} />;
   if (!data) return <Spinner />;
   const x = data.item;
@@ -362,6 +439,7 @@ export function DealDetail() {
       <Link to="/sales/deals" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowRight className="h-4 w-4" />עסקאות</Link>
       <PageHeader title={`${x.client.companyName || x.client.signerName} · ${x.data.project.name}`} subtitle={`עסקה מס' ${x.number}`}>
         <Pill tone={tone}>{label}</Pill>
+        {x.signMode === "manual" && <Pill>נחתם מחוץ לקישור</Pill>}
         {!x.approvedAt && !x.status.canceled && <Button size="sm" variant="outline" asChild><Link to={`/sales/deals/${id}/edit`}>עריכה</Link></Button>}
       </PageHeader>
 
@@ -374,7 +452,7 @@ export function DealDetail() {
           <Info rows={[
             ["נצפה", x.viewedAt && dateTime(x.viewedAt)],
             ["הזמנה אושרה", x.approvedAt && dateTime(x.approvedAt)],
-            ["הסכם נחתם", x.signedAt && dateTime(x.signedAt)],
+            ["הסכם נחתם", x.signedAt && (x.signMode === "manual" ? `${dmy(x.signedOn)} (מחוץ לקישור)` : dateTime(x.signedAt))],
             ["מקדמה", x.status.deposit === "paid" ? "שולמה" : "ממתינה"],
             ["הוראת קבע", { not_required: "לא נדרשת", pending: "ממתינה לכרטיס", set: "כרטיס נשמר", failed: "נכשלה" }[x.status.card]],
             ["פרויקט", { not_started: "לא התחיל", started: `התחיל ${dmy(x.projectStartedOn)}`, delivered: "נמסר" }[x.status.project]],
@@ -382,11 +460,29 @@ export function DealDetail() {
           ]} />
           <div className="mt-4 flex flex-wrap gap-2">
             {x.hasSignedPdf && <Button size="sm" asChild><a href={file("signed")}>הורדת ההסכם החתום</a></Button>}
+            {x.signMode === "manual" && (
+              <ContractUpload file={null} label={x.hasSignedPdf ? "החלפת קובץ החוזה" : "העלאת החוזה החתום"}
+                onFile={(f) => act({ action: "signed_file", fileId: f.fileId }, "החוזה נשמר")} />
+            )}
+            {!x.signedAt && !x.status.canceled && !closing && <Button size="sm" variant="outline" onClick={() => setClosing({ ...blankManual(), on: true })}>הלקוח חתם מחוץ לקישור</Button>}
             {x.data.project.specFileId && <Button size="sm" variant="outline" asChild><a href={file("spec")} target="_blank" rel="noreferrer">האפיון</a></Button>}
             {x.signedAt && x.status.deposit !== "paid" && <Button size="sm" variant="outline" onClick={() => setConfirm({ title: "לסמן שהמקדמה שולמה?", onConfirm: () => act({ action: "mark_deposit_paid" }, "סומן") })}>המקדמה שולמה</Button>}
             {x.signedAt && x.status.project === "started" && <Button size="sm" variant="outline" onClick={() => setConfirm({ title: "לסמן שהמערכת נמסרה?", onConfirm: () => act({ action: "mark_delivered" }, "סומן") })}>המערכת נמסרה</Button>}
             {!x.signedAt && !x.status.canceled && <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setConfirm({ title: "לבטל את העסקה?", description: "הקישור יפסיק לעבוד.", danger: true, onConfirm: () => act({ action: "cancel" }, "בוטלה") })}>ביטול</Button>}
           </div>
+          {closing && (
+            <form className="mt-4 space-y-3 rounded-xl border border-border p-3" onSubmit={async (e) => {
+              e.preventDefault();
+              const r = await run(() => api(`sales/deals?id=${id}`, { method: "PATCH", body: { action: "close_manual", ...manualPayload(closing) } }), closing.sendOrderMail ? "נשמר, אישור ההזמנה נשלח" : "נשמר");
+              if (r) { setClosing(null); reload(); }
+            }}>
+              <p className="text-sm font-medium">סגירה ידנית: הלקוח חתם מחוץ לקישור</p>
+              <p className="text-xs text-muted-foreground">{x.approvedAt ? "ההזמנה כבר אושרה בקישור, ולוח התשלומים שאושר נשאר." : "ההזמנה תסומן כמאושרת ולוח התשלומים יחושב מתאריך החתימה."} הקישור ללקוח ימשיך לעבוד{x.data.standingOrder?.enabled ? " להגדרת כרטיס להוראת הקבע" : ""}.</p>
+              <ManualClose m={closing} setM={setClosing} />
+              <OrderMailOptions m={closing} setM={setClosing} hasFile={Boolean(closing.file)} />
+              <div className="flex gap-2"><Button type="submit" size="sm">סימון כנחתם</Button><Button type="button" size="sm" variant="ghost" onClick={() => setClosing(null)}>ביטול</Button></div>
+            </form>
+          )}
           {x.signedAt && x.status.project === "not_started" && (
             <div className="mt-4 rounded-xl bg-secondary/60 p-3">
               <p className="text-sm font-medium">תחילת עבודה</p>
@@ -407,6 +503,26 @@ export function DealDetail() {
             ["הנהלת חשבונות", x.client.accountingEmail && <span dir="ltr">{x.client.accountingEmail}</span>],
           ]} />
         </Card>
+      </div>
+
+      <div className="grid gap-5 md:grid-cols-2">
+        <Card title="איך הלקוח משלם" actions={note === null && <Button size="sm" variant="ghost" onClick={() => setNote(x.paymentNote || "")}>עריכה</Button>}>
+          {note === null ? <p className="whitespace-pre-line text-sm">{x.paymentNote || <span className="text-muted-foreground">לא נרשם. כאן רושמים תשלום שסוכם מחוץ לקישור, למשל מקדמה שהועברה או שירות חודשי בהעברה.</span>}</p> : (
+            <form className="space-y-2" onSubmit={async (e) => { e.preventDefault(); const r = await run(() => api(`sales/deals?id=${id}`, { method: "PATCH", body: { action: "payment_note", note } }), "נשמר"); if (r) { setNote(null); reload(); } }}>
+              <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} autoFocus />
+              <div className="flex gap-2"><Button type="submit" size="sm">שמירה</Button><Button type="button" size="sm" variant="ghost" onClick={() => setNote(null)}>ביטול</Button></div>
+            </form>
+          )}
+        </Card>
+        {x.signMode === "manual" && (
+          <Card title="אישור הזמנה ללקוח">
+            <p className="mb-3 text-sm text-muted-foreground">ההזמנה, לוח התשלומים ואופן התשלום{sub?.status === "pending_card" ? ", עם קישור להגדרת כרטיס להוראת הקבע" : ""}. נשלח אל <span dir="ltr">{x.client.email || "—"}</span>{x.client.accountingEmail ? " ובהעתק להנהלת החשבונות" : ""}.</p>
+            <label className={`mb-3 flex items-center gap-2 text-sm ${x.hasSignedPdf ? "" : "text-muted-foreground"}`}>
+              <Switch checked={x.hasSignedPdf && attach} disabled={!x.hasSignedPdf} onCheckedChange={setAttach} />לצרף את החוזה החתום{!x.hasSignedPdf && " (לא הועלה)"}
+            </label>
+            <Button size="sm" disabled={!x.client.email} onClick={() => act({ action: "send_order", attachContract: x.hasSignedPdf && attach }, "אישור ההזמנה נשלח לתור")}>שליחת אישור הזמנה במייל</Button>
+          </Card>
+        )}
       </div>
 
       <Card title={`לוח תשלומים${x.approvedAt ? " (כפי שאושר)" : " (מחושב מהיום)"}`}>
