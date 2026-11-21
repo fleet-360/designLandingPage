@@ -48,7 +48,8 @@ export default function CardSetup({ firstCharge, startKnown, includes, open, che
       }
     } catch (e) {
       setBusy(false);
-      setError(errorText(e));
+      // Grow's own reason when it refused to open the card page (for example a phone number it does not accept)
+      setError(e?.data?.reason ? `דף הכרטיס לא נפתח: ${e.data.reason}` : errorText(e));
     }
   };
 
