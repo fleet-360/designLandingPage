@@ -1,5 +1,6 @@
 // GET /api/sales/deal-file?token=&kind=signed|spec|demo|logo|video     the client's own files (the token is the key)
 // GET /api/sales/deal-file?id=&kind=signed|spec|demo|logo|video        the same for the signed-in admin
+// GET /api/sales/deal-file?draft=&kind=demo|logo|video                 the film of a deal not created yet (admin)
 // demo: the demo film's HTML with its driver (api/_lib/demo-film.js), sandboxed: it runs without an origin,
 // so it can reach neither the page that frames it nor anyone's cookies.
 import { HttpError, route } from "../../_lib/http.js";
@@ -40,7 +41,11 @@ async function sendVideo(req, res, v) {
 export default route(["GET"], async (req, res) => {
   const q = new URL(req.url, "http://x").searchParams;
   let d;
-  if (q.get("id")) {
+  if (q.get("draft")) {
+    if (!sessionUser(req)) throw new HttpError(401, "signed_out");
+    d = (await query("SELECT film FROM sales.film_drafts WHERE id = $1", [uuidParam(q.get("draft"))])).rows[0];
+    if (d) d.data = {};
+  } else if (q.get("id")) {
     if (!sessionUser(req)) throw new HttpError(401, "signed_out");
     d = (await query("SELECT * FROM sales.deals WHERE id = $1", [uuidParam(q.get("id"))])).rows[0];
   } else if (/^[A-Za-z0-9_-]{20,40}$/.test(String(q.get("token") || ""))) {

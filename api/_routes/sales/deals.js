@@ -1,7 +1,9 @@
 // /api/sales/deals   deals, admin
 //   GET                    list, newest first
 //   GET    ?id=            one, with its order (live or frozen), events, emails, standing order
-//   POST   { data, client, sendEmail, paymentNote }    create (?preview=1: compute only, nothing saved)
+//   POST   { data, client, sendEmail, paymentNote, filmDraft }    create (?preview=1: compute only, nothing saved)
+//          filmDraft: the demo film made in the form (sales/deal-film?draft=), moved into the deal before the
+//          invite goes out, so the client sees it from the first visit
 //          signMode "manual": the client already signed outside the link. With signedOn, fileId (the signed
 //          contract, uploaded through /api/sales/upload), sendOrderMail, attachContract: see close_manual
 //   PATCH  ?id= { action, ... }
@@ -145,13 +147,16 @@ export default route(["GET", "POST", "PATCH"], async (req, res) => {
     // a deal closed by hand needs the email only to send the order confirmation
     if (!client.email && (!manual || b.sendOrderMail)) throw new HttpError(400, "bad_client_email");
     if (manual && b.fileId) await signedFile(b.fileId);
+    const draft = b.filmDraft ? (await query("SELECT id, film FROM sales.film_drafts WHERE id = $1", [uuidParam(b.filmDraft)])).rows[0] : null;
+    if (b.filmDraft && !draft) throw new HttpError(400, "bad_film_draft");
     const { rows } = await query(
-      `INSERT INTO sales.deals (token, created_by, data, client, card_status, payment_note)
-       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      `INSERT INTO sales.deals (token, created_by, data, client, card_status, payment_note, film)
+       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
       [newToken(), user, JSON.stringify(data), JSON.stringify(client), data.standingOrder.enabled ? "pending" : "not_required",
-        str(b.paymentNote, 1000) || null]);
+        str(b.paymentNote, 1000) || null, draft?.film && Object.keys(draft.film).length ? JSON.stringify(draft.film) : null]);
     let d = rows[0];
-    await logEvent("deal", d.id, "created", { by: user, ...(manual && { manual: true }) });
+    if (draft) await query("DELETE FROM sales.film_drafts WHERE id = $1", [draft.id]);
+    await logEvent("deal", d.id, "created", { by: user, ...(manual && { manual: true }), ...(d.film && { film: { script: Boolean(d.film.script), video: Boolean(d.film.video), published: Boolean(d.film.published) } }) });
     let mail = null;
     if (manual) {
       d = await closeManually(d, b, user, settings);

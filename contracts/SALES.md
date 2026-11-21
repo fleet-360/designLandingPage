@@ -72,7 +72,10 @@ Saving the card is a separate last step, so the signed agreement is kept even if
 "הפרויקט התחיל" in the admin sets the first charge (start of work + included months, on the billing day)
 and emails the client.
 
-**Demo film on the order page.** On the deal screen ("סרטון דמו בעמוד ההזמנה") sales uploads the demo (one
+**Demo film on the order page.** Part of the deal form ("סרטון דמו בעמוד ההזמנה", after the project), so the film is ready
+when the deal is created: a new deal's film is a draft (`sales.film_drafts`, `?draft=`) that creating the deal moves
+into it before the invite goes out, shown to the client from the start (drafts left behind are deleted after 14
+days). It stays on the deal screen for later changes. Sales uploads the demo (one
 HTML file, gzipped in the browser, up to 3.2MB gzipped) and the client's logo. "יצירת הסרטון" sends the demo's
 source (embedded images and long data runs replaced by markers, up to 900k characters) to Claude, which writes
 a script of 5 to 9 scenes: a caption each, and clicks, typing, drags, highlights and camera zooms by CSS
@@ -84,6 +87,11 @@ not play are listed, and "תיקון עם Claude" sends them back for a correcte
 are editable. A ready video (MP4/WebM/MOV, up to 60MB, uploaded and served in 2.5MB parts because Vercel takes
 4.5MB per request) replaces the film when there is one. Nothing shows until "מוצג ללקוח" is on. Under it: the
 client logos the site shows (`assets/img/clients`) and "הצטרפו ללקוחות שלנו / ובואו נהפוך את החלום למציאות".
+The client's logo is part of the demo, not a sticker: Claude also picks where a logo sits in the demo (script
+`brand`: the header or sidebar logo, or the product name it stands before), and the player puts the client's
+logo there before the film starts, matched to the bar (a dark mark on a transparent background turns white on a
+dark bar, a logo with a white background blends into a light one). A demo with no such place shows the logo with
+the captions; an uploaded video opens with the logo, which fades once it plays.
 Stored in `sales.deals.film`, outside the approved order and the signed snapshot.
 
 **Deal signed outside the link.** On a new deal, switching off "הלקוח מאשר וחותם דרך הקישור" gives a shorter

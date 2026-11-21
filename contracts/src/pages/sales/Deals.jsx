@@ -283,6 +283,7 @@ export function DealForm() {
   const [error, setError] = useState("");
   const [specFile, setSpecFile] = useState(null); // a spec PDF waiting for its pages to be picked
   const [confirm, setConfirm] = useState(null);
+  const [filmDraft, setFilmDraft] = useState(null); // the demo film made in this form, before the deal exists
 
   useEffect(() => {
     if (f) return;
@@ -358,7 +359,7 @@ export function DealForm() {
         await api(`sales/deals?id=${id}`, { method: "PATCH", body: { action: "update", ...f } });
         navigate(`/sales/deals/${id}`);
       } else {
-        const r = await api("sales/deals", { method: "POST", body: { ...f, sendEmail, paymentNote, ...(manual.on && { signMode: "manual", ...manualPayload(manual) }) } });
+        const r = await api("sales/deals", { method: "POST", body: { ...f, sendEmail, paymentNote, ...(filmDraft && { filmDraft }), ...(manual.on && { signMode: "manual", ...manualPayload(manual) }) } });
         navigate(`/sales/deals/${r.item.id}`);
       }
     } catch (e) { setBusy(false); setError(errorText(e)); }
@@ -438,6 +439,10 @@ export function DealForm() {
               <FieldRow label="מה נצטרך מהלקוח לפתיחה" className="sm:col-span-2"><Textarea {...bind("data.project.kickoffNeeds")} rows={2} /></FieldRow>
             </div>
           </Card>
+
+          {!manual.on && (id
+            ? <DealFilm id={id} project={sp.name} />
+            : <DealFilm draft={filmDraft} onDraft={setFilmDraft} project={sp.name} summary={sp.summary} />)}
           <Card title="מחיר ותשלומים">
             <div className="grid gap-3 sm:grid-cols-3">
               <FieldRow label='מחיר לפני מע"מ *'><Input {...bind("data.price.amount")} inputMode="decimal" dir="ltr" /></FieldRow>
