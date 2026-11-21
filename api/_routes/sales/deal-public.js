@@ -58,6 +58,8 @@ async function view(d, settings, base) {
       logo: d.film.logoFileId ? `${base}/api/sales/deal-file?token=${d.token}&kind=logo&v=${encodeURIComponent(d.film.logoFileId.slice(0, 8))}` : null,
       script: d.film.video ? null : d.film.script,
     } : null,
+    // the key lines sales chose for this client (written with Claude from the client's problem)
+    pitch: d.pitch && (d.pitch.headline || d.pitch.lines?.length) ? { headline: d.pitch.headline || "", lines: d.pitch.lines || [] } : null,
     company: { name: settings.company.name, phone: settings.company.phone, email: settings.officeEmail },
     officeEmail: settings.officeEmail,
   };

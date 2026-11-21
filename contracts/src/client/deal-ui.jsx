@@ -21,7 +21,7 @@ function Waves({ className = "", stroke = "#E3D6B8" }) {
   );
 }
 
-export function DealHero({ order }) {
+export function DealHero({ order, pitch }) {
   const o = order;
   const included = o.service?.enabled ? o.service.rows?.find((r) => !r.price) : null;
   const facts = [
@@ -40,7 +40,17 @@ export function DealHero({ order }) {
           מוכנים לעשות<br />היסטוריה?
         </h1>
         <p className="mt-6 text-xl font-extrabold text-[#C2311E] sm:text-2xl">{o.project.name}</p>
-        {o.project.summary && <p className="mt-2 max-w-2xl whitespace-pre-line text-[17px] leading-relaxed text-[#4F3324]">{o.project.summary}</p>}
+        {pitch ? (
+          // the key lines sales chose for this client (written with Claude from the client's problem)
+          <div className="mt-3 max-w-2xl">
+            {pitch.headline && <p className="text-[22px] font-extrabold leading-snug sm:text-2xl" style={{ color: INK }}>{pitch.headline}</p>}
+            {pitch.lines.length > 0 && (
+              <ul className="mt-3 space-y-1.5">
+                {pitch.lines.map((l) => <li key={l} className="flex gap-2.5 text-[17px] leading-relaxed text-[#4F3324]"><Check className="mt-1 h-5 w-5 shrink-0 text-[#E0432F]" aria-hidden="true" />{l}</li>)}
+              </ul>
+            )}
+          </div>
+        ) : o.project.summary && <p className="mt-2 max-w-2xl whitespace-pre-line text-[17px] leading-relaxed text-[#4F3324]">{o.project.summary}</p>}
         <ul className="mt-6 flex flex-wrap gap-2">
           {facts.map((f) => (
             <li key={f} className="flex items-center gap-1.5 rounded-full border border-[#DCCFB0] bg-white/70 px-3 py-1.5 text-sm font-medium" style={{ color: INK }}>
@@ -55,7 +65,8 @@ export function DealHero({ order }) {
 
 // ---- the road ----
 
-// the stops from the spec to the service, from what the order holds
+// the stops from the spec to the service, from what the order holds. A road map only: what happens and
+// when, no prices (they are in the price card and the payment schedule below)
 function roadStops(o) {
   const stops = [
     { t: "איפיון", s: "הושלם", state: "done" },
@@ -66,19 +77,16 @@ function roadStops(o) {
   ];
   if (o.service?.enabled) {
     let paid = 0;
-    let prev = null;
     for (const r of o.service.rows || []) {
-      if (!r.price) stops.push({ t: "ליווי צמוד", s: "כלול במחיר", s2: r.when, icon: Headset });
+      if (!r.price) stops.push({ t: "ליווי צמוד", s: "אחרי העלייה לאוויר", s2: r.when, icon: Headset });
       else {
         stops.push({
           t: paid === 0 ? "תמיכה ותחזוקה" : "תמיכה שוטפת",
-          s: `${nis(r.price)} לחודש`,
+          s: paid === 0 ? "צוות שמכיר את המערכת שלכם" : "ממשיכים לשפר ולתחזק",
           s2: r.when,
-          drop: prev != null && r.price < prev,
           icon: paid === 0 ? LifeBuoy : HeartHandshake,
         });
         paid++;
-        prev = r.price;
       }
     }
   } else {

@@ -100,6 +100,9 @@ const bankDayNote = (date) => {
  * and their dates are counted from `from`, the date the order is approved (default: today in Israel).
  * -> { price, vat, total, rows: [{ n, kind: 'deposit'|'installment', date, dateNote, method, before, vat, total }],
  *      totals: { before, vat, total } }
+ * Amounts with VAT are whole shekels: the total is rounded, each payment is rounded and the last one takes
+ * the difference, so the payments add up to the total exactly. The amount before VAT stays as sales set it;
+ * its VAT is what is left (an agora or two off the exact rate).
  */
 export function paymentSchedule(deal, from = israelDate()) {
   const rate = Number(deal.vatRate);
@@ -126,6 +129,12 @@ export function paymentSchedule(deal, from = israelDate()) {
     });
   }
   const vats = allocate(vatA, befores);
+  // whole shekels with VAT (what the client transfers, writes on a check and is invoiced for)
+  const toShekel = (a) => Math.round(a / 100) * 100;
+  const totalA = toShekel(priceA + vatA);
+  const totalsA = befores.map((b, i) => toShekel(b + vats[i]));
+  totalsA[totalsA.length - 1] += totalA - totalsA.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < vats.length; i++) vats[i] = totalsA[i] - befores[i];
 
   const rows = befores.map((before, i) => ({
     n: i + 1,
@@ -139,8 +148,8 @@ export function paymentSchedule(deal, from = israelDate()) {
   }));
   return {
     price: shekels(priceA),
-    vat: shekels(vatA),
-    total: shekels(priceA + vatA),
+    vat: shekels(totalA - priceA),
+    total: shekels(totalA),
     rows,
     totals: {
       before: shekels(befores.reduce((a, b) => a + b, 0)),
