@@ -86,7 +86,16 @@
                         });
                         growInitialised = true;
                     }
-                    resolve(true);
+                    /* init() only starts loading Grow's real runtime (window.growRuntime).
+                       Rendering before it exists fails at once through onError, which
+                       showed as a failed payment on a quick first tap. */
+                    if (window.growRuntime) {
+                        resolve(true);
+                    } else if (Date.now() - startedAt > GROW_SDK_TIMEOUT_MS) {
+                        resolve(false);
+                    } else {
+                        setTimeout(check, 100);
+                    }
                 } else if (Date.now() - startedAt > GROW_SDK_TIMEOUT_MS) {
                     resolve(false);
                 } else {
