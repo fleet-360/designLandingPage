@@ -4,7 +4,7 @@
 // part is frozen; when they sign, the whole thing is frozen with its hash (deal.snapshot).
 import { createHash } from "node:crypto";
 import { AGREEMENT as AGREEMENT_V1 } from "./agreement-v1.js";
-import { billingDayOnOrAfter, israelDate, paymentSchedule, servicePeriods, withVat } from "./sales-calc.js";
+import { chargeDayOf, israelDate, paymentSchedule, servicePeriods, withVat } from "./sales-calc.js";
 import { HttpError } from "./http.js";
 import { str } from "./sales.js";
 
@@ -47,10 +47,10 @@ export function cleanDealData(b, settings) {
         .filter((x) => x.price > 0),
     },
     standingOrder: (() => {
-      // a start date moves forward to the billing day, so the first two charges are a month apart
-      const dayOfMonth = Math.min(28, Math.max(1, Math.trunc(num(so.dayOfMonth, 1))));
-      const start = /^\d{4}-\d{2}-\d{2}$/.test(String(so.startDate || "")) ? billingDayOnOrAfter(so.startDate, dayOfMonth) : "";
-      return { enabled: Boolean(so.enabled), startDate: start, dayOfMonth };
+      // a first charge date sets the billing day; without one, the day asked for is used when the
+      // project starts (api/_routes/sales/deals.js mark_project_started)
+      const start = /^\d{4}-\d{2}-\d{2}$/.test(String(so.startDate || "")) ? so.startDate : "";
+      return { enabled: Boolean(so.enabled), startDate: start, dayOfMonth: chargeDayOf(start, so.dayOfMonth) };
     })(),
     appendix: {
       authorizedContact: contact(a.authorizedContact),

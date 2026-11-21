@@ -15,6 +15,7 @@ import { uuidParam } from "../../_lib/sign.js";
 import { events, getSettings, isEmail, logEvent, mailsFor, sendMail, str } from "../../_lib/sales.js";
 import { advanceAfterPaid, chargeRow, createSubscription, subscriptionRow, today } from "../../_lib/billing.js";
 import { cardReminderMail } from "../../_lib/sales-mail.js";
+import { chargeDayOf } from "../../_lib/sales-calc.js";
 import { callToro } from "../../_lib/toro.js";
 
 function cleanSchedule(list) {
@@ -95,7 +96,7 @@ export default route(["GET", "POST", "PATCH"], async (req, res) => {
       vatRate: Number.isFinite(Number(b.vatRate)) ? Number(b.vatRate) : settings.vatRate,
       schedule: cleanSchedule(b.schedule),
       startDate: dateOrNull(b.startDate),
-      dayOfMonth: Math.min(28, Math.max(1, Math.trunc(Number(b.dayOfMonth) || 1))),
+      dayOfMonth: chargeDayOf(dateOrNull(b.startDate), b.dayOfMonth),
     });
     await logEvent("subscription", s.id, "created", { by: user });
     let mail = null;
@@ -159,7 +160,7 @@ export default route(["GET", "POST", "PATCH"], async (req, res) => {
       const vals = [id];
       const add = (col, v) => { vals.push(v); sets.push(`${col} = $${vals.length}`); };
       if (b.schedule !== undefined) add("schedule", JSON.stringify(cleanSchedule(b.schedule)));
-      if (b.dayOfMonth !== undefined) add("day_of_month", Math.min(28, Math.max(1, Math.trunc(Number(b.dayOfMonth) || 1))));
+      if (b.dayOfMonth !== undefined) add("day_of_month", chargeDayOf(null, b.dayOfMonth));
       if (b.nextChargeDate !== undefined) {
         const nd = dateOrNull(b.nextChargeDate);
         add("next_charge_date", nd);

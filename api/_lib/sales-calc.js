@@ -59,6 +59,13 @@ export const billingDayOnOrAfter = (iso, day) => {
   return same >= iso ? same : addMonths(iso, 1, day);
 };
 
+// The standing order's billing day. A first charge date sets it (charged on the 22nd, then every
+// 22nd); without one it is the day asked for. Days past a month's end fall on its last day (addMonths).
+export function chargeDayOf(startDate, dayOfMonth) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(startDate || ""))) return Number(String(startDate).slice(8, 10));
+  return Math.min(31, Math.max(1, Math.trunc(Number(dayOfMonth) || 1)));
+}
+
 export function addMonths(iso, months, day) {
   const [y, m] = iso.split("-").map(Number);
   const target = new Date(Date.UTC(y, m - 1 + months, 1, 12));

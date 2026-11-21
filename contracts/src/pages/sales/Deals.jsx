@@ -228,8 +228,8 @@ export function DealForm() {
                   <label className="flex items-center gap-2 text-sm font-medium"><Switch checked={f.data.standingOrder.enabled} onCheckedChange={(x) => setF((s) => setIn(s, "data.standingOrder.enabled", x))} />גבייה בהוראת קבע בכרטיס אשראי</label>
                   {f.data.standingOrder.enabled && (
                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                      <FieldRow label="תאריך החיוב הראשון" hint="ריק: ייקבע כשתסמנו שהפרויקט התחיל (תחילת עבודה + החודשים הכלולים)"><Input {...bind("data.standingOrder.startDate")} type="date" /></FieldRow>
-                      <FieldRow label="יום החיוב בחודש"><Input {...bind("data.standingOrder.dayOfMonth")} inputMode="numeric" dir="ltr" /></FieldRow>
+                      <FieldRow label="תאריך החיוב הראשון" hint={f.data.standingOrder.startDate ? `החיובים הבאים ב-${Number(f.data.standingOrder.startDate.slice(8, 10))} בכל חודש` : "ריק: ייקבע כשתסמנו שהפרויקט התחיל (תחילת עבודה + החודשים הכלולים)"}><Input {...bind("data.standingOrder.startDate")} type="date" /></FieldRow>
+                      {!f.data.standingOrder.startDate && <FieldRow label="יום החיוב בחודש" hint="התאריך שייקבע יעוגל ליום הזה"><Input {...bind("data.standingOrder.dayOfMonth")} inputMode="numeric" dir="ltr" /></FieldRow>}
                     </div>
                   )}
                 </div>
