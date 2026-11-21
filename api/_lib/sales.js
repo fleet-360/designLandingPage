@@ -15,7 +15,7 @@ export const DEFAULT_SETTINGS = {
     taxId: "517124608",
     address: "הרברט סמואל 51, חדרה",
     phone: "052-6247267",
-    website: "buildalgo.co.il",
+    website: "pro-algo.com",
   },
   officeEmail: "sales@pro-algorithm.co.il",
   accountingContact: { name: "", phone: "052-6247267", email: "sales@pro-algorithm.co.il" },

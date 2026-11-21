@@ -25,7 +25,7 @@ function layout({ preheader = "", title, body, button, footer = "" }) {
 ${button ? `<p style="margin:26px 0 8px;"><a href="${esc(button.href)}" style="display:inline-block;background:${ACCENT};color:#ffffff;text-decoration:none;font-weight:700;padding:13px 26px;border-radius:10px;font-size:16px;">${esc(button.label)}</a></p>` : ""}
 </td></tr>
 <tr><td style="padding:18px 28px 26px;color:#6B7280;font-size:13px;line-height:1.6;border-top:1px solid #EEF0F4;">
-${footer || 'פרו אלגוריתם בע"מ · buildalgo.co.il'}
+${footer || 'פרו אלגוריתם בע"מ · pro-algo.com'}
 </td></tr>
 </table></td></tr></table></body></html>`;
 }
