@@ -23,9 +23,14 @@ export function israelTime(day, hhmm) {
   return new Date(guess.getTime() - tzOffset(guess) * 60000);
 }
 
+const MORNING = "10:00";     // the first time suggested each day (earlier free times are under "more times")
+const AFTERNOON = "12:30";
+const iso = (s) => ({ start: new Date(s.start).toISOString(), end: new Date(s.end).toISOString() });
+
 const overlaps = (a0, a1, b0, b1) => a0 < b1 && b0 < a1;
 
-/** -> { slots: [{ start, end }], calendarConnected, all: Date-pairs considered (for validation) } */
+/** -> { slots: [{ start, end }] the first suggestions, days: [{ day, suggested, all }] every free day in range,
+ *       calendarConnected, isFree(startIso) for validation } */
 export async function availableSlots(settings, minutes, { now = new Date(), excludeId = null } = {}) {
   const cal = settings.calendar;
   const step = 30;
@@ -56,20 +61,24 @@ export async function availableSlots(settings, minutes, { now = new Date(), excl
     }
   }
 
-  // spread: per day the first free morning slot and the first free afternoon slot
+  // spread: per day a morning slot (from 10:00) and an afternoon slot (from 12:30), so the client is not
+  // faced with a wall of times. Every other free time is sent too (days), for "more times" / "more dates".
   const picked = [];
+  const days = [];
   const byDay = new Map();
   for (const s of all) (byDay.get(s.day) || byDay.set(s.day, []).get(s.day)).push(s);
-  for (const [, list] of byDay) {
-    const noon = israelTime(list[0].day, "12:30").getTime();
-    const am = list.find((s) => s.start < noon);
+  for (const [day, list] of byDay) {
+    const morning = israelTime(day, MORNING).getTime();
+    const noon = israelTime(day, AFTERNOON).getTime();
+    const am = list.find((s) => s.start >= morning && s.start < noon) || list.find((s) => s.start < noon);
     const pm = list.find((s) => s.start >= noon && (!am || s.start >= am.end + 3600e3));   // an afternoon option, at least an hour after the morning one
-    for (const s of [am, pm]) if (s) picked.push(s);
-    if (picked.length >= Number(cal.slotsToOffer || 8)) break;
+    const suggested = [am, pm].filter(Boolean);
+    days.push({ day, suggested: suggested.map(iso), all: list.map(iso) });
+    if (picked.length < Number(cal.slotsToOffer || 8)) picked.push(...suggested);
   }
-  const iso = (s) => ({ start: new Date(s.start).toISOString(), end: new Date(s.end).toISOString() });
   return {
     slots: picked.slice(0, Number(cal.slotsToOffer || 8)).map(iso),
+    days,
     calendarConnected: busyRes.ok,
     isFree: (startIso) => all.some((s) => s.start === new Date(startIso).getTime()),
   };

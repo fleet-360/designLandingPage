@@ -19,7 +19,7 @@ the page through Toro's existing `grow/proAlgorithm/createPaymentLink`, with the
 id. Toro's existing payment report (`/api/pay/paid`) marks it paid, and the existing Caspit invoice goes
 out as for any payment. The amount comes from the browser, so a payment below the price (VAT included)
 is not marked paid: the office gets a "תשלום חלקי" email and can mark it paid by hand. The page then offers free slots. These are the configured hours, minus busy
-times in the `developers@` calendar (when connected) and booked meetings, at most two per day. Bookings are taken one at a time, so two clients cannot book
+times in the `developers@` calendar (when connected) and booked meetings: two suggestions per day (from 10:00 and from 12:30), with every other free time under "שעות נוספות" and later days under "תאריכים נוספים". Bookings are taken one at a time, so two clients cannot book
 overlapping times. Booking
 creates the event with a Meet link, and Google sends the invitations. When the calendar is not connected,
 the confirmation email carries an `.ics` invite instead. The calendar is reached directly from the site
