@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { CalendarCheck, CalendarDays, CalendarPlus, ChevronRight, Clock, CreditCard, FileText, Gift, Lock, MousePointerClick, Phone, PlaneTakeoff, Plus, Presentation, Ticket, UserRoundCheck, Video, X } from "lucide-react";
+import { CalendarCheck, CalendarDays, CalendarPlus, Check, ChevronRight, Clock, CreditCard, FileText, Gift, Lock, MousePointerClick, Phone, PlaneTakeoff, Plus, Presentation, Ticket, UserRoundCheck, Video, X } from "lucide-react";
 import { api, dayLabel, errorText, FIELD_ERRORS, fullNameOk, isEmail, meetingTime, mobileIL, nis, taxIdIL, timeLabel } from "@/sales/lib";
 import { createPayment, openWidget, warmUp } from "@/sales/grow";
 import { Loading, Notice, Shell } from "./ui.jsx";
@@ -177,7 +177,17 @@ function Offer({ d, canBook, canPay, onGo }) {
           <div>
             <p className="for"><Ticket className="h-4 w-4" aria-hidden="true" />{d.title} · הוכן עבור {who}</p>
             <h1 className="hd">רואים את המערכת לפני שמפתחים אותה</h1>
-            <p className="sub">יושבים עם מומחה תוכנה, משרטטים יחד את המסכים והתהליכים, ומקבלים דמו עובד של המערכת שלכם.</p>
+            {d.pitch ? (
+              // the key lines sales chose for this client (written with Claude from the client's problem)
+              <>
+                {d.pitch.headline && <p className="sub pitch-h">{d.pitch.headline}</p>}
+                {d.pitch.lines?.length > 0 && (
+                  <ul className="pitch">
+                    {d.pitch.lines.map((l) => <li key={l}><Check className="h-5 w-5" aria-hidden="true" />{l}</li>)}
+                  </ul>
+                )}
+              </>
+            ) : <p className="sub">יושבים עם מומחה תוכנה, משרטטים יחד את המסכים והתהליכים, ומקבלים דמו עובד של המערכת שלכם.</p>}
             {d.note && <div className="note">{d.note}{d.contacts?.sales?.name && <small>{d.contacts.sales.name}, איש המכירות שלכם</small>}</div>}
             {bar && <div className="cta"><button type="button" className="btn" onClick={onGo}><PlaneTakeoff className="h-5 w-5" aria-hidden="true" />{go}</button><span>{goNote}</span></div>}
           </div>
@@ -424,8 +434,7 @@ function PayForm({ d, onPaid }) {
     setBusy(true);
     try {
       const here = `${window.location.origin}${window.location.pathname}`;
-      const proc = await createPayment({ ...p, ...f, fullName: f.fullName.trim(), email: f.email.trim(), phone, taxId, sum: p.sum, successUrl: `${here}?paid=1`, cancelUrl: here,
-        wallet: new URLSearchParams(window.location.search).get("wallet") === "sdk" ? "sdk" : undefined });
+      const proc = await createPayment({ ...p, ...f, fullName: f.fullName.trim(), email: f.email.trim(), phone, taxId, sum: p.sum, successUrl: `${here}?paid=1`, cancelUrl: here });
       if (proc.authCode) {
         const opened = await openWidget(proc.authCode, {
           onSuccess: () => onPaid(),

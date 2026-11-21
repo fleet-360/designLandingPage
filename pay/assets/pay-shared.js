@@ -144,7 +144,7 @@ window.ProAlgoPay = (function () {
     /* ---------- API ---------- */
 
     /* Creates a Grow payment process and returns the hosted checkout URL. */
-    async function createPaymentLink({ fullName, email, phone, sum, description, paymentNumber, businessTaxId, linkId, wallet, successUrl, cancelUrl }) {
+    async function createPaymentLink({ fullName, email, phone, sum, description, paymentNumber, businessTaxId, linkId, successUrl, cancelUrl }) {
         const res = await fetch(PAYMENT_API.url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -160,9 +160,7 @@ window.ProAlgoPay = (function () {
                 linkId: linkId || undefined,
                 /* Grow sends the customer back here after paying (e.g. from the Bit app); Toro accepts only our pages */
                 successUrl: successUrl || undefined,
-                cancelUrl: cancelUrl || undefined,
-                /* "sdk": Grow's Wallet SDK page code, where it shows the listed methods (Google Pay, Apple Pay) */
-                wallet: wallet || undefined
+                cancelUrl: cancelUrl || undefined
             })
         });
 

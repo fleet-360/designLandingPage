@@ -80,8 +80,6 @@ export async function createPayment(p) {
       sum: Number(p.sum), description: p.description, paymentNumber: 1, businessTaxId: p.taxId || "", linkId: p.linkId,
       // Grow sends the customer back here after paying (e.g. from the Bit app); Toro accepts only our pages
       successUrl: p.successUrl, cancelUrl: p.cancelUrl,
-      // "sdk": Grow's Wallet SDK page code, where it shows the listed methods (Google Pay, Apple Pay)
-      wallet: p.wallet || undefined,
     }),
   });
   const data = await r.json().catch(() => ({}));

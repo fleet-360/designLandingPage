@@ -1,9 +1,10 @@
 // The signed deal as one PDF: work order with the payment schedule, the general terms, Appendix A,
-// both signatures, and a last page that records how and when each step was approved (name, email,
+// both signatures, Appendix B (the approved spec pages, api/_lib/spec-pdf.js) and a last page that records how and when each step was approved (name, email,
 // IP, browser, time, hash). Rendered from the deal's snapshot, so it shows exactly what was signed.
 import { jsPDF } from "jspdf";
 import { query } from "./db.js";
 import { HEBREW_RE, loadFonts, RTL_OPTIONS, rtlText } from "./sign-pdf.js";
+import { HOURS_NOTE, insertSpec, specFile } from "./spec-pdf.js";
 
 const nis = (n) => `${Number(n).toLocaleString("en-US", { minimumFractionDigits: Number(n) % 1 ? 2 : 0, maximumFractionDigits: 2 })} ₪`;
 const dmy = (iso) => (iso ? String(iso).slice(0, 10).split("-").reverse().join("/") : "");
@@ -103,8 +104,9 @@ function writer(meta) {
   return { pdf, text, gap, rule, table, image, newPage, space, get y() { return y; }, R, M };
 }
 
-/** snapshot: deal.snapshot (order, agreement, client, approval, signature) -> Buffer */
-export async function generateDealPdf(snapshot) {
+/** snapshot: deal.snapshot (order, agreement, client, approval, signature, spec) -> Buffer.
+ *  specBytes: the spec file, when already at hand (otherwise read from sign.files) */
+export async function generateDealPdf(snapshot, { specBytes } = {}) {
   const { order, agreement, approval, signature } = snapshot;
   const w = writer({
     title: `הזמנת עבודה ${order.number} · ${order.project.name}`,
@@ -118,7 +120,8 @@ export async function generateDealPdf(snapshot) {
   w.text(`${order.company.name} · עבור: ${c.companyName || c.signerName} · הזמנה מס' ${order.number} · ${dmy(order.date)}`, { size: 10, color: [107, 114, 128], after: 10 });
   w.text("מה מפתחים", { size: 12, bold: true });
   w.text(order.project.summary || "", { after: 6 });
-  if (order.project.specName) w.text(`האפיון המאושר: ${order.project.specName}${order.project.specVersion ? ` · גרסה ${order.project.specVersion}` : ""}${order.project.specDate ? ` · מיום ${dmy(order.project.specDate)}` : ""}`, { after: 8 });
+  if (order.project.specName) w.text(`האפיון המאושר: ${order.project.specName}${order.project.specVersion ? ` · גרסה ${order.project.specVersion}` : ""}${order.project.specDate ? ` · מיום ${dmy(order.project.specDate)}` : ""}${snapshot.spec ? " · מצורף כנספח ב'" : ""}`, { after: snapshot.spec ? 2 : 8 });
+  if (snapshot.spec) w.text(HOURS_NOTE, { size: 9.5, color: [107, 114, 128], after: 8 });
   w.text("מחיר ותנאי תשלום", { size: 12, bold: true });
   w.text(`מחיר הפרויקט: ${nis(order.price.amount)} לפני מע"מ (${nis(order.price.total)} כולל מע"מ). המחיר קבוע וסגור לתכולה שבאפיון המאושר.`);
   w.text(`מקדמה של ${order.price.depositPercent}% משולמת בתוך 3 ימי עסקים מהאישור. היתרה משולמת בתאריכים הקבועים בטבלה, ואינם תלויים באבני דרך. אמצעי תשלום היתרה: ${order.balanceMethod === "checks" ? "שיקים דחויים" : "העברה בנקאית"}.`, { after: 6 });
@@ -193,6 +196,22 @@ export async function generateDealPdf(snapshot) {
   w.image(await fileDataUrl(signature.fileId), 180, 63);
   w.text(`תאריך: ${dmy(String(signature.at).slice(0, 10))}`, { color: [107, 114, 128] });
 
+  // ---- Appendix B: the approved spec (its pages are inserted after this page) ----
+  const spec = snapshot.spec;
+  let specAfter = 0;
+  if (spec) {
+    w.newPage();
+    w.text(`נספח ב' – האפיון המאושר`, { size: 14, bold: true, after: 2 });
+    w.text(`מצורף להזמנה מס' ${order.number}${order.project.specName ? ` · ${order.project.specName}` : ""}${order.project.specVersion ? ` · גרסה ${order.project.specVersion}` : ""}${order.project.specDate ? ` · מיום ${dmy(order.project.specDate)}` : ""}`, { size: 9.5, color: [107, 114, 128], after: 10 });
+    w.text(spec.pages?.length && spec.pageCount
+      ? `בעמודים הבאים: ${spec.pages.length === 1 ? "עמוד" : "עמודים"} ${spec.pages.join(", ")} מתוך ${spec.pageCount} עמודי האפיון.`
+      : "בעמודים הבאים: מסמך האפיון.", { after: 8 });
+    w.text("הערכת שעות משוערת", { size: 12, bold: true });
+    w.text(HOURS_NOTE, { size: 10.5, after: 4 });
+    w.text("שעות פיתוח מעבר לאומדן כלולות בתמורה הקבועה ולא יחויבו ללקוח. תעריפי השעה שבנספח א' משמשים רק לחישוב שווי העבודה בביטול ולתמחור שינויים.", { size: 9.5, color: [107, 114, 128] });
+    specAfter = w.pdf.getNumberOfPages();
+  }
+
   // ---- Verification ----
   w.newPage();
   w.text("דף אימות חתימה", { size: 14, bold: true, after: 8 });
@@ -208,6 +227,9 @@ export async function generateDealPdf(snapshot) {
   rec("שלב 2 · חתימה על ההסכם", signature);
   w.text(`גרסת התנאים הכלליים: ${agreement.version} · הזמנה מס' ${order.number}`, { size: 9 });
   w.text(`גיבוב המסמך (SHA-256) של כל מה שנחתם: ${snapshot.hash}`, { size: 8.5, color: [107, 114, 128] });
+  if (spec?.sha256) w.text(`גיבוב קובץ האפיון שבנספח ב' (SHA-256): ${spec.sha256}`, { size: 8.5, color: [107, 114, 128] });
 
-  return Buffer.from(w.pdf.output("arraybuffer"));
+  const out = Buffer.from(w.pdf.output("arraybuffer"));
+  const bytes = spec && (specBytes || (await specFile(spec.fileId))?.data);
+  return bytes ? insertSpec(out, bytes, { afterPage: specAfter, number: order.number, pages: spec.pages, pageCount: spec.pageCount }) : out;
 }

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowRight, Plus } from "lucide-react";
+import { ArrowRight, Plus, RefreshCw, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -92,6 +92,76 @@ export function ManualFields({ m, onChange, minutesHint, locked = {} }) {
   );
 }
 
+// The key lines at the top of the client's page. Sales types what the client wants solved, Claude offers
+// headlines and supporting lines (sales/pitch), and sales picks and edits them. Typing them by hand works too.
+export const pitchFrom = (x) => ({ problem: x?.pitch?.problem || "", headline: x?.pitch?.headline || "", lines: x?.pitch?.lines || [], options: [] });
+export const pitchBody = (p) => {
+  const lines = p.lines.map((l) => l.trim()).filter(Boolean);
+  return p.headline.trim() || lines.length ? { problem: p.problem.trim(), headline: p.headline.trim(), lines } : null;
+};
+
+export function PitchFields({ p, onChange }) {
+  const { data: status } = useApi("sales/pitch");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const off = status && !status.configured;
+  const write = async () => {
+    if (p.problem.trim().length < 3) return setError("כתבו בכמה מילים מה הלקוח רוצה לפתור");
+    setError("");
+    setBusy(true);
+    try {
+      const r = await api("sales/pitch", { method: "POST", body: { problem: p.problem } });
+      onChange({ ...p, options: r.headlines, headline: r.headlines[0] || "", lines: r.lines });
+    } catch (err) { setError(errorText(err)); }
+    setBusy(false);
+  };
+  const setLine = (i, v) => onChange({ ...p, lines: p.lines.map((l, j) => (j === i ? v : l)) });
+  const shown = Boolean(p.headline) || p.lines.length > 0;
+  return (
+    <div className="space-y-3 rounded-xl bg-secondary/60 p-3">
+      <FieldRow label="מה הלקוח רוצה לפתור" hint={off ? "כתיבה אוטומטית לא מוגדרת בשרת (ANTHROPIC_API_KEY). אפשר לכתוב את המשפטים ידנית." : "בכמה מילים. ממנו נכתבים משפטי הפתיחה בראש העמוד של הלקוח"}>
+        <div className="flex gap-2">
+          <Input value={p.problem} onChange={(e) => onChange({ ...p, problem: e.target.value })} maxLength={500}
+            placeholder="למשל: להוציא כתבי כמויות של ברזל"
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (!off && !busy) write(); } }} />
+          <Button type="button" variant={shown ? "outline" : "default"} onClick={write} disabled={busy || off} className="shrink-0">
+            {shown ? <RefreshCw className={`ms-1 h-4 w-4 ${busy ? "animate-spin" : ""}`} /> : <Sparkles className={`ms-1 h-4 w-4 ${busy ? "animate-pulse" : ""}`} />}
+            {busy ? "כותב..." : shown ? "כתיבה מחדש" : "כתיבת משפטים"}
+          </Button>
+        </div>
+      </FieldRow>
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      {p.options.length > 1 && (
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium text-muted-foreground">בחרו כותרת</p>
+          {p.options.map((o) => (
+            <button key={o} type="button" onClick={() => onChange({ ...p, headline: o })}
+              className={`block w-full rounded-lg border px-3 py-2 text-start text-sm transition-colors ${p.headline === o ? "border-primary bg-background font-medium" : "border-transparent bg-background/60 hover:border-border"}`}>
+              {o}
+            </button>
+          ))}
+        </div>
+      )}
+      {(shown || off) && (
+        <div className="space-y-2">
+          <FieldRow label="כותרת" hint="השורה הבולטת בראש העמוד"><Input value={p.headline} onChange={(e) => onChange({ ...p, headline: e.target.value })} maxLength={200} /></FieldRow>
+          <p className="text-sm font-medium">משפטים מתחת לכותרת</p>
+          {p.lines.map((l, i) => (
+            <div key={i} className="flex gap-2">
+              <Input value={l} onChange={(e) => setLine(i, e.target.value)} maxLength={240} aria-label={`משפט ${i + 1}`} />
+              <Button type="button" variant="ghost" size="icon" onClick={() => onChange({ ...p, lines: p.lines.filter((_, j) => j !== i) })} aria-label={`הסרת משפט ${i + 1}`}><X className="h-4 w-4" /></Button>
+            </div>
+          ))}
+          <div className="flex flex-wrap gap-2">
+            {p.lines.length < 4 && <Button type="button" variant="ghost" size="sm" onClick={() => onChange({ ...p, lines: [...p.lines, ""] })}><Plus className="ms-1 h-4 w-4" />משפט</Button>}
+            {shown && <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" onClick={() => onChange({ ...p, headline: "", lines: [], options: [] })}>בלי משפטים (פתיחה רגילה)</Button>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function DiscoveryList() {
   const { data, error, reload } = useApi("sales/discovery");
   const [q, setQ] = useState("");
@@ -138,6 +208,7 @@ export function DiscoveryNew() {
   const { data } = useApi("sales/settings");
   const [f, setF] = useState({ clientName: "", companyName: "", email: "", phone: "", taxId: "", price: "", listPrice: null, note: "", meetingMinutes: "", sendEmail: true, contacts: null });
   const [manual, setManual] = useState(() => manualFrom(null));
+  const [pitch, setPitch] = useState(() => pitchFrom(null));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
@@ -167,7 +238,7 @@ export function DiscoveryNew() {
     if (manualError(manual)) return setError(manualError(manual));
     setBusy(true);
     try {
-      const r = await api("sales/discovery", { method: "POST", body: { ...f, contacts: undefined, ...contacts, price: f.price || undefined, listPrice: listPrice.trim(), meetingMinutes: f.meetingMinutes || undefined, ...manualBody(manual) } });
+      const r = await api("sales/discovery", { method: "POST", body: { ...f, contacts: undefined, ...contacts, price: f.price || undefined, listPrice: listPrice.trim(), meetingMinutes: f.meetingMinutes || undefined, pitch: pitchBody(pitch), ...manualBody(manual) } });
       navigate(`/sales/discovery/${r.item.id}`);
     } catch (err) { setBusy(false); setError(errorText(err)); }
   };
@@ -201,6 +272,10 @@ export function DiscoveryNew() {
           <FieldRow label="מנהלת משרד">
             <div className="flex gap-2"><Input value={contacts.officeName} onChange={setContact("officeName")} aria-label="שם מנהלת המשרד" placeholder="שם (לא חובה)" /><Input value={contacts.officePhone} onChange={setContact("officePhone")} type="tel" dir="ltr" aria-label="טלפון מנהלת המשרד" className="w-36" /></div>
           </FieldRow>
+        </div>
+        <div className="space-y-2">
+          <p className="text-sm font-medium">משפטי מפתח בראש העמוד</p>
+          <PitchFields p={pitch} onChange={setPitch} />
         </div>
         <FieldRow label="הערה אישית ללקוח" hint="מופיעה בראש העמוד. למשל: מה סיכמנו בשיחה"><Textarea value={f.note} onChange={set("note")} rows={3} /></FieldRow>
         <div className="space-y-2">
@@ -240,12 +315,13 @@ export function DiscoveryDetail() {
       </Card>
 
       <div className="grid gap-5 md:grid-cols-2">
-        <Card title="פרטים" actions={!x.paidAt && x.status !== "canceled" && <Button size="sm" variant="ghost" onClick={() => setEdit({ clientName: x.clientName, companyName: x.companyName || "", email: x.email || "", phone: x.phone || "", taxId: x.taxId || "", price: String(x.price), listPrice: x.listPrice ? String(x.listPrice) : "", leadName: x.contacts?.lead?.name || "", leadPhone: x.contacts?.lead?.phone || "", salesName: x.contacts?.sales?.name || "", salesPhone: x.contacts?.sales?.phone || "", officeName: x.contacts?.office?.name || "", officePhone: x.contacts?.office?.phone || "", note: x.note || "" })}>עריכה</Button>}>
+        <Card title="פרטים" actions={!x.paidAt && x.status !== "canceled" && <Button size="sm" variant="ghost" onClick={() => setEdit({ clientName: x.clientName, companyName: x.companyName || "", email: x.email || "", phone: x.phone || "", taxId: x.taxId || "", price: String(x.price), listPrice: x.listPrice ? String(x.listPrice) : "", leadName: x.contacts?.lead?.name || "", leadPhone: x.contacts?.lead?.phone || "", salesName: x.contacts?.sales?.name || "", salesPhone: x.contacts?.sales?.phone || "", officeName: x.contacts?.office?.name || "", officePhone: x.contacts?.office?.phone || "", note: x.note || "", pitch: pitchFrom(x) })}>עריכה</Button>}>
           {edit ? (
-            <form className="space-y-3" onSubmit={async (e) => { e.preventDefault(); await act({ action: "update", ...edit }, "נשמר"); setEdit(null); }}>
+            <form className="space-y-3" onSubmit={async (e) => { e.preventDefault(); await act({ action: "update", ...edit, pitch: pitchBody(edit.pitch) }, "נשמר"); setEdit(null); }}>
               {[["clientName", "שם"], ["companyName", "חברה"], ["email", "אימייל"], ["phone", "טלפון"], ["taxId", "ח.פ"], ["price", 'מחיר לפני מע"מ'], ["listPrice", "מחיר לפני הנחה (ריק = בלי)"], ["leadName", "ראש צוות אחראי"], ["leadPhone", "טלפון ראש הצוות"], ["salesName", "איש מכירות"], ["salesPhone", "טלפון איש המכירות"], ["officeName", "מנהלת משרד"], ["officePhone", "טלפון מנהלת המשרד"]].map(([k, l]) => (
                 <FieldRow key={k} label={l}><Input value={edit[k]} onChange={(e) => setEdit((s) => ({ ...s, [k]: e.target.value }))} dir={["email", "phone", "taxId", "price", "listPrice", "leadPhone", "salesPhone", "officePhone"].includes(k) ? "ltr" : undefined} /></FieldRow>
               ))}
+              <div className="space-y-2"><p className="text-sm font-medium">משפטי מפתח בראש העמוד</p><PitchFields p={edit.pitch} onChange={(v) => setEdit((s) => ({ ...s, pitch: v }))} /></div>
               <FieldRow label="הערה"><Textarea value={edit.note} onChange={(e) => setEdit((s) => ({ ...s, note: e.target.value }))} rows={3} /></FieldRow>
               <div className="flex gap-2"><Button type="submit" size="sm">שמירה</Button><Button type="button" size="sm" variant="ghost" onClick={() => setEdit(null)}>ביטול</Button></div>
             </form>
@@ -260,6 +336,8 @@ export function DiscoveryDetail() {
               ["ראש צוות", x.contacts?.lead?.name && `${x.contacts.lead.name}${x.contacts.lead.phone ? ` · ${x.contacts.lead.phone}` : ""}`],
               ["איש מכירות", x.contacts?.sales?.name && `${x.contacts.sales.name}${x.contacts.sales.phone ? ` · ${x.contacts.sales.phone}` : ""}`],
               ["מנהלת משרד", (x.contacts?.office?.name || x.contacts?.office?.phone) && [x.contacts.office.name, x.contacts.office.phone].filter(Boolean).join(" · ")],
+              x.pitch && ["כותרת בעמוד", x.pitch.headline],
+              x.pitch?.lines?.length > 0 && ["משפטים", <ul className="list-disc space-y-0.5 ps-4">{x.pitch.lines.map((l) => <li key={l}>{l}</li>)}</ul>],
               ["הערה", x.note],
               ["נוצר", `${dateTime(x.createdAt)} · ${x.createdBy || ""}`],
               ["נצפה", x.viewedAt && dateTime(x.viewedAt)],

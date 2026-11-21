@@ -109,6 +109,7 @@ function OrderStep({ d, post }) {
                   <p className="font-semibold">לפי האפיון המאושר: {o.project.specName}</p>
                   <p className="text-sm text-muted-foreground">{[o.project.specVersion && `גרסה ${o.project.specVersion}`, o.project.specDate && `מיום ${dmy(o.project.specDate)}`].filter(Boolean).join(" · ")}
                     {d.links.spec && <> · <a href={d.links.spec} target="_blank" rel="noreferrer" className="text-primary underline">לצפייה באפיון</a></>}</p>
+                  {d.links.spec && <p className="mt-1 text-sm text-muted-foreground">מצורף להסכם כנספח ב'. השעות שבאפיון הן הערכה משוערת בלבד, והמחיר קבוע וסגור.</p>}
                 </div>
               </li>
             )}

@@ -9,6 +9,7 @@ import { toast } from "@/components/ui/use-toast";
 import { api, dateTime, dmy, errorText, FIELD_ERRORS, fileToDataUrl, isEmail, mobileIL, nis, taxIdIL } from "@/sales/lib";
 import { Card, FieldRow, History, Info, LinkBox, LoadError, PageHeader, Pill, Spinner, run, useApi } from "./AdminUi.jsx";
 import { Confirm } from "./Discovery.jsx";
+import SpecPagePicker from "./SpecPagePicker.jsx";
 
 const todayIL = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Jerusalem" });
 const MAX_UPLOAD = 3 * 1024 * 1024;
@@ -119,7 +120,7 @@ const blankDeal = (s) => ({
     authorizedContact: { ...emptyContact },
   },
   data: {
-    project: { name: "", summary: "", specName: "", specVersion: "", specDate: "", specFileId: null, targetWeeks: "", kickoffNeeds: "" },
+    project: { name: "", summary: "", specName: "", specVersion: "", specDate: "", specFileId: null, specPages: null, specPageCount: null, targetWeeks: "", kickoffNeeds: "" },
     price: { amount: "", vatRate: s?.vatRate ?? 18, depositPercent: s?.depositPercent ?? 30, installments: 3, installmentDay: 1, balanceMethod: "transfer" },
     service: { enabled: true, periods: [{ months: 12, price: "" }, { months: null, price: "" }] },
     standingOrder: { enabled: true, startDate: "", dayOfMonth: 1 },
@@ -150,6 +151,7 @@ export function DealForm() {
   const [preview, setPreview] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [specFile, setSpecFile] = useState(null); // a spec PDF waiting for its pages to be picked
   const [confirm, setConfirm] = useState(null);
 
   useEffect(() => {
@@ -190,11 +192,14 @@ export function DealForm() {
   const bind = (path, extra = {}) => ({ value: v(path), onChange: (e) => setF((s) => setIn(s, path, e.target.value)), ...extra });
   const ap = f.data.appendix;
 
-  const upload = async (file) => {
-    if (!file) return;
-    const r = await run(async () => api("sales/upload", { method: "POST", body: { name: file.name, data_url: await fileToDataUrl(file) } }), "האפיון הועלה");
-    if (r) setF((s) => setIn(setIn(s, "data.project.specFileId", r.fileId), "data.project.specName", s.data.project.specName || file.name.replace(/\.pdf$/i, "")));
+  // the spec: sales picks its pages (SpecPagePicker), and only those are uploaded as Appendix B
+  const specPicked = (file, r) => {
+    setSpecFile(null);
+    setF((s) => ["specFileId", "specPages", "specPageCount"].reduce((x, k) => setIn(x, `data.project.${k}`, r[k]),
+      setIn(s, "data.project.specName", s.data.project.specName || file.name.replace(/\.pdf$/i, ""))));
+    toast({ title: "העמודים צורפו להסכם" });
   };
+  const sp = f.data.project;
 
   const save = async () => {
     setError("");
@@ -276,10 +281,19 @@ export function DealForm() {
               <FieldRow label="מה מפתחים (בשתי-שלוש שורות)" className="sm:col-span-2" hint="מופיע בראש העמוד של הלקוח"><Textarea {...bind("data.project.summary")} rows={3} /></FieldRow>
               <div className="sm:col-span-2">
                 <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm hover:bg-secondary">
-                  <Upload className="h-4 w-4" />{f.data.project.specFileId ? `האפיון מצורף${f.data.project.specName ? ` (${f.data.project.specName})` : ""} · החלפה` : "צירוף קובץ האפיון (PDF)"}
-                  <input type="file" accept="application/pdf" className="hidden" onChange={(e) => upload(e.target.files?.[0])} />
+                  <Upload className="h-4 w-4" />{sp.specFileId ? `האפיון מצורף${sp.specName ? ` (${sp.specName})` : ""} · החלפה` : "צירוף קובץ האפיון (PDF)"}
+                  <input type="file" accept="application/pdf" className="hidden" onChange={(e) => { const x = e.target.files?.[0]; e.target.value = ""; if (x) setSpecFile(x); }} />
                 </label>
-                <p className="mt-1 text-xs text-muted-foreground">קובץ ה-PDF של האפיון מ-Canva. זה המסמך שמגדיר את התכולה בהסכם.</p>
+                {sp.specFileId && (
+                  <p className="mt-1 text-sm">
+                    {sp.specPages?.length
+                      ? `נספח ב' בהסכם: ${sp.specPages.length === 1 ? "עמוד" : "עמודים"} ${sp.specPages.join(", ")}${sp.specPageCount ? ` מתוך ${sp.specPageCount}` : ""}.`
+                      : "נספח ב' בהסכם: כל הקובץ שצורף."}
+                    {id && <> <a href={`/api/sales/deal-file?id=${id}&kind=spec`} target="_blank" rel="noreferrer" className="text-primary underline">תצוגה כפי שהלקוח יראה</a></>}
+                  </p>
+                )}
+                <p className="mt-1 text-xs text-muted-foreground">קובץ ה-PDF של האפיון מ-Canva. אחרי הבחירה בוחרים אילו עמודים ממנו מצורפים להסכם כנספח ב'. כדי לשנות את העמודים, מצרפים את הקובץ שוב.</p>
+                {specFile && <SpecPagePicker file={specFile} onClose={() => setSpecFile(null)} onSave={(r) => specPicked(specFile, r)} />}
               </div>
               <FieldRow label="יעד פיתוח משוער (שבועות)"><Input {...bind("data.project.targetWeeks")} inputMode="numeric" dir="ltr" /></FieldRow>
               <FieldRow label="מה נצטרך מהלקוח לפתיחה" className="sm:col-span-2"><Textarea {...bind("data.project.kickoffNeeds")} rows={2} /></FieldRow>
