@@ -37,7 +37,7 @@ export function DealsList() {
             <thead><tr className="border-b border-border text-muted-foreground">
               <th className="p-3 text-start font-medium">#</th><th className="p-3 text-start font-medium">לקוח ופרויקט</th>
               <th className="p-3 text-start font-medium">מחיר</th><th className="p-3 text-start font-medium">סטטוס</th>
-              <th className="p-3 text-start font-medium">מקדמה</th><th className="p-3 text-start font-medium">נוצר</th>
+              <th className="p-3 text-start font-medium">מקדמה</th><th className="p-3 text-start font-medium">נוצר</th><th className="p-3"><span className="sr-only">פעולות</span></th>
             </tr></thead>
             <tbody>
               {items.map((x) => {
@@ -50,6 +50,7 @@ export function DealsList() {
                     <td className="p-3"><Pill tone={tone}>{label}</Pill></td>
                     <td className="p-3">{x.status.deposit === "paid" ? <Pill tone="green">שולמה</Pill> : x.signedAt ? <Pill tone="amber">ממתינה</Pill> : "—"}</td>
                     <td className="p-3 text-xs text-muted-foreground tabular-nums">{dateTime(x.createdAt)}</td>
+                    <td className="p-3 text-end"><Button asChild variant="outline" size="sm"><Link to={`/sales/deals/${x.id}`}>הצג</Link></Button></td>
                   </tr>
                 );
               })}

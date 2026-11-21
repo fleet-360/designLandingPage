@@ -34,7 +34,7 @@ export function DiscoveryList() {
           <table className="w-full min-w-[640px] text-sm">
             <thead><tr className="border-b border-border text-muted-foreground">
               <th className="p-3 text-start font-medium">לקוח</th><th className="p-3 text-start font-medium">מחיר</th>
-              <th className="p-3 text-start font-medium">סטטוס</th><th className="p-3 text-start font-medium">פגישה</th><th className="p-3 text-start font-medium">נוצר</th>
+              <th className="p-3 text-start font-medium">סטטוס</th><th className="p-3 text-start font-medium">פגישה</th><th className="p-3 text-start font-medium">נוצר</th><th className="p-3"><span className="sr-only">פעולות</span></th>
             </tr></thead>
             <tbody>
               {items.map((x) => {
@@ -46,6 +46,7 @@ export function DiscoveryList() {
                     <td className="p-3"><Pill tone={tone}>{label}</Pill></td>
                     <td className="p-3 text-xs">{x.meetingStart ? meetingTime(x.meetingStart) : "—"}</td>
                     <td className="p-3 text-xs text-muted-foreground tabular-nums">{dateTime(x.createdAt)}</td>
+                    <td className="p-3 text-end"><Button asChild variant="outline" size="sm"><Link to={`/sales/discovery/${x.id}`}>הצג</Link></Button></td>
                   </tr>
                 );
               })}
