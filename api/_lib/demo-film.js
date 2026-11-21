@@ -70,7 +70,9 @@ Selectors:
 - The element must exist and be visible when the action runs: if an earlier click renders it, it is there; if it appears after an animation or a timer, wait first.
 - SVG shapes are fine (selector "[data-hit]" with an id, etc.).
 
-If you get a previous script with what failed when it played, keep what worked and fix the failing actions, reading the source again for the right selectors.`;
+The client's logo (field "brand"): the film shows the client's own logo inside the demo, as if the system were already theirs. Pick the one place where a product's logo naturally sits: usually the logo or the product name at the start of the top bar, the header or the sidebar, present from the first screen. selector (and text if needed) of that element; place "replace" when it is a logo image, an SVG or a logo mark the client's logo should take the place of, or "start" when it is a product name or title the logo should stand before. If the demo has no such place, selector "" (the logo then shows with the captions).
+
+If you get a previous script with what failed when it played, keep what worked and fix the failing actions (and the brand selector if it failed), reading the source again for the right selectors.`;
 
 const SCHEMA = {
   type: "object",
@@ -105,8 +107,18 @@ const SCHEMA = {
         additionalProperties: false,
       },
     },
+    brand: {
+      type: "object",
+      properties: {
+        selector: { type: "string" },
+        text: { type: "string" },
+        place: { type: "string", enum: ["replace", "start"] },
+      },
+      required: ["selector", "text", "place"],
+      additionalProperties: false,
+    },
   },
-  required: ["scenes"],
+  required: ["scenes", "brand"],
   additionalProperties: false,
 };
 
@@ -128,7 +140,11 @@ export function cleanScript(x) {
     }),
   })).filter((sc) => sc.caption || sc.actions.length);
   if (!scenes.length) throw new HttpError(400, "bad_script");
-  return { scenes };
+  // where the client's logo goes in the demo (the player places it there); none: with the captions
+  const brand = s(x?.brand?.selector, 400)
+    ? { selector: s(x.brand.selector, 400), ...(s(x.brand.text, 200) && { text: s(x.brand.text, 200) }), place: x.brand.place === "start" ? "start" : "replace" }
+    : null;
+  return { scenes, ...(brand && { brand }) };
 }
 
 // Claude Opus 5.5 prices per million tokens (USD), for the cost shown to sales. Another model: tokens only.
@@ -275,7 +291,27 @@ case"highlight":{var g=find(a.selector,a.text);if(!inView(g)){g.scrollIntoView({
 case"zoom":{var z=find(a.selector,a.text);if(!inView(z)){z.scrollIntoView({block:"center",behavior:"smooth"});await rsleep(600)}var r=z.getBoundingClientRect();return{rect:{x:r.left,y:r.top,w:r.width,h:r.height}}}
 case"zoomOut":return;
 case"speed":F.speed(Number(a.value)||1);return;
+case"brand":return brand(a);
 default:throw new Error("unknown action")}}
+function attr(e){return [e.getAttribute("src"),e.getAttribute("alt"),e.getAttribute("class"),e.id,e.parentElement&&e.parentElement.getAttribute("class"),e.parentElement&&e.parentElement.id].join(" ")}
+function brandEl(a){if(a.selector){try{return find(a.selector,a.text)}catch(x){}}
+var l=[].slice.call(document.querySelectorAll("img,svg,[class*=logo i],[id*=logo i],[class*=brand i],[id*=brand i]"));
+l=l.filter(function(e){if(e.__film||!vis(e))return false;var r=e.getBoundingClientRect();if(r.top>150||r.height>90||r.width>380)return false;var t=e.tagName.toLowerCase();return(t!=="img"&&t!=="svg")||/logo|brand/i.test(attr(e))});return l[0]||null}
+function lum(c){var m=/rgba?\\(([\\d.]+),\\s*([\\d.]+),\\s*([\\d.]+)(?:,\\s*([\\d.]+))?/.exec(c||"");if(!m||(m[4]!==undefined&&Number(m[4])<0.5))return null;return(0.2126*m[1]+0.7152*m[2]+0.0722*m[3])/255}
+function bgLum(e){for(var n=e;n&&n.nodeType===1;n=n.parentElement){var v=lum(getComputedStyle(n).backgroundColor);if(v!==null)return v}return 1}
+var B=null,BO=null;
+function brand(a){var e=brandEl(a);if(!e)throw new Error(a.selector?"not found":"no place for the logo");
+var r=e.getBoundingClientRect(),t=e.tagName.toLowerCase(),mode=a.place||(t==="img"||t==="svg"?"replace":"start");
+var h=Math.round(Math.min(52,Math.max(22,mode==="replace"?r.height:Math.min(r.height-4,36))));
+var dark=bgLum(e.parentElement||e)<0.45,L=a.logo||{},fx="";
+if(L.transparent){if(dark&&L.ink<0.5)fx="filter:brightness(0) invert(1);";else if(!dark&&L.ink>0.82)fx="filter:brightness(0);opacity:.85;"}
+else if(!dark&&L.whiteBg)fx="mix-blend-mode:multiply;";else fx="border-radius:"+Math.round(h/5)+"px;";
+var css="height:"+h+"px;width:auto;max-width:"+Math.round(Math.max(110,Math.min(240,h*5)))+"px;object-fit:contain;display:inline-block;vertical-align:middle;flex:none;"+fx;
+var img;if(mode==="replace"&&t==="img"){img=e;img.removeAttribute("srcset");img.src=a.src;img.style.cssText+=";"+css}
+else{img=document.createElement("img");img.src=a.src;img.alt="";img.style.cssText=css;
+if(mode==="replace"){e.style.display="none";e.parentNode.insertBefore(img,e)}else{img.style.marginInlineEnd=Math.round(h/3)+"px";e.insertBefore(img,e.firstChild)}}
+img.setAttribute("data-film-brand","");B=a;
+if(!BO&&window.MutationObserver){BO=new MutationObserver(function(){if(B&&!document.querySelector("[data-film-brand]")){try{brand(B)}catch(x){}}});BO.observe(document.body,{childList:true,subtree:true})}}
 addEventListener("message",async function(ev){var m=ev.data;if(!m||m.film!==1||ev.source!==P)return;
 if(m.hello){P.postMessage({film:1,ready:true},"*");return}
 try{var r=await run(m.act||{});P.postMessage({film:1,id:m.id,ok:true,rect:r&&r.rect||null},"*")}catch(e){P.postMessage({film:1,id:m.id,ok:false,error:String(e&&e.message||e)},"*")}});

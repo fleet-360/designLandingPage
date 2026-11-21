@@ -28,6 +28,52 @@ function camera(rect, k) {
   return `translate(${tx}px,${ty}px) scale(${k})`;
 }
 
+// The client's logo, read once: as a data URL (the sandboxed demo cannot load our addresses itself) and what
+// it looks like, so it can sit in the demo the way a real product shows its logo: white on a dark bar when it
+// is a dark mark on a transparent background, blended into a light bar when it has a white background.
+// -> { src, transparent, whiteBg, ink (0 dark .. 1 light) }, or null when it cannot be read
+async function readLogo(url) {
+  const blob = await fetch(url).then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))));
+  const src = await new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(fr.result);
+    fr.onerror = reject;
+    fr.readAsDataURL(blob);
+  });
+  const img = new Image();
+  img.src = src;
+  await img.decode();
+  const w = 96;
+  const h = Math.max(1, Math.round((w * img.naturalHeight) / Math.max(1, img.naturalWidth)));
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h;
+  const g = c.getContext("2d", { willReadFrequently: true });
+  g.drawImage(img, 0, 0, w, h);
+  const px = g.getImageData(0, 0, w, h).data;
+  const at = (x, y) => px.subarray((y * w + x) * 4, (y * w + x) * 4 + 4);
+  const corners = [at(0, 0), at(w - 1, 0), at(0, h - 1), at(w - 1, h - 1)];
+  const transparent = corners.filter((p) => p[3] < 40).length >= 3;
+  const whiteBg = !transparent && corners.every((p) => p[0] > 235 && p[1] > 235 && p[2] > 235);
+  // the mark itself: the pixels that are neither see-through nor the white background
+  let sum = 0;
+  let count = 0;
+  for (let i = 0; i < px.length; i += 4) {
+    if (px[i + 3] < 120) continue;
+    const l = (0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2]) / 255;
+    if (whiteBg && l > 0.92) continue;
+    sum += l;
+    count++;
+  }
+  return { src, transparent, whiteBg, ink: count ? sum / count : 0.5 };
+}
+
+// the logo on the film's dark screens (opening, end): a dark transparent mark turns white, a logo with its
+// own background keeps it with soft corners
+const onDark = (info) => (info?.transparent
+  ? (info.ink < 0.5 ? { filter: "brightness(0) invert(1)" } : {})
+  : { borderRadius: 10, boxShadow: "0 6px 24px -8px rgba(0,0,0,.5)" });
+
 /**
  * demo: the demo's address (api/sales/deal-file kind=demo); logo: the client's logo or null
  * script: { scenes: [{ caption, actions }] }
@@ -50,6 +96,18 @@ export default function DemoFilm({ demo, logo, script, title, autoplay = true, o
   const token = useRef(0);
   const seq = useRef(0);
   const scenes = script?.scenes || [];
+  const [logoInfo, setLogoInfo] = useState(null);
+  const logoRef = useRef(null);
+  // the logo inside the demo; when the demo has no place for it, it shows with the captions
+  const [branded, setBranded] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    logoRef.current = null;
+    setLogoInfo(null);
+    if (logo) readLogo(logo).then((v) => { if (alive) { logoRef.current = v; setLogoInfo(v); } }).catch(() => {});
+    return () => { alive = false; };
+  }, [logo]);
 
   // fit the 1280x720 stage to the width it gets
   useEffect(() => {
@@ -95,15 +153,26 @@ export default function DemoFilm({ demo, logo, script, title, autoplay = true, o
     setPaused(false);
     setCam(camera(null, 1));
     setScene(-1);
+    setBranded(true);
     setPhase("intro");
     setRun((r) => r + 1);
     await sleep(50);
-    const [ok] = await Promise.all([waitReady(), sleep(INTRO_MS)]);
+    const failures = [];
+    // the client's logo goes into the demo while the opening still covers it, so the first frame shows it in place
+    const placeLogo = async () => {
+      if (!logo) return;
+      for (let i = 0; i < 20 && !logoRef.current; i++) await sleep(150);
+      const L = logoRef.current;
+      if (!L) { setBranded(false); return; }
+      const r = await send({ do: "brand", src: L.src, logo: { transparent: L.transparent, whiteBg: L.whiteBg, ink: L.ink }, ...(script?.brand || {}) });
+      setBranded(r.ok);
+      if (!r.ok && script?.brand) failures.push(`brand (${label({ do: "logo", ...script.brand })}): ${r.error}`);
+    };
+    const [ok] = await Promise.all([waitReady().then(async (v) => { if (v && token.current === t) await placeLogo(); return v; }), sleep(INTRO_MS)]);
     if (token.current !== t) return;
     if (!ok) { setPhase("failed"); onDone?.(["the demo did not load in the frame"]); return; }
     await send({ do: "speed", value: SPEED });
     setPhase("playing");
-    const failures = [];
     for (let i = 0; i < scenes.length; i++) {
       setScene(i);
       setStep(0);
@@ -125,7 +194,7 @@ export default function DemoFilm({ demo, logo, script, title, autoplay = true, o
     setCam(camera(null, 1));
     setPhase("end");
     onDone?.(failures);
-  }, [scenes, send, waitReady, onDone]);
+  }, [scenes, script, logo, send, waitReady, onDone]);
 
   // the client page: start once, when the viewer reaches the film
   useEffect(() => {
@@ -172,23 +241,25 @@ export default function DemoFilm({ demo, logo, script, title, autoplay = true, o
         {phase !== "free" && <div className="absolute inset-0" aria-hidden="true" />}
 
         {(phase === "poster" || phase === "intro") && (
-          <Intro logo={logo} title={title} onPlay={phase === "poster" ? play : null} />
+          <Intro logo={logoInfo?.src || logo} info={logoInfo} title={title} onPlay={phase === "poster" ? play : null} />
         )}
 
         {phase === "playing" && (
           <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/40 to-transparent px-4 pb-3 pt-10 sm:px-8 sm:pb-6">
-            <p key={scene} className="pa-film-cap text-center text-[15px] font-bold leading-snug text-white sm:text-2xl" aria-live="polite">{caption}</p>
+            <div className="flex items-center justify-center gap-3 sm:gap-4">
+              {/* the demo had no place for the logo: it leads the captions, on the same band */}
+              {!branded && logoInfo && (
+                <img src={logoInfo.src} alt="" className="pa-film-cap h-6 max-w-[22%] shrink-0 object-contain sm:h-9" style={onDark(logoInfo)} />
+              )}
+              <p key={scene} className="pa-film-cap text-center text-[15px] font-bold leading-snug text-white sm:text-2xl" aria-live="polite">{caption}</p>
+            </div>
           </div>
-        )}
-
-        {phase === "playing" && logo && (
-          <img src={logo} alt="" className="pointer-events-none absolute right-3 top-3 h-7 max-w-[28%] rounded-md bg-white/90 object-contain p-1 shadow sm:h-10" />
         )}
 
         {phase === "end" && (
           <div className="absolute inset-0 grid place-items-center bg-[#0f0e2a]/70 p-4 text-center backdrop-blur-[2px]">
             <div>
-              {logo && <img src={logo} alt="" className="mx-auto mb-3 h-12 max-w-[55%] rounded-lg bg-white object-contain p-2 sm:h-16" />}
+              {logo && <img src={logoInfo?.src || logo} alt="" className="pa-film-cap mx-auto mb-4 h-12 max-w-[55%] object-contain sm:h-16" style={onDark(logoInfo)} />}
               {title && <p className="text-lg font-extrabold text-white sm:text-2xl">{title}</p>}
               <div className="mt-4 flex flex-wrap justify-center gap-2">
                 <button type="button" onClick={play} className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-bold" style={{ color: INK }}>
@@ -240,28 +311,50 @@ export default function DemoFilm({ demo, logo, script, title, autoplay = true, o
 // it, like the film, with the usual controls.
 export function VideoFilm({ video, logo, title, className = "" }) {
   const ref = useRef(null);
+  const [info, setInfo] = useState(null);
+  // the client's logo opens the video with ours, and gives way once it plays (no sticker over the footage)
+  const [opening, setOpening] = useState(true);
+  useEffect(() => {
+    let alive = true;
+    setInfo(null);
+    if (logo) readLogo(logo).then((v) => { if (alive) setInfo(v); }).catch(() => {});
+    return () => { alive = false; };
+  }, [logo]);
+  useEffect(() => { setOpening(true); }, [video]);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !opening) return undefined;
+    let timer;
+    const on = () => { timer = setTimeout(() => setOpening(false), 1800); };
+    el.addEventListener("playing", on, { once: true });
+    return () => { el.removeEventListener("playing", on); clearTimeout(timer); };
+  }, [opening, video]);
   useEffect(() => {
     const el = ref.current;
     if (!el) return undefined;
-    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { io.disconnect(); el.play().catch(() => {}); } }, { threshold: 0.5 });
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { io.disconnect(); el.play().catch(() => setOpening(false)); } }, { threshold: 0.5 });
     io.observe(el);
     return () => io.disconnect();
   }, [video]);
   return (
     <div className={`relative w-full overflow-hidden rounded-2xl bg-[#0f0e2a] shadow-[0_24px_60px_-20px_rgba(28,26,79,.55)] ring-1 ring-black/10 ${className}`}>
       <video ref={ref} src={video} controls muted playsInline preload="metadata" className="block aspect-video w-full bg-black" aria-label={title || "סרטון הדמו"} />
-      {logo && <img src={logo} alt="" className="pointer-events-none absolute right-3 top-3 h-7 max-w-[28%] rounded-md bg-white/90 object-contain p-1 shadow sm:h-10" />}
+      {logo && (
+        <div className={`pointer-events-none absolute inset-0 transition-opacity duration-700 ${opening ? "opacity-100" : "opacity-0"}`} aria-hidden="true">
+          <Intro logo={info?.src || logo} info={info} title={title} onPlay={null} />
+        </div>
+      )}
     </div>
   );
 }
 
-function Intro({ logo, title, onPlay }) {
+function Intro({ logo, info, title, onPlay }) {
   return (
     <div className="pa-film-intro absolute inset-0 grid place-items-center bg-[radial-gradient(120%_90%_at_50%_10%,#2d2a8f_0%,#1c1a4f_55%,#0f0e2a_100%)] p-4 text-center">
       <div>
         <div className="flex items-center justify-center gap-3 sm:gap-5">
-          {logo && <img src={logo} alt="" className="h-10 max-w-[38vw] rounded-lg bg-white object-contain p-1.5 sm:h-16 sm:p-2" />}
-          {logo && <span className="text-xl font-light text-white/60 sm:text-3xl">×</span>}
+          {logo && <img src={logo} alt="" className="h-10 max-w-[38vw] object-contain sm:h-16" style={onDark(info)} />}
+          {logo && <span className="h-8 w-px bg-white/30 sm:h-12" aria-hidden="true" />}
           <img src="/assets/img/brand/logo-white-480.png" alt="Pro Algorithm" className="h-7 w-auto sm:h-11" />
         </div>
         {title && <p className="mt-4 text-lg font-extrabold text-white sm:mt-6 sm:text-3xl">{title}</p>}

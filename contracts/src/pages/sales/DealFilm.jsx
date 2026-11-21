@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Film, Loader2, Sparkles, Trash2, Upload, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +42,56 @@ function FilePick({ accept, label, busy, onFile }) {
 
 const n = (v) => Number(v || 0).toLocaleString("he-IL");
 
+// while Claude writes the script (up to about two minutes): what it is doing now, a bar that fills slowly
+// towards the end and never claims to be done, and the time so far
+const STEPS = [
+  [0, "קורא את קוד הדמו"],
+  [12, "מאתר את המסכים, הכפתורים והשדות"],
+  [30, "מתכנן את מהלך הסרטון"],
+  [55, "כותב את הלחיצות וההקלדות לכל סצנה"],
+  [80, "כותב כיתוב קצר לכל סצנה"],
+  [105, "בודק שכל צעד מתאים לדמו"],
+];
+const EXPECT = 120;
+
+export function Writing({ fix }) {
+  const [t, setT] = useState(0);
+  useEffect(() => {
+    const start = Date.now();
+    const timer = setInterval(() => setT((Date.now() - start) / 1000), 250);
+    return () => clearInterval(timer);
+  }, []);
+  const step = STEPS.filter(([at]) => t >= at).length - 1;
+  // eases towards 95%: fast at first, then slower, and keeps creeping past the expected time
+  const pct = Math.min(95, 95 * (1 - Math.exp(-t / (EXPECT / 2.2))));
+  const sec = Math.floor(t);
+  return (
+    <div className="film-writing mt-4 overflow-hidden rounded-xl border border-primary/20 bg-primary/[0.04] p-4" role="status" aria-live="polite">
+      <div className="flex items-center gap-3">
+        <span className="film-orb relative grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+          <Sparkles className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold">{fix ? "Claude מתקן את התסריט" : "Claude כותב את הסרטון"}</p>
+          <p key={step} className="film-step text-sm text-muted-foreground">{STEPS[step][1]}…</p>
+        </div>
+        <span className="shrink-0 text-xs tabular-nums text-muted-foreground" dir="ltr">{Math.floor(sec / 60)}:{String(sec % 60).padStart(2, "0")}</span>
+      </div>
+      <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-primary/10">
+        <div className="film-bar h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+      </div>
+      <ol className="mt-3 flex gap-1.5" aria-hidden="true">
+        {STEPS.map(([, label], i) => (
+          <li key={label} className={`h-1 flex-1 rounded-full transition-colors duration-500 ${i <= step ? "bg-primary/60" : "bg-primary/10"}`} />
+        ))}
+      </ol>
+      <p className="mt-3 text-xs text-muted-foreground">
+        {t < EXPECT ? "בדרך כלל עד שתי דקות. אפשר להמשיך למלא את שאר הטופס בינתיים." : "לוקח קצת יותר מהרגיל, עוד רגע."}
+      </p>
+    </div>
+  );
+}
+
 // what the scripts of this deal cost: the last request and the total
 function Usage({ rows }) {
   const last = rows[rows.length - 1];
@@ -57,9 +107,19 @@ function Usage({ rows }) {
   );
 }
 
-export default function DealFilm({ id, project }) {
-  const path = `sales/deal-film?id=${id}`;
+// id: a saved deal. Without it (the new-deal form) the film is a draft: the first upload creates it, onDraft
+// gets its id, and creating the deal moves it into the deal (deals.js filmDraft). project/summary: the form's.
+export default function DealFilm({ id, draft, onDraft, project, summary }) {
+  // the draft id arrives with the first answer; a video upload already under way goes on with it
+  const draftRef = useRef(draft || null);
+  useEffect(() => { draftRef.current = draft || draftRef.current; }, [draft]);
+  const where = () => (id ? `id=${id}` : `draft=${draftRef.current || "new"}`);
+  const path = `sales/deal-film?${id ? `id=${id}` : `draft=${draft || "new"}`}`;
   const { data, setData } = useApi(path);
+  const call = (body) => api(`sales/deal-film?${where()}`, { method: "POST", body: id ? body : { ...body, project, summary } }).then((r) => {
+    if (!id && r?.draft && r.draft !== draftRef.current) { draftRef.current = r.draft; onDraft?.(r.draft); }
+    return r;
+  });
   const [busy, setBusy] = useState("");            // demo | logo | generate | save
   const [failures, setFailures] = useState(null);  // after watching the preview
   const [captions, setCaptions] = useState(null);  // editing
@@ -71,7 +131,7 @@ export default function DealFilm({ id, project }) {
 
   const post = async (body, ok, kind) => {
     setBusy(kind);
-    const r = await run(() => api(path, { method: "POST", body }), ok);
+    const r = await run(() => call(body), ok);
     setBusy("");
     if (r) setData(r);
     return r;
@@ -104,7 +164,7 @@ export default function DealFilm({ id, project }) {
     for (let i = 0; i < total; i++) {
       setSent([i, total]);
       const data = toBase64(await file.slice(i * VIDEO_PART, Math.min(file.size, (i + 1) * VIDEO_PART)).arrayBuffer());
-      r = await run(() => api(path, { method: "POST", body: { action: "video_part", index: i, total, size: file.size, name: file.name, type, data } }), i === total - 1 ? "הסרטון הועלה" : null);
+      r = await run(() => call({ action: "video_part", index: i, total, size: file.size, name: file.name, type, data }), i === total - 1 ? "הסרטון הועלה" : null);
       if (!r) break;
     }
     setSent(null);
@@ -112,15 +172,20 @@ export default function DealFilm({ id, project }) {
     if (r) setData(r);
   };
 
-  const generate = (fix) => post(fix ? { action: "generate", failures: fix, script: film.script } : { action: "generate" },
-    fix ? "התסריט תוקן" : "התסריט נכתב", "generate").then((r) => { if (r) setWatch((w) => w + 1); });
+  const [writingFix, setWritingFix] = useState(false);
+  const generate = (fix) => {
+    setWritingFix(Boolean(fix));
+    return post(fix ? { action: "generate", failures: fix, script: film.script } : { action: "generate" },
+      fix ? "התסריט תוקן" : "התסריט נכתב", "generate").then((r) => { if (r) setWatch((w) => w + 1); });
+  };
 
   if (!data) return <Card title="סרטון דמו"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></Card>;
 
-  const demoUrl = film?.hasDemo ? `/api/sales/deal-file?id=${id}&kind=demo&v=${film.demoV}` : null;
-  const logoUrl = film?.hasLogo ? `/api/sales/deal-file?id=${id}&kind=logo&v=${film.logoV}` : null;
+  const fileUrl = (kind, v) => `/api/sales/deal-file?${where()}&kind=${kind}&v=${v}`;
+  const demoUrl = film?.hasDemo ? fileUrl("demo", film.demoV) : null;
+  const logoUrl = film?.hasLogo ? fileUrl("logo", film.logoV) : null;
   const scenes = film?.script?.scenes || [];
-  const videoUrl = film?.hasVideo ? `/api/sales/deal-file?id=${id}&kind=video&v=${film.videoV}` : null;
+  const videoUrl = film?.hasVideo ? fileUrl("video", film.videoV) : null;
 
   return (
     <Card title="סרטון דמו בעמוד ההזמנה" actions={(film?.script || film?.hasVideo) && (
@@ -133,6 +198,7 @@ export default function DealFilm({ id, project }) {
         מעלים את קובץ ה-HTML של הדמו ואת הלוגו של הלקוח. Claude קורא את קוד הדמו וכותב תסריט: איפה ללחוץ, מה להקליד וכיתוב לכל סצנה.
         בעמוד ההזמנה הדמו האמיתי רץ לבד עם סמן וכיתובים, ומתחתיו הלוגואים של הלקוחות שלנו.
         אם המתכנת כבר הקליט סרטון, אפשר להעלות אותו במקום, והוא מוצג במקום הסרטון של Claude.
+        {!id && " הסרטון נשמר עם העסקה, והלקוח רואה אותו כבר בכניסה הראשונה לקישור."}
       </p>
       {!data.configured && <p className="mb-3 rounded-lg bg-amber-50 p-2 text-sm text-amber-900">ANTHROPIC_API_KEY לא מוגדר בשרת, ולכן אי אפשר לכתוב תסריט.</p>}
 
@@ -166,7 +232,7 @@ export default function DealFilm({ id, project }) {
       </div>
       {film?.hasDemo && <p className="mt-2 text-xs text-muted-foreground">{film.demoName}{film.demoSize ? ` · ${Math.round(film.demoSize / 1024)}KB` : ""}</p>}
       {film?.usage?.length > 0 && <Usage rows={film.usage} />}
-      {busy === "generate" && <p className="mt-2 text-sm text-muted-foreground">Claude קורא את קוד הדמו וכותב את התסריט. זה לוקח עד שתי דקות, אפשר להישאר בעמוד.</p>}
+      {busy === "generate" && <Writing fix={writingFix} />}
 
       {demoUrl && film.script && (
         <div className="mt-5">
