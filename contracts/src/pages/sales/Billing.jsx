@@ -129,8 +129,8 @@ export function BillingNew() {
         <FieldRow label="תיאור (מופיע בחשבונית)"><Input {...fs("description")} /></FieldRow>
         <div><p className="mb-2 text-sm font-medium">סכום חודשי לפי תקופות</p><ScheduleEditor value={schedule} onChange={setSchedule} /></div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <FieldRow label="תאריך החיוב הראשון" hint="ריק: ייקבע מאוחר יותר"><Input {...fs("startDate")} type="date" /></FieldRow>
-          <FieldRow label="יום החיוב בחודש"><Input {...fs("dayOfMonth")} inputMode="numeric" dir="ltr" /></FieldRow>
+          <FieldRow label="תאריך החיוב הראשון" hint={f.startDate ? `החיובים הבאים ב-${Number(f.startDate.slice(8, 10))} בכל חודש` : "ריק: ייקבע מאוחר יותר"}><Input {...fs("startDate")} type="date" /></FieldRow>
+          {!f.startDate && <FieldRow label="יום החיוב בחודש" hint="התאריך שייקבע יעוגל ליום הזה"><Input {...fs("dayOfMonth")} inputMode="numeric" dir="ltr" /></FieldRow>}
         </div>
         <label className="flex items-center gap-3 text-sm"><Switch checked={f.sendLink} onCheckedChange={(v) => setF((s) => ({ ...s, sendLink: v }))} />לשלוח ללקוח קישור להזנת כרטיס</label>
         {error && <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
@@ -178,8 +178,8 @@ export function BillingDetail() {
             <FieldRow label="תיאור"><Input value={edit.description} onChange={(e) => setEdit((x) => ({ ...x, description: e.target.value }))} /></FieldRow>
             <div><p className="mb-2 text-sm font-medium">סכום לפי תקופות (לפני מע"מ, נספר מהחיוב הראשון)</p><ScheduleEditor value={edit.schedule} onChange={(v) => setEdit((x) => ({ ...x, schedule: v }))} /></div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <FieldRow label="מועד החיוב הבא"><Input type="date" value={edit.nextChargeDate} onChange={(e) => setEdit((x) => ({ ...x, nextChargeDate: e.target.value }))} /></FieldRow>
-              <FieldRow label="יום החיוב בחודש"><Input value={edit.dayOfMonth} onChange={(e) => setEdit((x) => ({ ...x, dayOfMonth: e.target.value }))} dir="ltr" /></FieldRow>
+              <FieldRow label="מועד החיוב הבא"><Input type="date" value={edit.nextChargeDate} onChange={(e) => { const v = e.target.value; setEdit((x) => ({ ...x, nextChargeDate: v, ...(v ? { dayOfMonth: Number(v.slice(8, 10)) } : {}) })); }} /></FieldRow>
+              <FieldRow label="יום החיוב בחודש" hint="מתעדכן לפי מועד החיוב הבא; אפשר לשנות"><Input value={edit.dayOfMonth} onChange={(e) => setEdit((x) => ({ ...x, dayOfMonth: e.target.value }))} dir="ltr" /></FieldRow>
             </div>
             <FieldRow label="הערות פנימיות"><Textarea value={edit.notes} onChange={(e) => setEdit((x) => ({ ...x, notes: e.target.value }))} rows={2} /></FieldRow>
             <div className="flex gap-2"><Button type="submit" size="sm">שמירה</Button><Button type="button" size="sm" variant="ghost" onClick={() => setEdit(null)}>ביטול</Button></div>
