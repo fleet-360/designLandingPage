@@ -26,7 +26,6 @@ export const ROUTES = {
   "contracts/submissions": () => import("./_routes/contracts/submissions.js"),
   "contracts/submit": () => import("./_routes/contracts/submit.js"),
 
-  "cron/daily": () => import("./_routes/cron/daily.js"),
 
   "outbox/item": () => import("./_routes/outbox/item.js"),
   "outbox/result": () => import("./_routes/outbox/result.js"),
