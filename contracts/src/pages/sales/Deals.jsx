@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { api, dateTime, dmy, errorText, fileToDataUrl, isEmail, nis } from "@/sales/lib";
+import { api, dateTime, dmy, errorText, FIELD_ERRORS, fileToDataUrl, isEmail, mobileIL, nis, taxIdIL } from "@/sales/lib";
 import { Card, FieldRow, History, Info, LinkBox, LoadError, PageHeader, Pill, Spinner, run, useApi } from "./AdminUi.jsx";
 import { Confirm } from "./Discovery.jsx";
 
@@ -130,6 +130,9 @@ export function DealForm() {
     if (!(Number(f.data.price.amount) > 0)) return setError("יש להזין מחיר");
     if (!f.client.companyName.trim() && !f.client.signerName.trim()) return setError("יש להזין שם חברה או שם החותם");
     if (!isEmail(f.client.email)) return setError("יש להזין אימייל תקין של הלקוח");
+    // the client can still correct them on the page, but Grow (invoices, card) refuses invalid ones
+    if (f.client.phone.trim() && !mobileIL(f.client.phone)) return setError(`טלפון הלקוח: ${FIELD_ERRORS.phone}`);
+    if (f.client.taxId.trim() && !taxIdIL(f.client.taxId)) return setError(`ח.פ הלקוח: ${FIELD_ERRORS.taxId}`);
     setBusy(true);
     try {
       if (id) {

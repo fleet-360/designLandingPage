@@ -46,6 +46,29 @@ export const timeLabel = (iso) =>
 
 export const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(s || "").trim());
 
+// What Grow accepts, checked before we call it, so the customer sees what to fix.
+// Israeli mobile: 05XXXXXXXX (spaces, dashes and +972 allowed) -> "05XXXXXXXX", or "" when not valid
+export const mobileIL = (v) => {
+  const d = String(v || "").replace(/[^\d+]/g, "").replace(/^\+?972/, "0");
+  return /^05\d{8}$/.test(d) ? d : "";
+};
+// ID / company number (ת.ז, ח.פ, ע.מ): up to 9 digits with the Israeli check digit -> 9 digits, or ""
+export const taxIdIL = (v) => {
+  const s = String(v || "").replace(/[\s-]/g, "");
+  if (!/^\d{5,9}$/.test(s) || !Number(s)) return "";
+  const p = s.padStart(9, "0");
+  let sum = 0;
+  for (let i = 0; i < 9; i++) { const x = Number(p[i]) * ((i % 2) + 1); sum += x > 9 ? x - 9 : x; }
+  return sum % 10 === 0 ? p : "";
+};
+export const fullNameOk = (v) => String(v || "").trim().split(/\s+/).filter((w) => w.length > 1).length >= 2;
+export const FIELD_ERRORS = {
+  fullName: "יש להזין שם מלא: לפחות שתי מילים",
+  email: "יש להזין אימייל תקין",
+  phone: "יש להזין טלפון נייד תקין: 10 ספרות שמתחילות ב-05",
+  taxId: "מספר ח.פ / ע.מ / ת.ז לא תקין. בדקו שהוזנו כל הספרות",
+};
+
 export async function copyText(text) {
   try {
     await navigator.clipboard.writeText(text);
@@ -68,6 +91,8 @@ const ERRORS = {
   signed_out: "פג תוקף ההתחברות. היכנסו שוב.",
   not_configured: "המערכת לא מוגדרת בשרת הזה.",
   bad_client_name: "יש להזין את שם הלקוח",
+  bad_tax_id: "מספר ח.פ / ע.מ / ת.ז לא תקין. בדקו שהוזנו כל הספרות",
+  bad_phone: "יש להזין טלפון נייד תקין: 10 ספרות שמתחילות ב-05",
   bad_email: "כתובת האימייל לא תקינה",
   bad_price: "יש להזין מחיר",
   bad_project_name: "יש להזין שם לפרויקט",

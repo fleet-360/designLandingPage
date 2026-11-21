@@ -156,3 +156,18 @@ export const money = (v, field = "amount") => {
 };
 
 export const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(s || "").trim());
+
+// What Grow accepts (the same checks as contracts/src/sales/lib.js): an Israeli mobile -> "05XXXXXXXX",
+// an ID / company number with its check digit -> 9 digits; "" when not valid
+export const mobileIL = (v) => {
+  const d = String(v || "").replace(/[^\d+]/g, "").replace(/^\+?972/, "0");
+  return /^05\d{8}$/.test(d) ? d : "";
+};
+export const taxIdIL = (v) => {
+  const s = String(v || "").replace(/[\s-]/g, "");
+  if (!/^\d{5,9}$/.test(s) || !Number(s)) return "";
+  const p = s.padStart(9, "0");
+  let sum = 0;
+  for (let i = 0; i < 9; i++) { const x = Number(p[i]) * ((i % 2) + 1); sum += x > 9 ? x - 9 : x; }
+  return sum % 10 === 0 ? p : "";
+};

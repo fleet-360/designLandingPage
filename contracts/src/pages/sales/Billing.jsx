@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/use-toast";
-import { api, dateTime, dmy, errorText, isEmail, nis } from "@/sales/lib";
+import { api, dateTime, dmy, errorText, FIELD_ERRORS, isEmail, mobileIL, nis, taxIdIL } from "@/sales/lib";
 import { Card, FieldRow, History, Info, LinkBox, LoadError, PageHeader, Pill, Spinner, run, useApi } from "./AdminUi.jsx";
 import { Confirm } from "./Discovery.jsx";
 import { subStatus } from "./Deals.jsx";
@@ -103,6 +103,9 @@ export function BillingNew() {
     setError("");
     if (!c.name && !c.company) return setError("יש להזין שם לקוח");
     if (!isEmail(c.email)) return setError("יש להזין אימייל תקין של הלקוח");
+    // Grow's card page needs a valid mobile; the invoice a valid tax id
+    if (!mobileIL(c.phone)) return setError(FIELD_ERRORS.phone);
+    if (c.taxId.trim() && !taxIdIL(c.taxId)) return setError(FIELD_ERRORS.taxId);
     setBusy(true);
     try {
       const r = await api("billing/subscriptions", { method: "POST", body: { customer: c, ...f, schedule } });

@@ -7,7 +7,7 @@
 // even if the client stops before step 3.
 import { clientIp, HttpError, json, origin, readJson, route } from "../../_lib/http.js";
 import { query } from "../../_lib/db.js";
-import { getSettings, isEmail, logEvent, sendMail, str } from "../../_lib/sales.js";
+import { getSettings, isEmail, logEvent, mobileIL, sendMail, str, taxIdIL } from "../../_lib/sales.js";
 import { buildAgreement, buildOrder, cleanClient, snapshotHash } from "../../_lib/deal.js";
 import { dealAccountingMail, dealSignedMail } from "../../_lib/sales-mail.js";
 import { parseDataUrl } from "../../_lib/sign.js";
@@ -80,6 +80,11 @@ export default route(["GET", "POST"], async (req, res) => {
     const client = cleanClient({ ...d.client, ...(b.client || {}) });
     if (!client.companyName && !client.signerName) throw new HttpError(400, "bad_company");
     if (!isEmail(client.accountingEmail)) throw new HttpError(400, "bad_accounting_email");
+    // invoices and the card for the standing order go through Grow, which refuses invalid ones
+    if (!taxIdIL(client.taxId)) throw new HttpError(400, "bad_tax_id");
+    if (!mobileIL(client.phone)) throw new HttpError(400, "bad_phone");
+    client.taxId = taxIdIL(client.taxId);
+    client.phone = mobileIL(client.phone);
     const approverName = str(b.approverName, 120);
     if (approverName.length < 2) throw new HttpError(400, "bad_name");
     const approval = who(req, { name: approverName, email: client.email });

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import SignaturePad from "@/components/sign/SignaturePad";
-import { api, dmy, dateTime, errorText, fileToDataUrl, isEmail, nis } from "@/sales/lib";
+import { api, dmy, dateTime, errorText, FIELD_ERRORS, fileToDataUrl, fullNameOk, isEmail, mobileIL, nis, taxIdIL } from "@/sales/lib";
 import { Container, ErrorLine, Field, Loading, Notice, PriceCard, ScheduleTable, Section, ServiceTimeline, Shell, Stepper } from "./ui.jsx";
 import CardSetup from "./CardSetup.jsx";
 
@@ -64,16 +64,25 @@ function OrderStep({ d, post }) {
   const [edit, setEdit] = useState(!d.client.accountingEmail || !d.client.taxId);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const set = (k) => (e) => setC((s) => ({ ...s, [k]: e.target.value }));
+  const [bad, setBad] = useState({});
+  const set = (k) => (e) => { setC((s) => ({ ...s, [k]: e.target.value })); setBad((b) => ({ ...b, [k]: "" })); };
 
   const approve = async () => {
     setError("");
     if (!c.companyName.trim() && !c.signerName.trim()) { setEdit(true); return setError("יש להזין שם חברה או שם מלא"); }
-    if (!isEmail(c.accountingEmail)) { setEdit(true); return setError("יש להזין אימייל של הנהלת החשבונות, לשם יישלחו החשבוניות"); }
+    // the invoices and the card for the standing order go through Grow, which needs these valid
+    const errs = {
+      taxId: taxIdIL(c.taxId) ? "" : FIELD_ERRORS.taxId,
+      phone: mobileIL(c.phone) ? "" : FIELD_ERRORS.phone,
+      signerName: fullNameOk(c.signerName) ? "" : FIELD_ERRORS.fullName,
+      accountingEmail: isEmail(c.accountingEmail) ? "" : "יש להזין אימייל של הנהלת החשבונות, לשם יישלחו החשבוניות",
+    };
+    setBad(errs);
+    if (Object.values(errs).some(Boolean)) { setEdit(true); return setError("יש לתקן את השדות המסומנים בפרטי ההתקשרות"); }
     if (approver.trim().length < 2) return setError("יש להזין את שם המאשר/ת");
     if (!accept) return setError("יש לסמן את תיבת האישור");
     setBusy(true);
-    try { await post({ action: "approve", client: c, approverName: approver.trim(), accept: true }); } catch (e) { setBusy(false); setError(errorText(e)); }
+    try { await post({ action: "approve", client: { ...c, phone: mobileIL(c.phone), taxId: taxIdIL(c.taxId) }, approverName: approver.trim(), accept: true }); } catch (e) { setBusy(false); setError(errorText(e)); }
   };
 
   return (
@@ -141,13 +150,13 @@ function OrderStep({ d, post }) {
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="שם החברה"><Input value={c.companyName} onChange={set("companyName")} className="h-11" /></Field>
-              <Field label="ח.פ / ע.מ"><Input value={c.taxId} onChange={set("taxId")} inputMode="numeric" dir="ltr" className="h-11" /></Field>
+              <Field label="ח.פ / ע.מ / ת.ז" required error={bad.taxId}><Input value={c.taxId} onChange={set("taxId")} inputMode="numeric" dir="ltr" className="h-11" /></Field>
               <Field label="כתובת"><Input value={c.address} onChange={set("address")} className="h-11" /></Field>
-              <Field label="טלפון"><Input value={c.phone} onChange={set("phone")} type="tel" dir="ltr" className="h-11" /></Field>
-              <Field label="שם מורשה החתימה"><Input value={c.signerName} onChange={set("signerName")} className="h-11" /></Field>
+              <Field label="טלפון נייד" required error={bad.phone}><Input value={c.phone} onChange={set("phone")} type="tel" dir="ltr" className="h-11" /></Field>
+              <Field label="שם מורשה החתימה" required error={bad.signerName}><Input value={c.signerName} onChange={set("signerName")} className="h-11" /></Field>
               <Field label="תפקיד"><Input value={c.signerRole} onChange={set("signerRole")} className="h-11" /></Field>
               <Field label="איש קשר בהנהלת החשבונות"><Input value={c.accountingName} onChange={set("accountingName")} className="h-11" /></Field>
-              <Field label="אימייל להנהלת החשבונות" required hint="לשם יישלחו החשבוניות"><Input value={c.accountingEmail} onChange={set("accountingEmail")} type="email" dir="ltr" className="h-11" /></Field>
+              <Field label="אימייל להנהלת החשבונות" required hint="לשם יישלחו החשבוניות" error={bad.accountingEmail}><Input value={c.accountingEmail} onChange={set("accountingEmail")} type="email" dir="ltr" className="h-11" /></Field>
             </div>
           )}
         </Section>
