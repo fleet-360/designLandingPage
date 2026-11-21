@@ -27,7 +27,7 @@ export default function DealPage({ token }) {
   const steps = [
     { label: "הזמנת העבודה", done: Boolean(d.approvedAt) },
     { label: "חתימה", done: Boolean(d.signedAt) },
-    ...(needsCard ? [{ label: "הוראת קבע", done: Boolean(d.subscription?.card) }] : []),
+    ...(needsCard ? [{ label: "יצאנו לדרך", done: Boolean(d.subscription?.card) }] : []),
   ];
   const current = !d.approvedAt ? 0 : !d.signedAt ? 1 : needsCard && d.subscription && !d.subscription.card && d.subscription.status !== "canceled" && !skipCard ? 2 : 3;
   const post = async (body) => { const v = await api(url, { method: "POST", body }); setD(v); return v; };
@@ -94,11 +94,9 @@ function OrderStep({ d, post }) {
 
   return (
     <>
-      <DealHero order={o} />
+      <DealHero order={o} pitch={d.pitch} />
       {d.film && <FilmBand film={d.film} order={o} />}
       <Container className={`${d.film ? "" : "-mt-4 "}space-y-5 pb-10`}>
-        <PriceCard price={o.price} />
-
         <Section title="מה בונים לכם">
           <ul className="space-y-3">
             {o.project.specName && (
@@ -130,6 +128,8 @@ function OrderStep({ d, post }) {
       <JourneyRoad order={o} note={so(o)} />
 
       <Container className="space-y-5 py-8 pb-16">
+        {/* the price after what is built and the road ahead, right above how it is paid */}
+        <PriceCard price={o.price} />
         <Section title="לוח התשלומים">
           <p className="mb-3 text-sm text-muted-foreground">
             {o.payInfo
@@ -262,7 +262,7 @@ function AgreementStep({ d, post }) {
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               <Field label="שם החותם" required><Input value={name} onChange={(e) => setName(e.target.value)} className="h-11" autoComplete="name" /></Field>
               <Field label="תפקיד החותם"><Input value={role} onChange={(e) => setRole(e.target.value)} className="h-11" /></Field>
-              <Field label="תעודת זהות" hint="לא חובה"><Input value={idNumber} onChange={(e) => setIdNumber(e.target.value)} inputMode="numeric" dir="ltr" className="h-11" /></Field>
+              <Field label="תעודת זהות"><Input value={idNumber} onChange={(e) => setIdNumber(e.target.value)} inputMode="numeric" dir="ltr" className="h-11" /></Field>
             </div>
             <div className="mt-4"><SignaturePad ref={pad} /></div>
             <label className="mt-4 flex items-start gap-3 text-[15px] leading-relaxed">

@@ -18,7 +18,10 @@
 //     signed_file { fileId }         replaces (or removes) the signed contract of a deal closed by hand
 //     send_order { attachContract }  emails the client the order confirmation, with the signed contract or without
 //     payment_note { note }          how the client pays or paid (internal), at any time
+//     pitch { pitch }                the key lines at the top of the client's page and in the order email
+//                                    ({ problem, headline, lines } or null), at any time: not part of the order
 import { HttpError, json, origin, readJson, route } from "../../_lib/http.js";
+import { pitchOf } from "./discovery.js";
 import { query } from "../../_lib/db.js";
 import { requireAdmin } from "../../_lib/auth.js";
 import { uuidParam } from "../../_lib/sign.js";
@@ -58,6 +61,7 @@ export function dealRow(r, base) {
     signedOn: r.signature?.manual ? r.signature.on : null,
     signerIdNumber: r.signature?.idNumber || null,
     paymentNote: r.payment_note || null,
+    pitch: r.pitch || null,
   };
 }
 
@@ -146,10 +150,10 @@ export default route(["GET", "POST", "PATCH"], async (req, res) => {
     if (!client.email && (!manual || b.sendOrderMail)) throw new HttpError(400, "bad_client_email");
     if (manual && b.fileId) await signedFile(b.fileId);
     const { rows } = await query(
-      `INSERT INTO sales.deals (token, created_by, data, client, card_status, payment_note)
-       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      `INSERT INTO sales.deals (token, created_by, data, client, card_status, payment_note, pitch)
+       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
       [newToken(), user, JSON.stringify(data), JSON.stringify(client), data.standingOrder.enabled ? "pending" : "not_required",
-        str(b.paymentNote, 1000) || null]);
+        str(b.paymentNote, 1000) || null, pitchOf(b.pitch)]);
     let d = rows[0];
     await logEvent("deal", d.id, "created", { by: user, ...(manual && { manual: true }) });
     let mail = null;
@@ -232,6 +236,10 @@ export default route(["GET", "POST", "PATCH"], async (req, res) => {
     }
     case "send_order":
       await sendOrder(d, settings, base, b.attachContract !== false);
+      break;
+    case "pitch":
+      await query("UPDATE sales.deals SET pitch = $2, updated_at = now() WHERE id = $1", [id, pitchOf(b.pitch)]);
+      await logEvent("deal", id, "pitch", { by: user });
       break;
     case "payment_note":
       await query("UPDATE sales.deals SET payment_note = $2, updated_at = now() WHERE id = $1", [id, str(b.note, 1000) || null]);

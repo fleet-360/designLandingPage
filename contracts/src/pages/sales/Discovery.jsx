@@ -100,7 +100,7 @@ export const pitchBody = (p) => {
   return p.headline.trim() || lines.length ? { problem: p.problem.trim(), headline: p.headline.trim(), lines } : null;
 };
 
-export function PitchFields({ p, onChange }) {
+export function PitchFields({ p, onChange, stage = "discovery" }) {
   const { data: status } = useApi("sales/pitch");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -110,7 +110,7 @@ export function PitchFields({ p, onChange }) {
     setError("");
     setBusy(true);
     try {
-      const r = await api("sales/pitch", { method: "POST", body: { problem: p.problem } });
+      const r = await api("sales/pitch", { method: "POST", body: { problem: p.problem, stage } });
       onChange({ ...p, options: r.headlines, headline: r.headlines[0] || "", lines: r.lines });
     } catch (err) { setError(errorText(err)); }
     setBusy(false);

@@ -147,7 +147,7 @@ export function buildOrder(deal, settings, from = israelDate()) {
     company: settings.company,
     client: deal.client,
     project: d.project,
-    price: { amount: d.price.amount, vatRate: d.price.vatRate, total: withVat(d.price.amount, d.price.vatRate), depositPercent },
+    price: { amount: d.price.amount, vatRate: d.price.vatRate, total: schedule.total, depositPercent },   // whole shekels, as the schedule
     balanceMethod: d.price.balanceMethod,
     schedule,
     // how to pay, frozen with the order: the bank account for transfers, and for checks how many, to whom,

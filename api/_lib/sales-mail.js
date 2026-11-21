@@ -42,6 +42,13 @@ ${rows.map((r, i) => `<tr style="background:${i % 2 ? "#FFF9EC" : "#F4ECD6"}">${
 
 // ---------------- Deals ----------------
 
+// the key lines sales chose (a spec request or a deal): the headline and its lines, for the top of an email
+function pitchHtml(pitch, { ink = "#3A2418", mark = "#E0432F" } = {}) {
+  if (!pitch || !(pitch.headline || pitch.lines?.length)) return "";
+  const lines = (pitch.lines || []).map((l) => `<tr><td width="26" style="vertical-align:top;padding:4px 0;color:${mark};font-size:16px;font-weight:900;">✓</td><td style="padding:4px 0;font-size:15.5px;line-height:1.55;color:${ink};">${esc(l)}</td></tr>`).join("");
+  return `${pitch.headline ? `<div style="font-size:19px;font-weight:800;line-height:1.45;color:${ink};margin:0 0 6px;">${esc(pitch.headline)}</div>` : ""}${lines ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:4px 0 12px;">${lines}</table>` : ""}`;
+}
+
 export function dealInviteMail(deal, settings, url) {
   const c = deal.client;
   const project = deal.data.project?.name || "הפרויקט";
@@ -52,7 +59,7 @@ export function dealInviteMail(deal, settings, url) {
     html: layout({
       preheader: "כל פרטי ההזמנה, התשלומים וההסכם במקום אחד",
       title: `${esc(c.signerName || c.companyName || "שלום")}, הזמנת העבודה מוכנה`,
-      body: `<p style="margin:0 0 10px;">ריכזנו בעמוד אחד את מה שסיכמנו על <strong>${esc(project)}</strong>: מה מפתחים, כמה זה עולה ומתי משלמים.</p>
+      body: `${pitchHtml(deal.pitch)}<p style="margin:0 0 10px;">ריכזנו בעמוד אחד את מה שסיכמנו על <strong>${esc(project)}</strong>: מה מפתחים, כמה זה עולה ומתי משלמים.</p>
 <p style="margin:0;">אחרי האישור תעברו לחתימה על ההסכם, ובסוף להגדרת אמצעי התשלום לשירות החודשי. אפשר לעצור בכל שלב ולחזור דרך אותו קישור.</p>`,
       button: { href: url, label: "לצפייה ואישור" },
       footer: `הזמנה מס' ${deal.number} · ${esc(settings.company.name)} · ${esc(settings.company.phone)}`,
@@ -305,7 +312,7 @@ export function discoveryInviteMail(d, settings, url) {
     html: passMail({
       preheader: p.list ? `הטבה: ${nis(p.price)} במקום ${nis(p.list)}. דמו עובד של המערכת שלכם.` : "רואים את המערכת לפני שמפתחים אותה",
       title: `${esc(d.client_name)}, רואים את המערכת לפני שמפתחים אותה`,
-      text: `פגישה אחת עם מומחה תוכנה, ובסופה דמו עובד של המערכת שלכם.${manual ? `<br><strong>פגישת הפתיחה נקבעה ל${esc(israelDateTime(d.meeting_start))}</strong> (${d.meeting_minutes} דקות).` : ""}`,
+      text: `${d.pitch && (d.pitch.headline || d.pitch.lines?.length) ? pitchHtml(d.pitch) : "פגישה אחת עם מומחה תוכנה, ובסופה דמו עובד של המערכת שלכם."}${manual ? `<br><strong>פגישת הפתיחה נקבעה ל${esc(israelDateTime(d.meeting_start))}</strong> (${d.meeting_minutes} דקות).` : ""}`,
       footer: footerOf(settings),
       rows: benefitRow(d) + clientsRow() + passRow(fields, dealStub(d))
         + `<tr><td style="background:${PV.tk};padding:4px 24px 6px;border-top:2px dashed ${PV.line};">${tbl(gets, "margin-top:8px;")}</td></tr>

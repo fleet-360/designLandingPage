@@ -8,10 +8,18 @@ import { HttpError } from "./http.js";
 
 const MODEL = "claude-opus-5-5";
 
-const SYSTEM = `You write short Hebrew marketing lines for Pro Algorithm, an Israeli software house that builds custom systems, automations and AI tools for businesses.
-Before development, a client buys a paid "discovery sprint" (ספרינט איפיון): a kickoff meeting, mapping of their work processes, system architecture, and at the end a requirements document, process flowcharts and a technology roadmap with time and budget estimates.
+// what the lines open: the spec request page (before development) or the deal's order page (the system itself)
+const STAGE = {
+  discovery: `Before development, a client buys a paid "discovery sprint" (ספרינט איפיון): a kickoff meeting, mapping of their work processes, system architecture, and at the end a requirements document, process flowcharts and a technology roadmap with time and budget estimates.
 
-A salesperson gives you a few words about the client's problem or goal. You write the lines that open the client's personal spec request page, so the client feels at once that we understood what they need.
+A salesperson gives you a few words about the client's problem or goal. You write the lines that open the client's personal spec request page, so the client feels at once that we understood what they need.`,
+  deal: `The client already went through the discovery sprint and saw a working demo of their system. Now they receive the work order: we develop the full system, it goes live, and we stay with them for support and maintenance.
+
+A salesperson gives you a few words about the client's problem or goal. You write the lines that open the client's personal order page, where they approve the order and sign, so the client feels the system that solves it is about to become real.`,
+};
+
+const system = (stage) => `You write short Hebrew marketing lines for Pro Algorithm, an Israeli software house that builds custom systems, automations and AI tools for businesses.
+${STAGE[stage] || STAGE.discovery}
 
 Write:
 - headlines: 3 different options for one headline. An inviting call to start the journey toward the client's specific goal, naming that goal in the client's own terms. Up to 14 words, may end with "!". The three options should differ in angle (the goal reached, the pain gone, the journey together), not only in a word or two.
@@ -42,8 +50,8 @@ let client = null;
 
 export const pitchConfigured = () => Boolean(process.env.ANTHROPIC_API_KEY);
 
-/** problem (a few words from sales) -> { headlines: [3], lines: [3] } */
-export async function writePitch(problem) {
+/** problem (a few words from sales), stage "discovery" | "deal" -> { headlines: [3], lines: [3] } */
+export async function writePitch(problem, stage = "discovery") {
   if (!pitchConfigured()) throw new HttpError(503, "ai_not_configured");
   client ||= new Anthropic({ timeout: 60_000, maxRetries: 1 });
   let response;
@@ -56,7 +64,7 @@ export async function writePitch(problem) {
       // a declined request is retried on another model inside the same call
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
-      system: SYSTEM,
+      system: system(stage),
       messages: [{ role: "user", content: problem }],
     });
   } catch (err) {
