@@ -9,7 +9,7 @@ import { str } from "../../_lib/sales.js";
 export default route(["POST"], async (req, res) => {
   requireAdmin(req);
   const b = await readJson(req, 4 * 1024 * 1024);
-  const { contentType, bytes } = parseDataUrl(b.data_url, { allowed: ["application/pdf", "image/png", "image/jpeg"], maxBytes: 3 * 1024 * 1024 });
+  const { contentType, bytes } = parseDataUrl(b.data_url, { allowed: ["application/pdf", "image/png", "image/jpeg", "image/webp"], maxBytes: 3 * 1024 * 1024 });
   const { rows } = await query(
     "INSERT INTO sign.files (is_public, name, content_type, size, data) VALUES (false, $1, $2, $3, $4) RETURNING id",
     [str(b.name, 200) || null, contentType, bytes.length, bytes]);

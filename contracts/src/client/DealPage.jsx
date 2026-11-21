@@ -7,6 +7,7 @@ import SignaturePad from "@/components/sign/SignaturePad";
 import { api, dmy, dateTime, errorText, FIELD_ERRORS, fileToDataUrl, fullNameOk, isEmail, mobileIL, nis, taxIdIL } from "@/sales/lib";
 import { Container, ErrorLine, Field, Loading, Notice, PriceCard, ScheduleTable, Section, ServiceTimeline, Shell, Stepper } from "./ui.jsx";
 import CardSetup from "./CardSetup.jsx";
+import DemoFilm, { ClientsStrip, VideoFilm } from "./DemoFilm.jsx";
 
 export default function DealPage({ token }) {
   const [d, setD] = useState(undefined);
@@ -98,7 +99,8 @@ function OrderStep({ d, post }) {
           {o.project.summary && <p className="mt-3 max-w-2xl whitespace-pre-line text-[17px] leading-relaxed text-white/90">{o.project.summary}</p>}
         </Container>
       </header>
-      <Container className="space-y-5 py-6 pb-16">
+      {d.film && <FilmBand film={d.film} order={o} />}
+      <Container className={`space-y-5 ${d.film ? "pt-2" : "py-6"} pb-16`}>
         <PriceCard price={o.price} />
 
         <Section title="מה בונים">
@@ -405,5 +407,23 @@ function Done({ d }) {
         </ol>
       </Section>
     </Container>
+  );
+}
+
+// the demo playing by itself, the client logos under it, and the line that invites them to join
+function FilmBand({ film, order }) {
+  return (
+    <section className="pb-4 pt-8 sm:pt-10" aria-label="הדמו">
+      <Container wide>
+        {film.video
+          ? <VideoFilm video={film.video} logo={film.logo} title={order.project.name} />
+          : <DemoFilm demo={film.demo} logo={film.logo} script={film.script} title={order.project.name} />}
+      </Container>
+      <ClientsStrip />
+      <Container className="pb-6 text-center">
+        <p className="text-2xl font-black leading-tight text-[#1c1a4f] sm:text-4xl">הצטרפו ללקוחות שלנו</p>
+        <p className="mt-2 text-lg font-bold text-[#2d2a8f] sm:text-2xl">ובואו נהפוך את החלום למציאות</p>
+      </Container>
+    </section>
   );
 }

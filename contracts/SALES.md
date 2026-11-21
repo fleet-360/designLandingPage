@@ -68,6 +68,20 @@ Saving the card is a separate last step, so the signed agreement is kept even if
 "הפרויקט התחיל" in the admin sets the first charge (start of work + included months, on the billing day)
 and emails the client.
 
+**Demo film on the order page.** On the deal screen ("סרטון דמו בעמוד ההזמנה") sales uploads the demo (one
+HTML file, gzipped in the browser, up to 3.2MB gzipped) and the client's logo. "יצירת הסרטון" sends the demo's
+source (embedded images and long data runs replaced by markers, up to 900k characters) to Claude, which writes
+a script of 5 to 9 scenes: a caption each, and clicks, typing, drags, highlights and camera zooms by CSS
+selector (`api/_lib/demo-film.js`, 25 to 45 seconds; a 550KB demo is about 175k input tokens, about $0.90 the first time and about $0.10 for a correction within 5 minutes, which reads the source from Claude's cache; the deal screen shows each request's tokens and cost). The film plays at 1.5x: the demo's own clock (timers, animation frames, CSS animations) runs faster inside the frame, so its animations and the script stay in step; "לנסות בעצמכם" sets it back to 1. The client page plays the real demo in a
+frame with a driver script added when it is served (`/api/sales/deal-file?kind=demo`, sandboxed by its
+`Content-Security-Policy: sandbox allow-scripts` header): a cursor moves and acts, the caption shows under it,
+then the client can watch again or try the demo. Sales watches it on the deal screen first; actions that did
+not play are listed, and "תיקון עם Claude" sends them back for a corrected script. Captions and the full script
+are editable. A ready video (MP4/WebM/MOV, up to 60MB, uploaded and served in 2.5MB parts because Vercel takes
+4.5MB per request) replaces the film when there is one. Nothing shows until "מוצג ללקוח" is on. Under it: the
+client logos the site shows (`assets/img/clients`) and "הצטרפו ללקוחות שלנו / ובואו נהפוך את החלום למציאות".
+Stored in `sales.deals.film`, outside the approved order and the signed snapshot.
+
 **Deal signed outside the link.** On a new deal, switching off "הלקוח מאשר וחותם דרך הקישור" gives a shorter
 form (no Appendix A): the signing date, the signed contract (PDF or photo, up to 3MB; it can also be uploaded
 later), and at the end the order confirmation email ("אישור הזמנה", `dealOrderMail`) with the signed contract

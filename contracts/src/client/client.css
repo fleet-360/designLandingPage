@@ -58,3 +58,18 @@
   .pa-dock, .pa-noprint { display: none !important; }
   .pa { background: #fff; }
 }
+
+/* the demo film (DemoFilm.jsx) */
+@keyframes pa-film-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.pa-film-cap { animation: pa-film-in .45s ease-out both; text-shadow: 0 1px 8px rgba(0, 0, 0, .45); }
+.pa-film-intro { animation: pa-film-in .6s ease-out both; }
+/* the client logos: one row that runs; the list is doubled, so -50% lands where it started */
+@keyframes pa-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.pa-marquee { mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.pa-marquee-track { animation: pa-marquee 38s linear infinite; }
+.pa-marquee:hover .pa-marquee-track { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .pa-marquee-track { animation: none; flex-wrap: wrap; justify-content: center; width: auto; }
+  .pa-marquee-track li[aria-hidden] { display: none; }
+  .pa-film-cap, .pa-film-intro { animation: none; }
+}
