@@ -3,18 +3,18 @@
 import { HttpError, json, readJson, route } from "../../_lib/http.js";
 import { requireAdmin } from "../../_lib/auth.js";
 import { DEFAULT_SETTINGS, getSettings, isEmail, saveSettings } from "../../_lib/sales.js";
-import { callToro } from "../../_lib/toro.js";
+import { calendarBusy, calendarUser, calendarVia } from "../../_lib/calendar.js";
 
 export default route(["GET", "PUT"], async (req, res) => {
   requireAdmin(req);
   if (req.method === "GET") {
     const q = new URL(req.url, "http://x").searchParams;
     const settings = await getSettings();
-    // is the developers@ calendar reachable through Toro?
+    // is the developers@ calendar reachable (directly with Google, or through Toro)?
     let calendar = null;
     if (q.get("check")) {
-      const r = await callToro("/proAlgoSales/calendar/busy", { timeMin: new Date().toISOString(), timeMax: new Date(Date.now() + 3600e3).toISOString() });
-      calendar = { connected: r.ok, error: r.ok ? null : r.error };
+      const r = await calendarBusy(settings, new Date().toISOString(), new Date(Date.now() + 3600e3).toISOString());
+      calendar = { connected: r.ok, error: r.ok ? null : r.error, via: calendarVia(), user: calendarUser(settings) };
     }
     return json(res, 200, { settings, defaults: DEFAULT_SETTINGS, calendar });
   }

@@ -2,7 +2,7 @@
 // is busy in the developers@pro-algo.com calendar (through Toro) and meetings already booked here.
 // A small spread is offered (at most two a day) so the client is not faced with a wall of times.
 import { query } from "./db.js";
-import { callToro } from "./toro.js";
+import { calendarBusy } from "./calendar.js";
 import { addDays, isBusinessDay, israelDate } from "./sales-calc.js";
 
 const TZ = "Asia/Jerusalem";
@@ -35,10 +35,7 @@ export async function availableSlots(settings, minutes, { now = new Date(), excl
   const lastDay = addDays(firstDay, Number(cal.daysAhead || 14));
 
   // busy: Google calendar (when connected) + meetings booked here
-  const busyRes = await callToro("/proAlgoSales/calendar/busy", {
-    timeMin: israelTime(firstDay, "00:00").toISOString(),
-    timeMax: israelTime(addDays(lastDay, 1), "00:00").toISOString(),
-  });
+  const busyRes = await calendarBusy(settings, israelTime(firstDay, "00:00").toISOString(), israelTime(addDays(lastDay, 1), "00:00").toISOString());
   const busy = (busyRes.ok ? busyRes.busy || [] : []).map((b) => [new Date(b.start).getTime(), new Date(b.end).getTime()]);
   const booked = await query(
     `SELECT meeting_start, meeting_end FROM sales.discovery

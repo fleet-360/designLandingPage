@@ -7,7 +7,7 @@ import { query, transaction } from "../../_lib/db.js";
 import { getSettings, isEmail, logEvent, sendMail } from "../../_lib/sales.js";
 import { withVat } from "../../_lib/sales-calc.js";
 import { availableSlots } from "../../_lib/slots.js";
-import { callToro } from "../../_lib/toro.js";
+import { calendarBook } from "../../_lib/calendar.js";
 import { discoveryBookedMail, meetingIcs } from "../../_lib/sales-mail.js";
 
 const iso = (d) => (d ? new Date(d).toISOString() : null);
@@ -101,8 +101,9 @@ export default route(["GET", "POST"], async (req, res) => {
   }
   await logEvent("discovery", d.id, "booked", { start: start.toISOString(), attendees });
 
-  // the calendar event (with a Meet link and invitations to everyone), through Toro
-  const cal = await callToro("/proAlgoSales/calendar/book", { bookingId: d.id });
+  // the calendar event (with a Meet link and invitations to everyone): Google directly, or through Toro
+  const booked = (await query("SELECT * FROM sales.discovery WHERE id = $1", [d.id])).rows[0];
+  const cal = await calendarBook(booked, settings);
   if (cal.ok) {
     await query(
       `UPDATE sales.discovery SET booking_status = 'confirmed', calendar_event_id = $2, meet_url = $3, booking_error = NULL
