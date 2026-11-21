@@ -63,7 +63,7 @@ assert.equal(pub.showBooking, false);
 assert.equal(pub.payment, null, "no payment widget when the payment is outside the page");
 assert.equal(pub.booked, true);
 assert.equal(pub.meeting.invited, "manual");
-assert.deepEqual(await api(`sales/discovery-public?token=${dtok}&slots=1`), { slots: [], manual: true });
+assert.deepEqual(await api(`sales/discovery-public?token=${dtok}&slots=1`), { slots: [], days: [], manual: true });
 await api(`sales/discovery-public?token=${dtok}`, { method: "POST", body: { action: "hold", start: disc.meetingStart }, expect: 409 });
 
 step("spec request: later marked paid by hand, with the payment date");
@@ -127,7 +127,7 @@ const dealData = {
   // the first charge date is required with a monthly service (agreement v2)
   standingOrder: { enabled: true, startDate: israelDay(Date.now() + 120 * 86400e3), dayOfMonth: 1 },
 };
-const dealClient = { companyName: "ברק הנדסה בע\"מ", taxId: "515555555", signerName: "נועה ברק", signerRole: "מנכ\"לית", email: "noa@example.com", phone: "0521112233", accountingEmail: "books@example.com" };
+const dealClient = { companyName: "ברק הנדסה בע\"מ", taxId: "515555555", address: "הנביאים 5, חדרה", signerName: "נועה ברק", signerRole: "מנכ\"לית", email: "noa@example.com", phone: "0521112233", accountingEmail: "books@example.com" };
 const PDF = `data:application/pdf;base64,${Buffer.from("%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n").toString("base64")}`;
 
 step("deal: the signed contract is uploaded, the deal is saved signed, the order confirmation goes out with it");
@@ -172,7 +172,7 @@ await api(`sales/deals?id=${deal.id}`, { method: "PATCH", body: { action: "cance
 await api(`sales/deals?id=${deal.id}`, { method: "PATCH", body: { action: "close_manual" }, expect: 409 });
 
 step("deal: sent through the link, then signed on paper; the contract is uploaded afterwards");
-let linkDeal = (await api("sales/deals", { method: "POST", body: { data: { ...dealData, standingOrder: { enabled: false } }, client: dealClient } })).item;
+let linkDeal = (await api("sales/deals", { method: "POST", body: { data: { ...dealData, standingOrder: { ...dealData.standingOrder, enabled: false } }, client: dealClient } })).item;
 await api(`sales/deals?id=${linkDeal.id}`, { method: "PATCH", body: { action: "signed_file", fileId }, expect: 409 });
 linkDeal = (await api(`sales/deals?id=${linkDeal.id}`, { method: "PATCH", body: { action: "close_manual" } })).item;
 assert.equal(linkDeal.signMode, "manual");
