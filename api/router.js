@@ -45,6 +45,7 @@ export const ROUTES = {
   "sales/discovery-public": () => import("./_routes/sales/discovery-public.js"),
   "sales/pitch": () => import("./_routes/sales/pitch.js"),
   "sales/settings": () => import("./_routes/sales/settings.js"),
+  "sales/spec-pages": () => import("./_routes/sales/spec-pages.js"),
   "sales/upload": () => import("./_routes/sales/upload.js"),
 };
 

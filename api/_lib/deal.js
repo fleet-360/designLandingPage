@@ -31,6 +31,12 @@ export function cleanDealData(b, settings) {
       specVersion: str(p.specVersion, 40),
       specDate: str(p.specDate, 10) || israelDate(),
       specFileId: p.specFileId && /^[0-9a-f-]{36}$/i.test(p.specFileId) ? p.specFileId : null,
+      // the file holds only the pages sales picked (Appendix B); these are their numbers in the original
+      // Canva PDF and how many pages it had, to say so in the appendix. null: the whole file (older deals)
+      specPages: Array.isArray(p.specPages) && p.specPages.length
+        ? [...new Set(p.specPages.map((n) => Math.trunc(num(n))).filter((n) => n >= 1 && n <= 500))].sort((a, b) => a - b).slice(0, 100)
+        : null,
+      specPageCount: Math.trunc(num(p.specPageCount)) > 0 ? Math.min(500, Math.trunc(num(p.specPageCount))) : null,
       targetWeeks: Math.max(0, Math.trunc(num(p.targetWeeks))),
       kickoffNeeds: str(p.kickoffNeeds, 600),
     },
