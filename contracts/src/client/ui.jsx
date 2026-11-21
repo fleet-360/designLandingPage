@@ -1,12 +1,25 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { dmy, nis } from "@/sales/lib";
 
+// Rubik, the client pages' font (loaded here so the app's own pages keep theirs)
+const FONT_HREF = "https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap";
+function useClientFont() {
+  useEffect(() => {
+    if (document.querySelector(`link[href="${FONT_HREF}"]`)) return;
+    const l = document.createElement("link");
+    l.rel = "stylesheet";
+    l.href = FONT_HREF;
+    document.head.appendChild(l);
+  }, []);
+}
+
 export function Shell({ children, wide = false, header = true, company }) {
+  useClientFont();
   return (
     <div className="pa" dir="rtl">
       {header && (
-        <header className="pa-noprint border-b border-border/70 bg-white/90 backdrop-blur">
+        <header className="pa-noprint border-b">
           <div className={`mx-auto flex h-14 items-center justify-between px-4 ${wide ? "max-w-5xl" : "max-w-3xl"}`}>
             <img src="/pay-assets/all-dark-logo.png" alt="Pro Algorithm" className="h-5 w-auto" />
             {company?.phone && <a href={`tel:${company.phone}`} className="text-sm text-muted-foreground hover:text-foreground pa-num">{company.phone}</a>}
@@ -82,11 +95,11 @@ export function Stepper({ steps, current }) {
 
 export function PriceCard({ price }) {
   return (
-    <div className="rounded-2xl bg-gradient-to-l from-[#2d2390] to-[#3b46b8] p-5 text-white sm:p-6">
-      <p className="text-sm text-white/75">מחיר הפרויקט</p>
-      <p className="mt-1 text-3xl font-extrabold sm:text-4xl"><span className="pa-num">{nis(price.amount)}</span> <span className="text-base font-medium text-white/80">+ מע"מ</span></p>
-      <p className="mt-1 text-sm text-white/80"><span className="pa-num">{nis(price.total)}</span> כולל מע"מ ({price.vatRate}%)</p>
-      <p className="mt-3 text-sm text-white/85">המחיר קבוע וסגור לתכולה שבאפיון המאושר.</p>
+    <div className="rounded-[1.25rem] bg-[#3A2418] p-5 text-[#F4ECD6] sm:p-6">
+      <p className="inline-block rounded-lg bg-[#E0432F] px-3 py-1 text-sm font-bold text-white">מחיר הפרויקט</p>
+      <p className="mt-3 text-4xl font-black sm:text-5xl"><span className="pa-num">{nis(price.amount)}</span> <span className="text-base font-medium text-[#E8DCC0]">+ מע"מ</span></p>
+      <p className="mt-1 text-sm text-[#E8DCC0]"><span className="pa-num">{nis(price.total)}</span> כולל מע"מ ({price.vatRate}%)</p>
+      <p className="mt-3 border-t border-dashed border-[#E8DCC0]/50 pt-3 text-sm text-[#F4ECD6]">המחיר קבוע וסגור לתכולה שבאפיון המאושר.</p>
     </div>
   );
 }

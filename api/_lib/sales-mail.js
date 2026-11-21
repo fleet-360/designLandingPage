@@ -4,8 +4,11 @@
 import { payInstructions } from "./deal.js";
 import { PAYMENT_METHODS } from "./sales-calc.js";
 
-const BRAND = "#2B2A8C";
-const ACCENT = "#4A6FD8";
+// the colors of the client pages: a mint header, tomato buttons, cream around, coffee ink
+const BRAND = "#9ED9C3";
+const ACCENT = "#E0432F";
+const MAIL_FONT = "Rubik,Heebo,Arial,sans-serif";
+const MAIL_FONT_LINK = '<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">';
 
 export const esc = (v) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 export const nis = (n) => `₪\u00a0${Number(n).toLocaleString("en-US", { minimumFractionDigits: Number(n) % 1 ? 2 : 0, maximumFractionDigits: 2 })}`;
@@ -14,27 +17,27 @@ export const israelDateTime = (d) =>
   new Date(d).toLocaleString("he-IL", { timeZone: "Asia/Jerusalem", weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
 
 function layout({ preheader = "", title, body, button, footer = "" }) {
-  return `<!doctype html><html lang="he" dir="rtl"><body style="margin:0;background:#F5F7FA;">
+  return `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8">${MAIL_FONT_LINK}</head><body style="margin:0;background:#F4ECD6;">
 <span style="display:none;max-height:0;overflow:hidden">${esc(preheader)}</span>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F5F7FA;padding:24px 12px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F4ECD6;padding:24px 12px;">
 <tr><td align="center">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;font-family:Heebo,Arial,sans-serif;color:#1F2937;direction:rtl;text-align:right;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFF9EC;border-radius:18px;overflow:hidden;font-family:${MAIL_FONT};color:#3A2418;direction:rtl;text-align:right;">
 <tr><td style="background:${BRAND};padding:22px 28px;">
-<img src="https://www.pro-algo.com/images/logo/Vertical-logo-white.png" alt="Pro Algorithm" width="150" style="display:block;width:150px;height:auto;border:0;">
+<img src="https://www.pro-algo.com/pay-assets/all-dark-logo.png" alt="Pro Algorithm" width="150" style="display:block;width:150px;height:auto;border:0;">
 </td></tr>
 <tr><td style="padding:28px 28px 8px;">
-<h1 style="margin:0 0 14px;font-size:22px;line-height:1.35;color:#111827;">${title}</h1>
+<h1 style="margin:0 0 14px;font-size:24px;line-height:1.35;color:#3A2418;font-weight:900;">${title}</h1>
 <div style="font-size:16px;line-height:1.65;">${body}</div>
-${button ? `<p style="margin:26px 0 8px;"><a href="${esc(button.href)}" style="display:inline-block;background:${ACCENT};color:#ffffff;text-decoration:none;font-weight:700;padding:13px 26px;border-radius:10px;font-size:16px;">${esc(button.label)}</a></p>` : ""}
+${button ? `<p style="margin:26px 0 8px;"><a href="${esc(button.href)}" style="display:inline-block;background:${ACCENT};color:#ffffff;text-decoration:none;font-weight:800;padding:14px 28px;border-radius:12px;font-size:17px;">${esc(button.label)}</a></p>` : ""}
 </td></tr>
-<tr><td style="padding:18px 28px 26px;color:#6B7280;font-size:13px;line-height:1.6;border-top:1px solid #EEF0F4;">
+<tr><td style="padding:18px 28px 26px;color:#6A4330;font-size:13px;line-height:1.6;border-top:2px dashed #E3D6B8;">
 ${footer || 'פרו אלגוריתם בע"מ · pro-algo.com'}
 </td></tr>
 </table></td></tr></table></body></html>`;
 }
 
 const table = (rows) => `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin:12px 0;font-size:15px;">
-${rows.map((r, i) => `<tr style="background:${i % 2 ? "#ffffff" : "#F8FAFC"}">${r.map((c) => `<td style="padding:8px 10px;border-bottom:1px solid #EEF0F4;">${c}</td>`).join("")}</tr>`).join("")}
+${rows.map((r, i) => `<tr style="background:${i % 2 ? "#FFF9EC" : "#F4ECD6"}">${r.map((c) => `<td style="padding:8px 10px;border-bottom:1px solid #E3D6B8;">${c}</td>`).join("")}</tr>`).join("")}
 </table>`;
 
 // ---------------- Deals ----------------
@@ -112,7 +115,7 @@ export function dealOrderMail(deal, settings, { pdf = null, cardUrl = null } = {
   const c = deal.client;
   const project = deal.data.project?.name || "";
   const service = o.service?.enabled && o.service.rows?.length
-    ? `<h2 style="margin:22px 0 4px;font-size:17px;color:#111827;">שירות חודשי</h2>${table(o.service.rows.map((r) => [esc(r.when), r.price ? `${nis(r.priceWithVat)} לחודש כולל מע"מ` : "ללא עלות"]))}`
+    ? `<h2 style="margin:22px 0 4px;font-size:17px;color:#3A2418;">שירות חודשי</h2>${table(o.service.rows.map((r) => [esc(r.when), r.price ? `${nis(r.priceWithVat)} לחודש כולל מע"מ` : "ללא עלות"]))}`
     : "";
   return {
     to: [c.email],
@@ -123,9 +126,9 @@ export function dealOrderMail(deal, settings, { pdf = null, cardUrl = null } = {
       preheader: "פרטי ההזמנה ולוח התשלומים",
       title: `אישור הזמנה מס' ${deal.number}`,
       body: `<p style="margin:0 0 10px;">${esc(c.signerName || c.companyName || "שלום")}, תודה על ההתקשרות. ריכזנו כאן את פרטי ההזמנה ל<strong>${esc(project)}</strong>.</p>
-${o.project?.summary ? `<p style="margin:0 0 10px;color:#4B5563;">${esc(o.project.summary)}</p>` : ""}
+${o.project?.summary ? `<p style="margin:0 0 10px;color:#6A4330;">${esc(o.project.summary)}</p>` : ""}
 ${table([["מחיר הפרויקט", `${nis(o.price.amount)} + מע"מ`], ["כולל מע\"מ", `<strong>${nis(o.price.total)}</strong>`]])}
-<h2 style="margin:22px 0 4px;font-size:17px;color:#111827;">לוח תשלומים</h2>
+<h2 style="margin:22px 0 4px;font-size:17px;color:#3A2418;">לוח תשלומים</h2>
 ${table(scheduleRows(o.schedule))}${howToPay(o, settings, deal.number)}
 ${service}
 ${pdf ? "<p>מצורף עותק של ההסכם החתום.</p>" : ""}
