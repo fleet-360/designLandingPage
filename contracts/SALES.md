@@ -17,7 +17,7 @@ Clients get personal links, with no sign-in (the token in the link is the key):
 **Spec request.** Sales enters the client, the price (with an optional price before discount, shown struck
 through) and the responsible team lead, salesperson and office manager → link (email / WhatsApp / copy). The
 client picks a meeting time first. The free times are the configured hours, minus busy times in the
-`developers@` calendar (when connected) and times booked or held here: two suggestions per day (from 10:00
+availability calendars (settings "בדיקת זמינות מול", `yariv@` by default; when connected) and times booked or held here: two suggestions per day (from 10:00
 and from 12:30), with every other free time under "שעות נוספות" and later days under "תאריכים נוספים". The picked time
 is held for the client for 30 minutes (`api/_lib/discovery-book.js`), and no invite goes out yet. Then the
 client pays in the page through Toro's existing `grow/proAlgorithm/createPaymentLink`, with the request's id
@@ -136,7 +136,8 @@ The site trusts Toro's calls by its IP (`api/_lib/toro.js`), the same as `/api/p
   3. In Vercel (landing-page-build → Settings → Environment Variables): `GOOGLE_CALENDAR_CREDENTIALS` =
      the whole JSON file. Redeploy.
 
-  The calendar is the one on the settings screen (`developers@pro-algo.com`), and its
+  The calendar that organizes the meetings is the one on the settings screen (`developers@pro-algo.com`);
+  free/busy is read from "בדיקת זמינות מול" (`yariv@pro-algo.com`), each calendar as its own user. Its
   "בדיקת חיבור ליומן" button shows whether it works. Until then booking works with `.ics` invites.
 - **Key lines and spec pages (Claude):** in Vercel (landing-page-build → Settings → Environment Variables):
   `ANTHROPIC_API_KEY` = a key from console.anthropic.com. Redeploy. Optional `ANTHROPIC_MODEL` replaces the

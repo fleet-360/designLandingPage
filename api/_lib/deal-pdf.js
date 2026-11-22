@@ -125,13 +125,14 @@ export async function generateDealPdf(snapshot, { specBytes } = {}) {
   if (order.project.specName) w.text(`האפיון המאושר: ${order.project.specName}${order.project.specVersion ? ` · גרסה ${order.project.specVersion}` : ""}${order.project.specDate ? ` · מיום ${dmy(order.project.specDate)}` : ""}${snapshot.spec ? " · מצורף כנספח ב'" : ""}`, { after: snapshot.spec ? 2 : 8 });
   if (snapshot.spec) w.text(HOURS_NOTE, { size: 9.5, color: [107, 114, 128], after: 8 });
   w.text("מחיר ותנאי תשלום", { size: 12, bold: true });
-  w.text(`מחיר הפרויקט: ${nis(order.price.amount)} לפני מע"מ (${nis(order.price.total)} כולל מע"מ). המחיר קבוע וסגור לתכולה שבאפיון המאושר.`);
+  const off = order.price.listAmount ? ` אחרי הנחה של ${nis(order.price.discount)} ממחיר של ${nis(order.price.listAmount)}` : "";
+  w.text(`מחיר הפרויקט: ${nis(order.price.amount)} לפני מע"מ${off} (${nis(order.price.total)} כולל מע"מ). המחיר קבוע וסגור לתכולה שבאפיון המאושר.`);
   const how = payInstructions(order);
   w.text(how
     ? "התשלומים משולמים בתאריכים ובאמצעי התשלום הקבועים בטבלה, ואינם תלויים באבני דרך. הראשון הוא המקדמה."
     : `מקדמה של ${order.price.depositPercent}% משולמת בתוך 3 ימי עסקים מהאישור. היתרה משולמת בתאריכים הקבועים בטבלה, ואינם תלויים באבני דרך. אמצעי תשלום היתרה: ${order.balanceMethod === "checks" ? "שיקים דחויים" : "העברה בנקאית"}.`, { after: 6 });
   w.table([26, 145, 76, 85, 80, 91],
-    order.schedule.rows.map((r) => [r.n, `${r.kind === "deposit" ? `מקדמה (${order.price.depositPercent}%) · ` : ""}${dmy(r.date)}${r.dateNote ? ` · ${r.dateNote}` : ""}`, PAYMENT_METHODS[r.method] || "", nis(r.before), nis(r.vat), nis(r.total)])
+    order.schedule.rows.map((r) => [r.n, `${r.kind === "deposit" ? "מקדמה · " : ""}${dmy(r.date)}${r.dateNote ? ` · ${r.dateNote}` : ""}`, PAYMENT_METHODS[r.method] || "", nis(r.before), nis(r.vat), nis(r.total)])
       .concat([["", "סה\"כ", "", nis(order.schedule.totals.before), nis(order.schedule.totals.vat), nis(order.schedule.totals.total)]]),
     { head: ["#", "מועד", "אמצעי תשלום", "לפני מע\"מ", "מע\"מ", "כולל מע\"מ"] });
   for (const l of how || []) w.text(l, { size: 9.5 });
@@ -162,11 +163,18 @@ export async function generateDealPdf(snapshot, { specBytes } = {}) {
     }
   }
 
-  // ---- Appendix A ----
-  w.newPage();
+  // ---- The order details: Appendix A up to agreement v2; from v3 part of the agreement itself, signed with it ----
   const ap = agreement.appendix;
-  w.text(`נספח א' – נספח הזמנה מס' ${order.number}`, { size: 14, bold: true, after: 2 });
-  w.text(`פרויקט במחיר קבוע · מצורף להסכם המסגרת בין ${order.company.name} לבין ${c.companyName || c.signerName}`, { size: 9.5, color: [107, 114, 128], after: 8 });
+  const appendixA = ["v1", "v2"].includes(agreement.version);
+  // an appendix starts its own page; the details of v3 carry on right after the last clause
+  if (appendixA) w.newPage(); else w.gap(14);
+  if (appendixA) {
+    w.text(`נספח א' – נספח הזמנה מס' ${order.number}`, { size: 14, bold: true, after: 2 });
+    w.text(`פרויקט במחיר קבוע · מצורף להסכם המסגרת בין ${order.company.name} לבין ${c.companyName || c.signerName}`, { size: 9.5, color: [107, 114, 128], after: 8 });
+  } else {
+    w.text(`פרטי ההזמנה – הזמנה מס' ${order.number}`, { size: 14, bold: true, after: 2 });
+    w.text("פרויקט במחיר קבוע · חלק בלתי נפרד מההסכם", { size: 9.5, color: [107, 114, 128], after: 8 });
+  }
   w.text("א. אנשי קשר", { size: 11, bold: true });
   w.table([200, 303], ap.contacts);
   w.text("ב. תכולה", { size: 11, bold: true });
@@ -189,7 +197,7 @@ export async function generateDealPdf(snapshot, { specBytes } = {}) {
   }
   w.text("ו. הפעלה ורישיון", { size: 11, bold: true });
   w.table([200, 303], ap.operation);
-  w.text("חתימת הצדדים על נספח זה מהווה אישור מחייב להזמנת העבודה, לאפיון המאושר ולתנאים המפורטים בנספח.", { color: [107, 114, 128] });
+  if (appendixA) w.text("חתימת הצדדים על נספח זה מהווה אישור מחייב להזמנת העבודה, לאפיון המאושר ולתנאים המפורטים בנספח.", { color: [107, 114, 128] });
 
   // ---- Signatures ----
   w.gap(10);
@@ -215,7 +223,7 @@ export async function generateDealPdf(snapshot, { specBytes } = {}) {
       : "בעמודים הבאים: מסמך האפיון.", { after: 8 });
     w.text("הערכת שעות משוערת", { size: 12, bold: true });
     w.text(HOURS_NOTE, { size: 10.5, after: 4 });
-    w.text("שעות פיתוח מעבר לאומדן כלולות בתמורה הקבועה ולא יחויבו ללקוח. תעריפי השעה שבנספח א' משמשים רק לחישוב שווי העבודה בביטול ולתמחור שינויים.", { size: 9.5, color: [107, 114, 128] });
+    w.text(`שעות פיתוח מעבר לאומדן כלולות בתמורה הקבועה ולא יחויבו ללקוח. תעריפי השעה ש${appendixA ? "בנספח א'" : "בפרטי ההזמנה"} משמשים רק לחישוב שווי העבודה בביטול ולתמחור שינויים.`, { size: 9.5, color: [107, 114, 128] });
     specAfter = w.pdf.getNumberOfPages();
   }
 

@@ -62,6 +62,20 @@ test("direct: booking creates an event with Meet and invitations", async () => {
   assert.equal(calls.filter((c) => c.url.includes("oauth2")).length, 1);
 });
 
+test("direct: free/busy comes from the availability calendars, each read as itself; booking stays with the calendar user", async () => {
+  const s = { ...settings, calendar: { ...settings.calendar, availability: ["Yariv@pro-algo.com "] } };
+  assert.deepEqual(cal.availabilityUsers(s), ["yariv@pro-algo.com"]);
+  assert.deepEqual(cal.availabilityUsers({ calendar: { user: "developers@pro-algo.com", availability: [] } }), ["developers@pro-algo.com"]);
+  const from = calls.length;
+  const r = await cal.calendarBusy(s, "2026-11-23T00:00:00Z", "2026-11-24T00:00:00Z");
+  assert.equal(r.ok, true);
+  const fb = calls.slice(from).filter((c) => c.url.endsWith("/freeBusy"));
+  assert.equal(fb.length, 1);
+  assert.equal(fb[0].opts.headers.Authorization, "Bearer tok-for-yariv@pro-algo.com");
+  assert.deepEqual(JSON.parse(fb[0].opts.body).items, [{ id: "yariv@pro-algo.com" }]);
+  assert.equal(cal.bookingEvent({ client_name: "x", meeting_start: new Date(), meeting_end: new Date() }, s).attendees.includes("developers@pro-algo.com"), true);
+});
+
 test("direct: a missing delegation is reported, not thrown", async () => {
   const r = await cal.calendarBusy({ calendar: { user: "nodelegation@pro-algo.com" } }, "2026-11-23T00:00:00Z", "2026-11-24T00:00:00Z");
   assert.equal(r.ok, false);

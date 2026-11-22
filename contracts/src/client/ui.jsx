@@ -97,6 +97,12 @@ export function PriceCard({ price }) {
   return (
     <div className="rounded-[1.25rem] bg-[#3A2418] p-5 text-[#F4ECD6] sm:p-6">
       <p className="inline-block rounded-lg bg-[#E0432F] px-3 py-1 text-sm font-bold text-white">מחיר הפרויקט</p>
+      {price.listAmount > price.amount && (
+        <p className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+          <s className="pa-num text-[#E8DCC0]/80">{nis(price.listAmount)}</s>
+          <span className="rounded-full bg-[#F4ECD6]/15 px-2 py-0.5 font-semibold">הנחה של <span className="pa-num">{nis(price.discount)}</span></span>
+        </p>
+      )}
       <p className="mt-3 text-4xl font-black sm:text-5xl"><span className="pa-num">{nis(price.amount)}</span> <span className="text-base font-medium text-[#E8DCC0]">+ מע"מ</span></p>
       <p className="mt-1 text-sm text-[#E8DCC0]"><span className="pa-num">{nis(price.total)}</span> כולל מע"מ ({price.vatRate}%)</p>
       <p className="mt-3 border-t border-dashed border-[#E8DCC0]/50 pt-3 text-sm text-[#F4ECD6]">המחיר קבוע וסגור לתכולה שבאפיון המאושר.</p>
@@ -106,8 +112,8 @@ export function PriceCard({ price }) {
 
 export const METHOD_NAMES = { transfer: "העברה בנקאית", check: "שיק", card: "כרטיס אשראי" };
 
-export function ScheduleTable({ schedule, depositPercent }) {
-  const label = (r) => (r.kind === "deposit" ? `מקדמה ${depositPercent}%` : `תשלום ${r.n - 1}`);
+export function ScheduleTable({ schedule }) {
+  const label = (r) => (r.kind === "deposit" ? "מקדמה" : `תשלום ${r.n - 1}`);
   // deals made before each payment had its own method: the deposit's date was "by", 3 business days on
   const when = (r) => (r.kind === "deposit" && !r.method ? `עד ${dmy(r.date)}` : dmy(r.date));
   const methods = schedule.rows.some((r) => r.method);

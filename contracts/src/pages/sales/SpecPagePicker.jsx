@@ -8,8 +8,13 @@ import { api, errorText } from "@/sales/lib";
 // Picks the pages of the Canva spec that go into the contract as Appendix B. The PDF is read here in the
 // browser (pdf.js): thumbnails, and each page's text for the AI pick (api/_routes/sales/spec-pages.js),
 // which preselects the proposal summary and the hours estimate. Only the picked pages are uploaded, as a
-// new PDF (pdf-lib), so a large Canva file still fits the upload limit.
+// new PDF (pdf-lib). The original Canva file can be any size: it never leaves the browser. When the picked
+// pages are still over the upload limit (Canva embeds full-size images), each page is drawn as a JPEG at the
+// page's own size, smaller step by step until the file fits. The limit is the server's (a Vercel function
+// takes about 4.5MB per request, and the signed PDF that includes these pages is served the same way).
 const MAX_UPLOAD = 3 * 1024 * 1024;
+// [pixels on the page's longer side, JPEG quality], sharpest first
+const SHRINK = [[2400, 0.85], [2000, 0.8], [1600, 0.75], [1300, 0.7], [1000, 0.62]];
 const THUMB_W = 220;
 
 let pdfjsPromise = null;
@@ -32,6 +37,39 @@ async function renderPage(doc, n, width) {
   return canvas.toDataURL("image/jpeg", 0.85);
 }
 
+// a page as a JPEG of `longSide` pixels on its longer side, with the page's size in points
+async function pageJpeg(doc, n, longSide, quality) {
+  const page = await doc.getPage(n);
+  const base = page.getViewport({ scale: 1 });
+  const viewport = page.getViewport({ scale: longSide / Math.max(base.width, base.height) });
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.ceil(viewport.width);
+  canvas.height = Math.ceil(viewport.height);
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#ffffff"; // JPEG has no transparency
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+  canvas.width = canvas.height = 0;
+  return { bytes: new Uint8Array(await blob.arrayBuffer()), w: base.width, h: base.height };
+}
+
+// the picked pages as a PDF of images, at the first SHRINK step that fits; null when none does
+async function shrunkPdf(doc, pages, PDFDocument, onStep) {
+  for (const [i, [side, q]] of SHRINK.entries()) {
+    onStep?.(i);
+    const out = await PDFDocument.create();
+    for (const n of pages) {
+      const { bytes, w, h } = await pageJpeg(doc, n, side, q);
+      const img = await out.embedJpg(bytes);
+      out.addPage([w, h]).drawImage(img, { x: 0, y: 0, width: w, height: h });
+    }
+    const blob = new Blob([await out.save()], { type: "application/pdf" });
+    if (blob.size <= MAX_UPLOAD) return blob;
+  }
+  return null;
+}
+
 const pageText = async (doc, n) => (await (await doc.getPage(n)).getTextContent()).items.map((i) => i.str).join(" ");
 
 const blobToDataUrl = (blob) => new Promise((resolve, reject) => {
@@ -49,6 +87,7 @@ export default function SpecPagePicker({ file, onClose, onSave }) {
   const [ai, setAi] = useState(null); // { summaryPage, hoursPage, source } | "loading"
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [shrinking, setShrinking] = useState(null); // the SHRINK step being tried
   const [zoom, setZoom] = useState(null); // { n, src }
   const bytes = useRef(null);
 
@@ -100,10 +139,15 @@ export default function SpecPagePicker({ file, onClose, onSave }) {
       const src = await PDFDocument.load(bytes.current, { ignoreEncryption: true });
       const out = await PDFDocument.create();
       for (const p of await out.copyPages(src, pages.map((n) => n - 1))) out.addPage(p);
-      const blob = new Blob([await out.save()], { type: "application/pdf" });
+      let blob = new Blob([await out.save()], { type: "application/pdf" });
       if (blob.size > MAX_UPLOAD) {
-        toast({ title: `העמודים שבחרתם שוקלים ${(blob.size / 1024 / 1024).toFixed(1)}MB, והמקסימום הוא 3MB. בחרו פחות עמודים, או ייצאו מ-Canva באיכות נמוכה יותר.`, variant: "destructive" });
-        return;
+        setShrinking(0);
+        blob = await shrunkPdf(doc, pages, PDFDocument, setShrinking);
+        setShrinking(null);
+        if (!blob) {
+          toast({ title: `גם אחרי כיווץ, ${pages.length} העמודים שבחרתם גדולים מדי להעלאה. בחרו פחות עמודים.`, variant: "destructive" });
+          return;
+        }
       }
       const name = file.name.replace(/\.pdf$/i, "") + ` (עמודים ${pages.join(", ")}).pdf`;
       const r = await api("sales/upload", { method: "POST", body: { name, data_url: await blobToDataUrl(blob) } });
@@ -111,6 +155,7 @@ export default function SpecPagePicker({ file, onClose, onSave }) {
     } catch (e) {
       toast({ title: errorText(e), variant: "destructive" });
     } finally {
+      setShrinking(null);
       setBusy(false);
     }
   };
@@ -175,7 +220,7 @@ export default function SpecPagePicker({ file, onClose, onSave }) {
           <p className="text-sm text-muted-foreground">{count ? `${picked.size ? `נבחרו ${picked.size === 1 ? "עמוד אחד" : `${picked.size} עמודים`}` : "לא נבחרו עמודים"} מתוך ${count}` : ""}</p>
           <div className="flex gap-2">
             <Button variant="outline" onClick={onClose} disabled={busy}>ביטול</Button>
-            <Button onClick={save} disabled={busy || !picked.size || !count}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" />מצרף...</> : "צירוף העמודים להסכם"}</Button>
+            <Button onClick={save} disabled={busy || !picked.size || !count}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" />{shrinking !== null ? `מכווץ את העמודים (${shrinking + 1}/${SHRINK.length})...` : "מצרף..."}</> : "צירוף העמודים להסכם"}</Button>
           </div>
         </div>
 
