@@ -70,7 +70,9 @@
 .dv .full { font-size: 14px; color: var(--tk-muted); font-weight: 700; margin-top: 12px; }
 .dv .full s { font-size: 20px; text-decoration-thickness: 2.5px; color: var(--tk-ink); }
 .dv .yours { font-size: 14px; font-weight: 800; margin-top: 10px; }
-.dv .p999 { font-size: 54px; font-weight: 900; line-height: 1; letter-spacing: -1px; }
+.dv .sbody { container-type: inline-size; }
+/* --em is the price's width in em (priceEm in DiscoveryPage.jsx): the price takes the largest size up to 54px that fits the stub */
+.dv .p999 { font-size: min(54px, calc(100cqi / var(--em, 3.4))); font-weight: 900; line-height: 1; letter-spacing: -1px; }
 .dv .vat { font-size: 14px; color: var(--tk-muted); font-weight: 700; }
 .dv .svb { margin-top: 10px; font-size: 16px; font-weight: 900; color: var(--acc); }
 .dv .barcode { margin-top: auto; padding-top: 14px; height: 44px; display: block; width: 100%; }

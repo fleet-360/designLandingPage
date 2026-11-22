@@ -139,6 +139,14 @@ function useRubik() {
   }, []);
 }
 
+// The ticket price's width in em at Rubik 900 with -1px tracking (measured: a digit 0.69em,
+// a comma or dot 0.29em, the "₪ " prefix 1.26em), plus 4% slack, so the CSS can size it to the stub.
+function priceEm(text) {
+  let em = 0;
+  for (const ch of text) em += /\d/.test(ch) ? 0.69 : ch === "," || ch === "." ? 0.29 : 0.63;
+  return +(em * 1.04).toFixed(3);
+}
+
 function Barcode() {
   // a fixed decorative pattern
   const bars = [2, 2, 1, 2, 3, 1, 2, 1, 1, 1, 1, 3, 1, 1, 2, 1, 3, 3, 1, 2, 3, 3, 3, 2, 2, 3, 1, 2, 1, 3];
@@ -216,7 +224,7 @@ function Offer({ d, canBook, canPay, onGo }) {
               </div>
               <div className="stub">
                 <span className="notch t" /><span className="notch b" />
-                <div>
+                <div className="sbody">
                   {p.deal ? (
                     <>
                       <span className="dealb"><Gift className="h-5 w-5" aria-hidden="true" />הטבה</span>
@@ -224,7 +232,7 @@ function Offer({ d, canBook, canPay, onGo }) {
                       <div className="yours">ההטבה שלכם</div>
                     </>
                   ) : <div className="yours">המחיר</div>}
-                  <div className="p999 num">{nis(p.price)}</div>
+                  <div className="p999 num" style={{ "--em": priceEm(nis(p.price)) }}>{nis(p.price)}</div>
                   <div className="vat">+ מע"מ</div>
                   {p.deal && <div className="svb">חוסכים <Num>{nis(p.save)}</Num></div>}
                 </div>
