@@ -3,7 +3,8 @@
 import { randomBytes } from "node:crypto";
 import { query } from "./db.js";
 import { callToro } from "./toro.js";
-import { HttpError } from "./http.js";
+import { clientIp, HttpError } from "./http.js";
+import { sessionUser } from "./session.js";
 
 export const newToken = () => randomBytes(18).toString("base64url");
 
@@ -83,6 +84,18 @@ export async function saveSettings(value) {
 export async function logEvent(entity, entityId, type, detail = null, db = { query }) {
   await db.query("INSERT INTO sales.events (entity, entity_id, type, detail) VALUES ($1, $2, $3, $4)",
     [entity, entityId, type, detail ? JSON.stringify(detail) : null]);
+}
+
+// Every time the client opens their link again (the first time is "viewed"). The page sends visit=1 on its
+// first load only, so the data it fetches again while open (after a payment, the card check) is not a visit.
+// Not logged when someone signed in to the system opens the link, nor twice within a minute (a quick refresh).
+export async function logVisit(req, entity, entityId) {
+  if (new URL(req.url, "http://x").searchParams.get("visit") !== "1" || sessionUser(req)) return;
+  const { rows } = await query(
+    `SELECT 1 FROM sales.events WHERE entity = $1 AND entity_id = $2 AND type IN ('viewed', 'visit')
+       AND at > now() - interval '1 minute' LIMIT 1`, [entity, entityId]);
+  if (rows.length) return;
+  await logEvent(entity, entityId, "visit", { ip: clientIp(req), userAgent: String(req.headers["user-agent"] || "").slice(0, 400) });
 }
 
 export async function events(entity, entityId) {

@@ -1,5 +1,6 @@
 // /api/sales/deal-public?token=   the client's deal page (no sign-in; the token is the key)
-//   GET  -> everything the three steps show; the first visit marks the order viewed
+//   GET  -> everything the three steps show; the first visit marks the order viewed, each later one (&visit=1)
+//           goes in the history
 //   POST { action: "approve", client, approverName, accept }          step 1: work order and payments
 //   POST { action: "sign", name, role, idNumber (optional), signature (PNG data URL), accept }  step 2: the agreement
 //   POST { action: "card" }  step 3: opens Grow's card page (through Toro) -> { authCode, url }
@@ -7,7 +8,7 @@
 // even if the client stops before step 3.
 import { clientIp, HttpError, json, origin, readJson, route } from "../../_lib/http.js";
 import { query } from "../../_lib/db.js";
-import { getSettings, isEmail, logEvent, mobileIL, sendMail, str, taxIdIL } from "../../_lib/sales.js";
+import { getSettings, isEmail, logEvent, logVisit, mobileIL, sendMail, str, taxIdIL } from "../../_lib/sales.js";
 import { buildAgreement, buildOrder, cleanClient, snapshotHash } from "../../_lib/deal.js";
 import { dealAccountingMail, dealSignedMail } from "../../_lib/sales-mail.js";
 import { parseDataUrl } from "../../_lib/sign.js";
@@ -78,6 +79,8 @@ export default route(["GET", "POST"], async (req, res) => {
       await query("UPDATE sales.deals SET viewed_at = now(), order_status = CASE WHEN order_status = 'sent' THEN 'viewed' ELSE order_status END WHERE id = $1", [d.id]);
       await logEvent("deal", d.id, "viewed", { ip: clientIp(req) });
       d = await load(token);
+    } else {
+      await logVisit(req, "deal", d.id);
     }
     return json(res, 200, await view(d, settings, base));
   }

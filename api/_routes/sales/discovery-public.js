@@ -1,5 +1,5 @@
 // /api/sales/discovery-public?token=   the client's spec request page (no sign-in; the token is the key)
-//   GET   -> the page's data; the first visit marks it viewed
+//   GET   -> the page's data; the first visit marks it viewed, each later one (&visit=1) goes in the history
 //   GET &slots=1 -> meeting slots: the first suggestions + every free time per day
 //   POST { action: "hold", start, attendees: [email] }  -> keeps the time for the client until they pay
 //                                                         (once paid, or when the payment is not on the page:
@@ -7,7 +7,7 @@
 // Sales may leave the booking or the payment off the page (show_booking / show_payment) and enter them by hand.
 import { HttpError, json, readJson, route } from "../../_lib/http.js";
 import { query } from "../../_lib/db.js";
-import { getSettings, isEmail, logEvent } from "../../_lib/sales.js";
+import { getSettings, isEmail, logEvent, logVisit } from "../../_lib/sales.js";
 import { withVat } from "../../_lib/sales-calc.js";
 import { availableSlots } from "../../_lib/slots.js";
 import { reserveSlot, sendInvites } from "../../_lib/discovery-book.js";
@@ -79,6 +79,8 @@ export default route(["GET", "POST"], async (req, res) => {
     if (!d.viewed_at) {
       await query("UPDATE sales.discovery SET viewed_at = now(), status = CASE WHEN status = 'sent' THEN 'viewed' ELSE status END WHERE id = $1", [d.id]);
       await logEvent("discovery", d.id, "viewed");
+    } else {
+      await logVisit(req, "discovery", d.id);
     }
     return json(res, 200, view(d, settings));
   }
