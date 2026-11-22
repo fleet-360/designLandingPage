@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import SignaturePad from "@/components/sign/SignaturePad";
-import { api, dmy, dateTime, errorText, FIELD_ERRORS, fileToDataUrl, fullNameOk, getWithRetry, isEmail, mobileIL, nis, taxIdIL } from "@/sales/lib";
+import { api, dmy, dateTime, errorText, FIELD_ERRORS, fileToDataUrl, fullNameOk, getWithRetry, isEmail, mobileIL, nis, taxIdIL, cleanText } from "@/sales/lib";
 import { Container, ErrorLine, Field, Loading, LoadFailed, METHOD_NAMES, Notice, PriceCard, ScheduleTable, Section, ServiceTimeline, Shell, Stepper } from "./ui.jsx";
 import { DealHero, JourneyRoad, PayHow } from "./deal-ui.jsx";
 import CardSetup from "./CardSetup.jsx";
@@ -89,7 +89,7 @@ function OrderStep({ d, post }) {
     if (approver.trim().length < 2) return setError("יש להזין את שם המאשר/ת");
     if (!accept) return setError("יש לסמן את תיבת האישור");
     setBusy(true);
-    try { await post({ action: "approve", client: { ...c, phone: mobileIL(c.phone), taxId: taxIdIL(c.taxId) }, approverName: approver.trim(), accept: true }); } catch (e) { setBusy(false); setError(errorText(e)); }
+    try { await post({ action: "approve", client: { ...c, accountingEmail: cleanText(c.accountingEmail), email: cleanText(c.email), authorizedContact: { ...c.authorizedContact, email: cleanText(c.authorizedContact.email) }, phone: mobileIL(c.phone), taxId: taxIdIL(c.taxId) }, approverName: approver.trim(), accept: true }); } catch (e) { setBusy(false); setError(errorText(e)); }
   };
 
   return (

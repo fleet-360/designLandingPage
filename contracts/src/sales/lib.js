@@ -57,24 +57,27 @@ export const dayLabel = (iso) =>
 export const timeLabel = (iso) =>
   new Date(iso).toLocaleTimeString("he-IL", { timeZone: "Asia/Jerusalem", hour: "2-digit", minute: "2-digit" });
 
-export const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(s || "").trim());
+// Text pasted from WhatsApp, mail or a Hebrew document often carries invisible direction marks and
+// zero-width characters (and no-break spaces). They look like nothing but fail every check below.
+export const cleanText = (v) => String(v ?? "").replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF\u00AD]/g, "").replace(/[\u00A0\u2000-\u200A\u202F\u205F\u3000]/g, " ").trim();
+export const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(cleanText(s));
 
 // What Grow accepts, checked before we call it, so the customer sees what to fix.
 // Israeli mobile: 05XXXXXXXX (spaces, dashes and +972 allowed) -> "05XXXXXXXX", or "" when not valid
 export const mobileIL = (v) => {
-  const d = String(v || "").replace(/[^\d+]/g, "").replace(/^\+?972/, "0");
+  const d = cleanText(v).replace(/[^\d+]/g, "").replace(/^\+?972/, "0");
   return /^05\d{8}$/.test(d) ? d : "";
 };
 // ID / company number (ת.ז, ח.פ, ע.מ): up to 9 digits with the Israeli check digit -> 9 digits, or ""
 export const taxIdIL = (v) => {
-  const s = String(v || "").replace(/[\s-]/g, "");
+  const s = cleanText(v).replace(/[\s\-./]/g, "");
   if (!/^\d{5,9}$/.test(s) || !Number(s)) return "";
   const p = s.padStart(9, "0");
   let sum = 0;
   for (let i = 0; i < 9; i++) { const x = Number(p[i]) * ((i % 2) + 1); sum += x > 9 ? x - 9 : x; }
   return sum % 10 === 0 ? p : "";
 };
-export const fullNameOk = (v) => String(v || "").trim().split(/\s+/).filter((w) => w.length > 1).length >= 2;
+export const fullNameOk = (v) => cleanText(v).split(/\s+/).filter((w) => w.length > 1).length >= 2;
 export const FIELD_ERRORS = {
   fullName: "יש להזין שם מלא: לפחות שתי מילים",
   email: "יש להזין אימייל תקין",
