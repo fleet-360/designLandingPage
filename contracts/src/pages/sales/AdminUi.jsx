@@ -96,7 +96,7 @@ export function LinkBox({ url, phone, message }) {
 }
 
 const EVENT_LABELS = {
-  created: "נוצר", updated: "עודכן", viewed: "הלקוח פתח את הקישור", paid: "שולם", canceled: "בוטל", booked: "נקבעה פגישה",
+  created: "נוצר", updated: "עודכן", viewed: "הלקוח פתח את הקישור", visit: "הלקוח נכנס שוב לקישור", paid: "שולם", canceled: "בוטל", booked: "נקבעה פגישה",
   calendar_failed: "היומן לא זמין, נשלח זימון במייל", charged: "חיוב הצליח", ended: "הסתיים", email_sent: "נשלח מייל", approved: "הלקוח אישר את הזמנת העבודה",
   signed: "ההסכם נחתם", deposit_paid: "המקדמה סומנה כשולמה", project_started: "הפרויקט התחיל", delivered: "המערכת נמסרה",
   card_set: "נשמר כרטיס", card_page_opened: "הלקוח פתח את דף הכרטיס", card_page_failed: "פתיחת דף הכרטיס נכשלה",
@@ -106,11 +106,13 @@ const EVENT_LABELS = {
   held: "הלקוח בחר מועד", hold_lost: "המועד שנבחר נתפס", manual: "פגישה או תשלום עודכנו ידנית",
   signed_manual: "סומן כנחתם מחוץ לקישור", signed_file: "קובץ החוזה החתום עודכן", payment_note: "אופן התשלום עודכן",
 };
+// the device a visit came from, by its user agent
+const device = (ua) => (!ua ? "" : /iPad|Tablet/i.test(ua) ? "מטאבלט" : /Mobi|Android|iPhone/i.test(ua) ? "מהטלפון" : "מהמחשב");
 const MAIL_STATUS = { sent: ["green", "נשלח"], queued: ["amber", "בתור"], fetched: ["amber", "בשליחה"], failed: ["red", "נכשל"] };
 
 export function History({ events = [], mails = [] }) {
   const items = [
-    ...events.filter((e) => e.type !== "email_sent").map((e) => ({ at: e.at, text: EVENT_LABELS[e.type] || e.type, detail: e.detail })),   // emails are listed from the outbox below
+    ...events.filter((e) => e.type !== "email_sent").map((e) => ({ at: e.at, text: [EVENT_LABELS[e.type] || e.type, e.type === "visit" && device(e.detail?.userAgent)].filter(Boolean).join(" "), detail: e.detail })),   // emails are listed from the outbox below
     ...mails.map((m) => ({ at: m.at, text: `מייל: ${m.subject}`, sub: (m.to || []).join(", "), mail: m })),
   ].sort((a, b) => (a.at < b.at ? 1 : -1));
   if (!items.length) return <p className="text-sm text-muted-foreground">אין עדיין פעילות.</p>;

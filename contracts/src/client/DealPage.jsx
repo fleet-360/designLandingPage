@@ -14,8 +14,9 @@ export default function DealPage({ token }) {
   const [d, setD] = useState(undefined);
   const [skipCard, setSkipCard] = useState(false);
   const url = `sales/deal-public?token=${encodeURIComponent(token)}`;
-  const load = useCallback(() => getWithRetry(url).then((v) => { setD(v); return v; }), [url]);
-  useEffect(() => { load().catch((err) => setD(err.status === 404 ? null : "failed")); }, [load]);
+  // visit=1: opening the page, which goes in the deal's history (not the card check's reloads)
+  const load = useCallback((visit) => getWithRetry(visit ? `${url}&visit=1` : url).then((v) => { setD(v); return v; }), [url]);
+  useEffect(() => { load(true).catch((err) => setD(err.status === 404 ? null : "failed")); }, [load]);
   useEffect(() => { window.scrollTo(0, 0); }, [d?.status?.order, d?.status?.agreement, skipCard]);
 
   if (d === undefined) return <Shell><Loading /></Shell>;

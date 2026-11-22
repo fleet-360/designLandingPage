@@ -39,9 +39,10 @@ export default function DiscoveryPage({ token }) {
   const [stage, setStage] = useState("view"); // view | schedule | pay | waiting | done
   // d: undefined while loading, null when the link is not active (404), "failed" when the page could not load.
   // A failed reload once the page is up (the payment polling) keeps what is on screen.
-  const load = useCallback(async () => {
+  // visit=1: opening the page, which goes in the request's history (not the payment polling's reloads)
+  const load = useCallback(async (visit) => {
     try {
-      const v = await getWithRetry(`sales/discovery-public?token=${encodeURIComponent(token)}`);
+      const v = await getWithRetry(`sales/discovery-public?token=${encodeURIComponent(token)}${visit ? "&visit=1" : ""}`);
       setD(v);
       return v;
     } catch (err) {
@@ -51,7 +52,8 @@ export default function DiscoveryPage({ token }) {
   }, [token]);
 
   useEffect(() => {
-    load().then((v) => {
+    // coming back from Grow's page after paying is not a new visit
+    load(new URLSearchParams(window.location.search).get("paid") !== "1").then((v) => {
       if (!v) return;
       if (finished(v)) setStage("done");
       else if (v.paid && v.showBooking) setStage("schedule");
