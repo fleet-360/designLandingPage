@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { CalendarCheck, CalendarDays, CalendarPlus, Check, ChevronRight, Clock, CreditCard, FileText, Gift, Lock, MousePointerClick, Phone, PlaneTakeoff, Plus, Presentation, Ticket, UserRoundCheck, Video, X } from "lucide-react";
-import { api, dayLabel, errorText, FIELD_ERRORS, fullNameOk, getWithRetry, isEmail, meetingTime, mobileIL, nis, taxIdIL, timeLabel } from "@/sales/lib";
+import { api, dayLabel, errorText, FIELD_ERRORS, fullNameOk, getWithRetry, isEmail, meetingTime, mobileIL, nis, taxIdIL, timeLabel, cleanText } from "@/sales/lib";
 import { createPayment, openWidget, warmUp } from "@/sales/grow";
 import { Loading, LoadFailed, Notice, Shell } from "./ui.jsx";
 import { DEMO_MOCK, HOLOGRAM_SVG } from "./discoveryArt.js";
@@ -414,7 +414,7 @@ function Receipt({ d }) {
 
 function PayForm({ d, onPaid }) {
   const p = d.payment;
-  const [f, setF] = useState({ fullName: p.fullName, email: p.email, phone: p.phone, taxId: p.taxId });
+  const [cur, setF] = useState({ fullName: p.fullName, email: p.email, phone: p.phone, taxId: p.taxId });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [bad, setBad] = useState({});
@@ -423,6 +423,10 @@ function PayForm({ d, onPaid }) {
   const pay = async (e) => {
     e.preventDefault();
     setError("");
+    // read the fields as they are now: browser autofill (iOS especially) can fill them without telling React
+    const form = new FormData(e.currentTarget);
+    const f = Object.fromEntries(["fullName", "email", "phone", "taxId"].map((k) => [k, cleanText(form.get(k) ?? cur[k])]));
+    setF(f);
     // Grow refuses these without saying why, so they are checked here first
     const phone = mobileIL(f.phone);
     const taxId = taxIdIL(f.taxId);
@@ -437,7 +441,7 @@ function PayForm({ d, onPaid }) {
     setBusy(true);
     try {
       const here = `${window.location.origin}${window.location.pathname}`;
-      const proc = await createPayment({ ...p, ...f, fullName: f.fullName.trim(), email: f.email.trim(), phone, taxId, sum: p.sum, successUrl: `${here}?paid=1`, cancelUrl: here });
+      const proc = await createPayment({ ...p, ...f, phone, taxId, sum: p.sum, successUrl: `${here}?paid=1`, cancelUrl: here });
       if (proc.authCode) {
         const opened = await openWidget(proc.authCode, {
           onSuccess: () => onPaid(),
@@ -461,7 +465,7 @@ function PayForm({ d, onPaid }) {
   const field = (k, label, props, hint) => (
     <label className="block">
       <span className="lbl">{label}</span>
-      <input className="inp" value={f[k]} onChange={set(k)} aria-invalid={Boolean(bad[k])} {...props} />
+      <input className="inp" name={k} value={cur[k]} onChange={set(k)} aria-invalid={Boolean(bad[k])} {...props} />
       {bad[k] ? <span className="ferr">{bad[k]}</span> : hint && <span className="hint">{hint}</span>}
     </label>
   );

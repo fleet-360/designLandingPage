@@ -163,7 +163,7 @@ export async function markDiscoveryPaid(id, { via, ref, payer = {}, amount = nul
 
 export const str = (v, max = 300) => {
   if (v === null || v === undefined) return "";
-  return String(v).trim().slice(0, max);
+  return cleanText(v).slice(0, max);
 };
 
 export const money = (v, field = "amount") => {
@@ -172,16 +172,19 @@ export const money = (v, field = "amount") => {
   return n;
 };
 
-export const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(s || "").trim());
+// Text pasted from WhatsApp, mail or a Hebrew document often carries invisible direction marks and
+// zero-width characters (and no-break spaces). They look like nothing but fail every check below.
+export const cleanText = (v) => String(v ?? "").replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF\u00AD]/g, "").replace(/[\u00A0\u2000-\u200A\u202F\u205F\u3000]/g, " ").trim();
+export const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(cleanText(s));
 
 // What Grow accepts (the same checks as contracts/src/sales/lib.js): an Israeli mobile -> "05XXXXXXXX",
 // an ID / company number with its check digit -> 9 digits; "" when not valid
 export const mobileIL = (v) => {
-  const d = String(v || "").replace(/[^\d+]/g, "").replace(/^\+?972/, "0");
+  const d = cleanText(v).replace(/[^\d+]/g, "").replace(/^\+?972/, "0");
   return /^05\d{8}$/.test(d) ? d : "";
 };
 export const taxIdIL = (v) => {
-  const s = String(v || "").replace(/[\s-]/g, "");
+  const s = cleanText(v).replace(/[\s\-./]/g, "");
   if (!/^\d{5,9}$/.test(s) || !Number(s)) return "";
   const p = s.padStart(9, "0");
   let sum = 0;
