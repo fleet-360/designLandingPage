@@ -107,7 +107,7 @@ export function dealSignedMail(deal, settings, pdf) {
     subject: `ההסכם נחתם · ${deal.data.project?.name || ""} · הזמנה ${deal.number}`,
     html: layout({
       title: "תודה, ההסכם נחתם",
-      body: `<p>מצורף עותק חתום של הסכם ההתקשרות ל<strong>${esc(deal.data.project?.name || "")}</strong>, כולל הזמנת העבודה, לוח התשלומים ונספח א'.</p>
+      body: `<p>מצורף עותק חתום של הסכם ההתקשרות ל<strong>${esc(deal.data.project?.name || "")}</strong>, כולל הזמנת העבודה ולוח התשלומים.</p>
 <p>נתחיל לעבוד עם קבלת המקדמה והחומרים שסיכמנו. נהיה בקשר בקרוב.</p>`,
     }),
     attachments: pdf ? [{ filename: pdf.name, fileId: pdf.fileId }] : [],
@@ -134,7 +134,7 @@ export function dealOrderMail(deal, settings, { pdf = null, cardUrl = null } = {
       title: `אישור הזמנה מס' ${deal.number}`,
       body: `<p style="margin:0 0 10px;">${esc(c.signerName || c.companyName || "שלום")}, תודה על ההתקשרות. ריכזנו כאן את פרטי ההזמנה ל<strong>${esc(project)}</strong>.</p>
 ${o.project?.summary ? `<p style="margin:0 0 10px;color:#6A4330;">${esc(o.project.summary)}</p>` : ""}
-${table([["מחיר הפרויקט", `${nis(o.price.amount)} + מע"מ`], ["כולל מע\"מ", `<strong>${nis(o.price.total)}</strong>`]])}
+${table([...(o.price.listAmount ? [["מחיר לפני הנחה", `<s>${nis(o.price.listAmount)}</s>`], ["הנחה", nis(o.price.discount)]] : []), ["מחיר הפרויקט", `${nis(o.price.amount)} + מע"מ`], ["כולל מע\"מ", `<strong>${nis(o.price.total)}</strong>`]])}
 <h2 style="margin:22px 0 4px;font-size:17px;color:#3A2418;">לוח תשלומים</h2>
 ${table(scheduleRows(o.schedule))}${howToPay(o, settings, deal.number)}
 ${service}

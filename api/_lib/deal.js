@@ -47,6 +47,8 @@ export function cleanDealData(b, settings) {
     },
     price: {
       amount: Math.round(num(pr.amount) * 100) / 100,
+      // the price before a discount, when sales gave one; `amount` is always the price after it
+      listAmount: Math.round(num(pr.listAmount) * 100) / 100 || null,
       vatRate: num(pr.vatRate, settings.vatRate),
       depositPercent: num(pr.depositPercent, settings.depositPercent),
       installments: Math.min(36, Math.max(1, Math.trunc(num(pr.installments, 1)))),
@@ -95,6 +97,8 @@ export function cleanDealData(b, settings) {
   };
   if (!data.project.name) throw new HttpError(400, "bad_project_name");
   if (!(data.price.amount > 0)) throw new HttpError(400, "bad_price");
+  // a "discount" that does not lower the price is no discount
+  if (!(data.price.listAmount > data.price.amount)) data.price.listAmount = null;
   const pays = data.price.payments;
   if (pays) {
     if (!pays.length) throw new HttpError(400, "bad_payments");
@@ -147,7 +151,15 @@ export function buildOrder(deal, settings, from = israelDate()) {
     company: settings.company,
     client: deal.client,
     project: d.project,
-    price: { amount: d.price.amount, vatRate: d.price.vatRate, total: schedule.total, depositPercent },   // whole shekels, as the schedule
+    price: {
+      amount: d.price.amount, vatRate: d.price.vatRate, total: schedule.total, depositPercent,   // whole shekels, as the schedule
+      // the discount, when there is one: the price before it, how much and what share (all before VAT)
+      ...(d.price.listAmount > d.price.amount && {
+        listAmount: d.price.listAmount,
+        discount: Math.round((d.price.listAmount - d.price.amount) * 100) / 100,
+        discountPercent: Math.round((1 - d.price.amount / d.price.listAmount) * 1000) / 10,
+      }),
+    },
     balanceMethod: d.price.balanceMethod,
     schedule,
     // how to pay, frozen with the order: the bank account for transfers, and for checks how many, to whom,

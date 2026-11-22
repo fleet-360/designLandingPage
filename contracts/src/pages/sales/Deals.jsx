@@ -81,13 +81,17 @@ function withVatRows(amounts, price, vatRate) {
   return before.map((b, i) => (b + vats[i]) / 100);
 }
 const blankSplit = (price = {}) => ({
-  depositPercent: price.depositPercent ?? 30, depositDate: soonWorkday(), depositMethod: "transfer",
+  depositUnit: "percent", depositPercent: price.depositPercent ?? 30, depositAmount: "", depositDate: soonWorkday(), depositMethod: "transfer",
   count: price.installments ?? 3, firstDate: firstOfNextMonth(), method: price.balanceMethod === "checks" ? "check" : "transfer",
 });
+// the deposit in agorot: a share of the price (whole shekels) or the amount sales typed, never above the price
+const splitDeposit = (total, s) => Math.min(total, s.depositUnit === "amount"
+  ? Math.max(0, agorot(s.depositAmount))
+  : Math.round((total * Number(s.depositPercent || 0)) / 10000) * 100);
 // deposit + equal monthly payments in whole shekels, the remainder on the last one
 function splitPayments(amount, s) {
   const total = agorot(amount);
-  const deposit = Math.round((total * Number(s.depositPercent || 0)) / 10000) * 100;
+  const deposit = splitDeposit(total, s);
   const n = Math.max(0, Math.min(35, Math.trunc(Number(s.count) || 0)));
   const rest = total - deposit;
   const each = n ? Math.floor(rest / n / 100) * 100 : 0;
@@ -113,7 +117,19 @@ function PaymentsEditor({ price, vatRate, payments, setPayments, pickupDate, set
         <p className="mb-2 text-sm font-medium">חלוקה מהירה</p>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-sm">
           <span>מקדמה</span>
-          <Input value={split.depositPercent} onChange={(e) => setSplit({ ...split, depositPercent: e.target.value })} inputMode="numeric" dir="ltr" className="h-8 w-16" aria-label="אחוז מקדמה" /><span>%</span>
+          {split.depositUnit === "amount"
+            ? <Input value={split.depositAmount} onChange={(e) => setSplit({ ...split, depositAmount: e.target.value })} inputMode="decimal" dir="ltr" placeholder="₪" className="h-8 w-24" aria-label='סכום המקדמה לפני מע"מ' />
+            : <Input value={split.depositPercent} onChange={(e) => setSplit({ ...split, depositPercent: e.target.value })} inputMode="numeric" dir="ltr" className="h-8 w-16" aria-label="אחוז מקדמה" />}
+          <select value={split.depositUnit} className="h-8 rounded-md border border-input bg-transparent px-1.5" aria-label="מקדמה באחוזים או בסכום"
+            onChange={(e) => {
+              const unit = e.target.value;
+              // switching keeps the same deposit: 30% of 50,000 becomes 15,000 and back
+              const total = agorot(price);
+              if (unit === "amount") setSplit({ ...split, depositUnit: unit, depositAmount: split.depositAmount || (total ? splitDeposit(total, split) / 100 : "") });
+              else setSplit({ ...split, depositUnit: unit, depositPercent: total && Number(split.depositAmount) > 0 ? Math.round((agorot(split.depositAmount) / total) * 1000) / 10 : split.depositPercent });
+            }}>
+            <option value="percent">%</option><option value="amount">₪ לפני מע"מ</option>
+          </select>
           <span>ב-</span><Input type="date" value={split.depositDate} onChange={(e) => setSplit({ ...split, depositDate: e.target.value })} className="h-8 w-40" aria-label="תאריך המקדמה" />
           <select value={split.depositMethod} onChange={(e) => setSplit({ ...split, depositMethod: e.target.value })} className="h-8 rounded-md border border-input bg-transparent px-2" aria-label="אמצעי תשלום המקדמה">
             {METHODS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
@@ -124,10 +140,13 @@ function PaymentsEditor({ price, vatRate, payments, setPayments, pickupDate, set
           <select value={split.method} onChange={(e) => setSplit({ ...split, method: e.target.value })} className="h-8 rounded-md border border-input bg-transparent px-2" aria-label="אמצעי תשלום היתרה">
             {METHODS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
           </select>
-          <Button type="button" size="sm" variant="outline" disabled={!(target > 0) || !split.depositDate || (Number(split.count) > 0 && !split.firstDate)}
+          <Button type="button" size="sm" variant="outline" disabled={!(target > 0) || !split.depositDate || (Number(split.count) > 0 && !split.firstDate) || (split.depositUnit === "amount" && !(Number(split.depositAmount) > 0))}
             onClick={() => setPayments(splitPayments(price, split))}>{rows.length ? "חלוקה מחדש" : "מילוי הטבלה"}</Button>
         </div>
-        <p className="mt-1.5 text-xs text-muted-foreground">ממלא את הטבלה למטה. אחר כך אפשר לשנות כל תשלום בנפרד.</p>
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          ממלא את הטבלה למטה. אחר כך אפשר לשנות כל תשלום בנפרד.
+          {split.depositUnit === "amount" && agorot(split.depositAmount) > target && target > 0 && <span className="text-amber-700"> המקדמה גבוהה מהמחיר, ותוגבל למחיר.</span>}
+        </p>
       </div>
 
       {rows.length > 0 && (
@@ -138,12 +157,19 @@ function PaymentsEditor({ price, vatRate, payments, setPayments, pickupDate, set
           {rows.map((p, i) => {
             const late = p.date && p.date < today;
             const order = i > 0 && p.date && rows[i - 1].date && p.date < rows[i - 1].date;
+            // the last payment takes whatever is left, so the table adds up to the price
+            const fill = i === rows.length - 1 && target > 0 && diff !== 0 && agorot(p.amount) + diff > 0 ? (agorot(p.amount) + diff) / 100 : null;
             return (
               <div key={i}>
                 <div className="grid grid-cols-2 items-center gap-2 rounded-xl border border-border p-2 sm:grid-cols-[72px_150px_1fr_1fr_150px_36px] sm:border-0 sm:p-0 sm:px-1">
                   <span className="text-sm font-medium">{i === 0 ? "מקדמה" : `תשלום ${i}`}</span>
                   <Input type="date" value={p.date} onChange={(e) => set(i, "date", e.target.value)} aria-label="תאריך" className="h-9" />
-                  <Input value={p.amount} onChange={(e) => set(i, "amount", e.target.value)} inputMode="decimal" dir="ltr" placeholder="₪" aria-label='סכום לפני מע"מ' className="h-9" />
+                  <div className="flex items-center gap-1.5">
+                    <Input value={p.amount} onChange={(e) => set(i, "amount", e.target.value)} inputMode="decimal" dir="ltr" placeholder="₪" aria-label='סכום לפני מע"מ' className="h-9 min-w-0" />
+                    {fill !== null && (
+                      <Button type="button" size="sm" variant="outline" className="h-9 shrink-0 px-2.5" title={`היתרה: ${nis(fill)} לפני מע"מ`} onClick={() => set(i, "amount", fill)}>השלם</Button>
+                    )}
+                  </div>
                   <span className="text-sm tabular-nums text-muted-foreground" dir="ltr">{Number(p.amount) > 0 ? nis(totals[i]) : ""}</span>
                   <select value={p.method} onChange={(e) => set(i, "method", e.target.value)} className={sel} aria-label="אמצעי תשלום">
                     <option value="">אמצעי תשלום...</option>
@@ -170,11 +196,7 @@ function PaymentsEditor({ price, vatRate, payments, setPayments, pickupDate, set
             {diff < 0 && <> · עודף של <span className="tabular-nums font-semibold">{nis(-diff / 100)}</span></>}
             {diff === 0 && <> · <span className="tabular-nums">{nis(totals.reduce((a, b) => a + b, 0))}</span> כולל מע"מ</>}
           </span>
-          {diff !== 0 && agorot(rows[rows.length - 1].amount) + diff > 0 && (
-            <Button type="button" size="sm" variant="outline" className="h-7 bg-white" onClick={() => set(rows.length - 1, "amount", (agorot(rows[rows.length - 1].amount) + diff) / 100)}>
-              {diff > 0 ? "להוסיף את החסר לתשלום האחרון" : "להוריד את העודף מהתשלום האחרון"}
-            </Button>
-          )}
+          {diff !== 0 && agorot(rows[rows.length - 1].amount) + diff > 0 && <span className="text-xs">"השלם" בתשלום האחרון ממלא בו את היתרה</span>}
         </div>
       )}
 
@@ -182,6 +204,74 @@ function PaymentsEditor({ price, vatRate, payments, setPayments, pickupDate, set
         <FieldRow label="איסוף השיקים על ידי שליח" hint="הלקוח יראה את התאריך ואת הסכומים המדויקים, כדי שיכין את השיקים מראש. אפשר להשאיר ריק ולתאם בהמשך">
           <Input type="date" value={pickupDate || ""} onChange={(e) => setPickupDate(e.target.value)} className="max-w-48" />
         </FieldRow>
+      )}
+    </div>
+  );
+}
+
+// ---- the price, with an optional discount. `amount` is always the price the client pays (before VAT);
+// with a discount, `listAmount` is the price before it. Sales types the original price and either the
+// discount (₪ or %) or the price after it, and the third is worked out.
+const round2 = (n) => Math.round(Number(n) * 100) / 100;
+const trimNum = (n) => String(round2(n));
+function discountText(list, amount, unit) {
+  const l = Number(list); const a = Number(amount);
+  if (!(l > 0) || !(a > 0) || a >= l) return "";
+  return unit === "percent" ? trimNum((1 - a / l) * 100) : trimNum(l - a);
+}
+function PriceFields({ price, setPrice }) {
+  const [on, setOn] = useState(() => Number(price.listAmount) > 0);
+  const [unit, setUnit] = useState("amount");
+  const [disc, setDisc] = useState(() => discountText(price.listAmount, price.amount, "amount"));
+  const afterDiscount = (list, d, u) => {
+    const l = Number(list); const x = Number(d);
+    if (!(l > 0) || d === "" || !(x >= 0)) return null;
+    return round2(u === "percent" ? l * (1 - Math.min(100, x) / 100) : Math.max(0, l - x));
+  };
+  const setList = (list) => {
+    const a = afterDiscount(list, disc, unit);
+    setPrice({ ...price, listAmount: list, ...(a !== null && { amount: a }) });
+  };
+  const setDiscount = (d) => {
+    setDisc(d);
+    const a = afterDiscount(price.listAmount, d, unit);
+    if (a !== null) setPrice({ ...price, amount: a });
+  };
+  const setAmount = (amount) => { setPrice({ ...price, amount }); setDisc(discountText(price.listAmount, amount, unit)); };
+  const toggle = (v) => {
+    setOn(v);
+    if (v) { setPrice({ ...price, listAmount: price.amount || "" }); setDisc(""); setUnit("amount"); }
+    else setPrice({ ...price, listAmount: "" });
+  };
+  const l = Number(price.listAmount); const a = Number(price.amount);
+  const off = on && l > 0 && a > 0 && a < l;
+  return (
+    <div className="space-y-3 sm:col-span-3">
+      <label className="flex items-center gap-2 text-sm"><Switch checked={on} onCheckedChange={toggle} />הנחה</label>
+      {!on ? (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <FieldRow label='מחיר לפני מע"מ *'><Input value={price.amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" dir="ltr" /></FieldRow>
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <FieldRow label='מחיר מקורי לפני מע"מ'><Input value={price.listAmount} onChange={(e) => setList(e.target.value)} inputMode="decimal" dir="ltr" /></FieldRow>
+            <FieldRow label="הנחה">
+              <div className="flex gap-1.5">
+                <Input value={disc} onChange={(e) => setDiscount(e.target.value)} inputMode="decimal" dir="ltr" className="min-w-0" aria-label="הנחה" />
+                <select value={unit} className="h-10 rounded-md border border-input bg-transparent px-2 text-sm" aria-label="הנחה בסכום או באחוזים"
+                  onChange={(e) => { setUnit(e.target.value); setDisc(discountText(price.listAmount, price.amount, e.target.value)); }}>
+                  <option value="amount">₪</option><option value="percent">%</option>
+                </select>
+              </div>
+            </FieldRow>
+            <FieldRow label='מחיר אחרי הנחה, לפני מע"מ *'><Input value={price.amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" dir="ltr" /></FieldRow>
+          </div>
+          <p className={`text-xs ${off || !(l > 0) ? "text-muted-foreground" : "text-amber-700"}`}>
+            {off ? `הנחה של ${nis(round2(l - a))} (${trimNum((1 - a / l) * 100)}%). הלקוח יראה את המחיר המקורי מחוק ואת ההנחה.`
+              : l > 0 && a >= l ? "המחיר אחרי ההנחה לא נמוך מהמחיר המקורי, ולכן לא תוצג הנחה." : "מזינים את המחיר המקורי, ואז את ההנחה או את המחיר אחריה."}
+          </p>
+        </>
       )}
     </div>
   );
@@ -388,7 +478,7 @@ export function DealForm() {
               </label>
               {manual.on && (
                 <div className="mt-4 space-y-3">
-                  <p className="text-sm text-muted-foreground">תהליך מקוצר: ההזמנה נשמרת כמאושרת וחתומה, בלי נספח א' ובלי מסך החתימה. אם יש הוראת קבע, הלקוח יגדיר כרטיס דרך הקישור שבאישור ההזמנה.</p>
+                  <p className="text-sm text-muted-foreground">תהליך מקוצר: ההזמנה נשמרת כמאושרת וחתומה, בלי פרטי ההזמנה שבהסכם ובלי מסך החתימה. אם יש הוראת קבע, הלקוח יגדיר כרטיס דרך הקישור שבאישור ההזמנה.</p>
                   <ManualClose m={manual} setM={setManual} />
                 </div>
               )}
@@ -452,7 +542,7 @@ export function DealForm() {
             : <DealFilm draft={filmDraft} onDraft={setFilmDraft} project={sp.name} summary={sp.summary} />)}
           <Card title="מחיר ותשלומים">
             <div className="grid gap-3 sm:grid-cols-3">
-              <FieldRow label='מחיר לפני מע"מ *'><Input {...bind("data.price.amount")} inputMode="decimal" dir="ltr" /></FieldRow>
+              <PriceFields price={f.data.price} setPrice={(p) => setF((s) => setIn(s, "data.price", p))} />
               <FieldRow label='מע"מ %'><Input {...bind("data.price.vatRate")} inputMode="decimal" dir="ltr" /></FieldRow>
               <div className="sm:col-span-3">
                 <p className="text-sm font-medium">לוח התשלומים *</p>
@@ -506,7 +596,7 @@ export function DealForm() {
             ) : <p className="text-sm text-muted-foreground">ללא שירות חודשי.</p>}
           </Card>
 
-          {!manual.on && <Card title="נספח א'">
+          {!manual.on && <Card title="פרטי ההזמנה בהסכם">
             <div className="space-y-5">
               <FieldRow label="לא כלול" hint="מה לא כלול בפרויקט, מעבר למה שלא מופיע באפיון"><Textarea {...bind("data.appendix.notIncluded")} rows={2} /></FieldRow>
               <div>
@@ -560,6 +650,7 @@ export function DealForm() {
           <Card title="תצוגה מקדימה">
             {!preview || preview.error ? <p className="text-sm text-muted-foreground">{preview?.error || "הזינו שם פרויקט ומחיר כדי לראות את לוח התשלומים."}</p> : (
               <div className="space-y-3 text-sm">
+                {preview.price.listAmount && <p className="text-xs text-muted-foreground"><s className="tabular-nums">{nis(preview.price.listAmount)}</s> · הנחה של <span className="tabular-nums">{nis(preview.price.discount)}</span> ({preview.price.discountPercent}%)</p>}
                 <p className="font-semibold">{nis(preview.price.amount)} + מע"מ = {nis(preview.price.total)}</p>
                 <table className="w-full">
                   <tbody>

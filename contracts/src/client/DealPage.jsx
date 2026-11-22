@@ -3,6 +3,7 @@ import { CalendarClock, CheckCircle2, ChevronDown, Download, FileText, PenLine, 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import SignaturePad from "@/components/sign/SignaturePad";
 import { api, dmy, dateTime, errorText, FIELD_ERRORS, fileToDataUrl, fullNameOk, getWithRetry, isEmail, mobileIL, nis, taxIdIL, cleanText } from "@/sales/lib";
 import { Container, ErrorLine, Field, Loading, LoadFailed, METHOD_NAMES, Notice, PriceCard, ScheduleTable, Section, ServiceTimeline, Shell, Stepper } from "./ui.jsx";
@@ -135,9 +136,9 @@ function OrderStep({ d, post }) {
           <p className="mb-3 text-sm text-muted-foreground">
             {o.payInfo
               ? "כל תשלום בתאריך ובאמצעי התשלום שלו. התאריכים קבועים ואינם תלויים באבני דרך. התשלום הראשון הוא המקדמה, ואיתה מתחילים לעבוד."
-              : `מקדמה של ${o.price.depositPercent}% בתוך 3 ימי עסקים מהאישור, והיתרה בתאריכים קבועים שאינם תלויים באבני דרך.`}
+              : `מקדמה בתוך 3 ימי עסקים מהאישור, והיתרה בתאריכים קבועים שאינם תלויים באבני דרך.`}
           </p>
-          <ScheduleTable schedule={o.schedule} depositPercent={o.price.depositPercent} />
+          <ScheduleTable schedule={o.schedule} />
           <PayHow order={o} />
         </Section>
 
@@ -207,7 +208,7 @@ function AgreementStep({ d, post }) {
   const [role, setRole] = useState(d.client.signerRole || "");
   const [idNumber, setIdNumber] = useState("");
   const [accept, setAccept] = useState(false);
-  const [openAll, setOpenAll] = useState(false);
+  const [reading, setReading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -224,22 +225,25 @@ function AgreementStep({ d, post }) {
     } catch (e) { setBusy(false); setError(errorText(e)); }
   };
 
+  const details = appendixA(a) ? "נספח א'" : "פרטי ההזמנה";
+  const navLink = "block truncate rounded px-2 py-1 text-muted-foreground hover:bg-secondary hover:text-foreground";
   return (
     <Container wide className="py-6 pb-16">
       <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
-        <nav className="hidden lg:block" aria-label="תוכן ההסכם">
+        <nav className="hidden lg:block" aria-label="תוכן העמוד">
           <div className="sticky top-4 space-y-1 text-sm">
             <p className="mb-2 font-semibold">תוכן</p>
-            {a.sections.map((s) => <a key={s.n} href={`#s${s.n}`} onClick={() => setOpenAll(true)} className="block truncate rounded px-2 py-1 text-muted-foreground hover:bg-secondary hover:text-foreground">{s.n}. {s.title}</a>)}
-            <a href="#appendix" className="block rounded px-2 py-1 text-muted-foreground hover:bg-secondary hover:text-foreground">נספח א'</a>
+            <button type="button" onClick={() => setReading(true)} className={`${navLink} w-full text-start`}>ההסכם</button>
+            <a href="#appendix" className={navLink}>{details}</a>
             <a href="#sign" className="block rounded px-2 py-1 font-semibold text-primary hover:bg-secondary">חתימה</a>
           </div>
         </nav>
         <div className="min-w-0 space-y-5">
           <div className="rounded-2xl bg-emerald-50 p-4 text-emerald-900">
             <p className="font-semibold">הזמנת העבודה אושרה{d.approval?.name && ` על ידי ${d.approval.name}`}.</p>
-            <p className="text-sm">נשאר לקרוא ולחתום על הסכם ההתקשרות. ההסכם כולל את הזמנת העבודה כנספח א'.</p>
+            <p className="text-sm">נשאר לקרוא ולחתום על הסכם ההתקשרות. {appendixA(a) ? "ההסכם כולל את הזמנת העבודה כנספח א'." : "פרטי ההזמנה שלמטה הם חלק מההסכם."}</p>
           </div>
+          {/* the agreement's heading and parties as they were; its sections open in a dialog, like terms to accept */}
           <Section>
             <h1 className="text-center text-2xl font-bold">{a.title}</h1>
             <p className="text-center text-sm text-muted-foreground">{a.subtitle}</p>
@@ -247,14 +251,12 @@ function AgreementStep({ d, post }) {
               <p><span className="font-semibold">בין: </span>{a.parties.company}</p>
               <p><span className="font-semibold">לבין: </span>{a.parties.client}</p>
             </div>
-            <div className="pa-legal mt-4 text-[15px]">{a.recitals.map((r) => <p key={r}>{r}</p>)}</div>
-            <div className="mt-4 flex justify-end">
-              <button type="button" onClick={() => setOpenAll((v) => !v)} className="text-sm font-semibold text-primary underline">{openAll ? "סגירת כל הסעיפים" : "פתיחת כל הסעיפים"}</button>
-            </div>
-            <div className="mt-2 divide-y divide-border">
-              {a.sections.map((s) => <Clauses key={`${s.n}-${openAll}`} s={s} open={openAll} />)}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
+              <p className="text-sm text-muted-foreground">{a.sections.length} סעיפים</p>
+              <button type="button" onClick={() => setReading(true)} className="text-sm font-semibold text-primary underline">קריאת ההסכם המלא</button>
             </div>
           </Section>
+          {reading && <AgreementDialog d={d} onClose={() => setReading(false)} />}
 
           <Appendix d={d} />
 
@@ -268,7 +270,7 @@ function AgreementStep({ d, post }) {
             <div className="mt-4"><SignaturePad ref={pad} /></div>
             <label className="mt-4 flex items-start gap-3 text-[15px] leading-relaxed">
               <Checkbox checked={accept} onCheckedChange={(v) => setAccept(v === true)} className="mt-1" />
-              <span>קראתי את ההסכם ואת נספח א', אני מסכים/ה לתנאיהם ומוסמך/ת לחתום בשם {d.client.companyName || "הלקוח"}. ידוע לי שחתימה אלקטרונית זו מחייבת כחתימה בכתב יד.</span>
+              <span>קראתי את <button type="button" onClick={(e) => { e.preventDefault(); setReading(true); }} className="font-semibold text-primary underline">ההסכם</button> ואת {appendixA(a) ? "נספח א'" : "פרטי ההזמנה"}, אני מסכים/ה לתנאיהם ומוסמך/ת לחתום בשם {d.client.companyName || "הלקוח"}. ידוע לי שחתימה אלקטרונית זו מחייבת כחתימה בכתב יד.</span>
             </label>
             <div className="mt-4 space-y-3">
               <ErrorLine error={error} />
@@ -281,6 +283,59 @@ function AgreementStep({ d, post }) {
     </Container>
   );
 }
+
+// The agreement's text, as it was on the page: recitals and sections, with the contents beside it.
+// The order details and the signature stay on the page.
+function AgreementDialog({ d, onClose }) {
+  const a = d.agreement;
+  const [openAll, setOpenAll] = useState(false);
+  const go = (id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.open = true;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+      {/* pa: the dialog renders outside the page (a portal), so it takes the page's theme itself */}
+      <DialogContent dir="rtl" style={{ minHeight: 0 }} className="pa flex h-[92vh] w-[calc(100vw-1rem)] max-w-5xl flex-col gap-0 overflow-hidden rounded-2xl border-0 p-0">
+        <DialogTitle className="sr-only">{a.title}</DialogTitle>
+        <DialogDescription className="sr-only">{a.subtitle}</DialogDescription>
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6">
+          <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
+            <nav className="hidden pt-8 lg:block" aria-label="תוכן ההסכם">
+              <div className="sticky top-8 space-y-1 text-sm">
+                <p className="mb-2 font-semibold">תוכן</p>
+                {a.sections.map((s) => <button key={s.n} type="button" onClick={() => go(`s${s.n}`)} className="block w-full truncate rounded px-2 py-1 text-start text-muted-foreground hover:bg-secondary hover:text-foreground">{s.n}. {s.title}</button>)}
+              </div>
+            </nav>
+            <Section>
+              <h2 className="text-center text-2xl font-bold">{a.title}</h2>
+              <p className="text-center text-sm text-muted-foreground">{a.subtitle}</p>
+              <div className="mt-5 space-y-1 text-[15px]">
+                <p><span className="font-semibold">בין: </span>{a.parties.company}</p>
+                <p><span className="font-semibold">לבין: </span>{a.parties.client}</p>
+              </div>
+              <div className="pa-legal mt-4 text-[15px]">{a.recitals.map((r) => <p key={r}>{r}</p>)}</div>
+              <div className="mt-4 flex justify-end">
+                <button type="button" onClick={() => setOpenAll((v) => !v)} className="text-sm font-semibold text-primary underline">{openAll ? "סגירת כל הסעיפים" : "פתיחת כל הסעיפים"}</button>
+              </div>
+              <div className="mt-2 divide-y divide-border">
+                {a.sections.map((s) => <Clauses key={`${s.n}-${openAll}`} s={s} open={openAll} />)}
+              </div>
+            </Section>
+          </div>
+        </div>
+        <div className="border-t border-border bg-white p-3 sm:px-6">
+          <Button size="lg" type="button" onClick={onClose} className="h-12 w-full rounded-xl text-base font-bold">חזרה לחתימה</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// up to agreement v2 the order details were Appendix A; from v3 they are part of the agreement itself
+const appendixA = (a) => ["v1", "v2"].includes(a.version);
 
 function Clauses({ s, open }) {
   return (
@@ -317,8 +372,8 @@ function Appendix({ d }) {
   return (
     <section id="appendix" className="pa-card scroll-mt-4 space-y-5 p-5 sm:p-7">
       <div>
-        <h2 className="text-xl font-bold">נספח א' – נספח הזמנה מס' <span className="pa-num">{o.number}</span></h2>
-        <p className="text-sm text-muted-foreground">פרויקט במחיר קבוע · {o.project.name}</p>
+        <h2 className="text-xl font-bold">{appendixA(d.agreement) ? "נספח א' – נספח הזמנה" : "פרטי ההזמנה – הזמנה"} מס' <span className="pa-num">{o.number}</span></h2>
+        <p className="text-sm text-muted-foreground">פרויקט במחיר קבוע · {o.project.name}{!appendixA(d.agreement) && " · חלק בלתי נפרד מההסכם"}</p>
       </div>
       <div><h3 className="mb-2 font-bold">א. אנשי קשר</h3><Rows rows={ap.contacts} /></div>
       <div><h3 className="mb-2 font-bold">ב. תכולה</h3><Rows rows={ap.scope} /></div>
@@ -340,11 +395,11 @@ function Appendix({ d }) {
       )}
       <div>
         <h3 className="mb-2 font-bold">ד. מחיר ותשלום</h3>
-        <p className="mb-3 text-[15px]">מחיר הפרויקט: <span className="pa-num font-semibold">{nis(o.price.amount)}</span> לפני מע"מ (<span className="pa-num">{nis(o.price.total)}</span> כולל מע"מ).
+        <p className="mb-3 text-[15px]">מחיר הפרויקט: <span className="pa-num font-semibold">{nis(o.price.amount)}</span> לפני מע"מ{o.price.listAmount > o.price.amount && <> אחרי הנחה של <span className="pa-num">{nis(o.price.discount)}</span> ממחיר של <span className="pa-num">{nis(o.price.listAmount)}</span></>} (<span className="pa-num">{nis(o.price.total)}</span> כולל מע"מ).
           {ap.hourlyRates?.length > 0 && <> תעריפי שעה לשינויים ולחישוב בביטול, לפני מע"מ: {ap.hourlyRates.map((r, i) => <span key={i}>{i > 0 && " · "}{r.role} <span className="pa-num">{nis(r.rate)}</span></span>)}.</>}
           {!ap.hourlyRates && ap.hourlyRate ? <> תעריף שעה לשינויים ולחישוב בביטול: <span className="pa-num">{nis(ap.hourlyRate)}</span> לפני מע"מ.</> : null}
           {o.payInfo ? " כל תשלום בתאריך ובאמצעי התשלום שבטבלה." : <> אמצעי תשלום היתרה: {ap.balanceMethod === "checks" ? "שיקים דחויים" : "העברות בנקאיות"}{ap.bankAccount && ap.balanceMethod !== "checks" ? ` (${ap.bankAccount})` : ""}.</>}</p>
-        <ScheduleTable schedule={o.schedule} depositPercent={o.price.depositPercent} />
+        <ScheduleTable schedule={o.schedule} />
         {o.payInfo && <PayHow order={o} />}
       </div>
       {o.service?.enabled && (

@@ -31,6 +31,7 @@ export default function SalesSettings() {
     setBusy(true);
     let clean = setIn(s, "service.includes", (s.service?.includes || []).map((y) => y.trim()).filter(Boolean));
     clean = setIn(clean, "calendar.invitees", (s.calendar?.invitees || []).map((y) => y.trim().toLowerCase()).filter(Boolean));
+    clean = setIn(clean, "calendar.availability", (s.calendar?.availability || []).map((y) => y.trim().toLowerCase()).filter(Boolean));
     clean = setIn(clean, "hourlyRates", (s.hourlyRates || []).map((r) => ({ role: String(r.role || "").trim(), rate: Number(r.rate) })).filter((r) => r.role && r.rate > 0));
     const r = await run(() => api("sales/settings", { method: "PUT", body: { settings: clean } }), "ההגדרות נשמרו");
     if (r) setS(r.settings);
@@ -99,7 +100,7 @@ export default function SalesSettings() {
         </div>
       </Card>
 
-      <Card title="איש קשר מטעמנו (נספח א' בכל עסקה)">
+      <Card title="איש קשר מטעמנו (בפרטי ההזמנה בכל עסקה)">
         <div className="grid gap-3 sm:grid-cols-4">
           <Input {...bind("companyContact.name")} placeholder="שם" />
           <Input {...bind("companyContact.role")} placeholder="תפקיד" />
@@ -144,17 +145,23 @@ export default function SalesSettings() {
         {cal && cal !== "checking" && (
           <p className={`mb-3 flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${cal.connected ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-900"}`}>
             {cal.connected ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
-            {cal.connected ? `היומן ${cal.user || ""} מחובר${cal.via === "google" ? " ישירות לגוגל" : cal.via === "toro" ? " דרך טורו" : ""}: המועדים מסוננים לפי היומן והפגישות נכנסות אליו עם זימון.` : `היומן לא מחובר (${cal.error}). הפגישות נקבעות לפי שעות הפעילות בלבד, והזימון נשלח במייל כקובץ יומן.`}
+            {cal.connected ? `היומן מחובר${cal.via === "google" ? " ישירות לגוגל" : cal.via === "toro" ? " דרך טורו" : ""}: המועדים מסוננים לפי ${(cal.availability || [cal.user]).join(", ")}, והפגישות נכנסות ל-${cal.user || ""} עם זימון.` : `היומן לא מחובר (${cal.error}). הפגישות נקבעות לפי שעות הפעילות בלבד, והזימון נשלח במייל כקובץ יומן.`}
           </p>
         )}
         <div className="grid gap-3 sm:grid-cols-3">
-          <FieldRow label="יומן"><Input {...bind("calendar.user")} dir="ltr" /></FieldRow>
+          <FieldRow label="יומן שקובע את הפגישות"><Input {...bind("calendar.user")} dir="ltr" /></FieldRow>
           <FieldRow label="משעה"><Input {...bind("calendar.from")} type="time" /></FieldRow>
           <FieldRow label="עד שעה"><Input {...bind("calendar.to")} type="time" /></FieldRow>
           <FieldRow label="ימים קדימה"><Input {...bind("calendar.daysAhead", true)} dir="ltr" /></FieldRow>
           <FieldRow label="התראה מינימלית (שעות)"><Input {...bind("calendar.minNoticeHours", true)} dir="ltr" /></FieldRow>
           <FieldRow label="כמה מועדים להציע"><Input {...bind("calendar.slotsToOffer", true)} dir="ltr" /></FieldRow>
           <FieldRow label="מרווח בין פגישות (דקות)"><Input {...bind("calendar.bufferMinutes", true)} dir="ltr" /></FieldRow>
+        </div>
+        <div className="mt-3">
+          <FieldRow label="בדיקת זמינות מול" hint="כתובת בכל שורה. מועד שתפוס באחד היומנים האלה לא יוצע ללקוח. ריק = היומן שקובע את הפגישות">
+            <textarea value={(s.calendar?.availability || []).join("\n")} onChange={(e) => setS((x) => setIn(x, "calendar.availability", e.target.value.split("\n")))} rows={2} dir="ltr"
+              className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
+          </FieldRow>
         </div>
         <div className="mt-3">
           <FieldRow label="מוזמנים מטעמנו" hint="כתובת בכל שורה. מקבלים זימון לכל פגישת איפיון, יחד עם הלקוח, המשתתפים שהוסיף והיומן עצמו">
