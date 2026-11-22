@@ -231,6 +231,10 @@ export async function writeFilm(html, { project = "", summary = "", fix = null }
 // film plays faster (like a video at 1.5x) by running the demo's own time faster, so its animations and the
 // script's waits keep in step. Timers, animation frames, performance.now/Date.now and CSS animations follow
 // window.__film.speed(k); 1 (the default) changes nothing.
+// And scrolling stays inside the frame: Chrome lets scrollIntoView (and focus) in a frame scroll the page
+// around it too, so while the film brings an element into view the client reading further down the deal
+// page was pulled back up to the film. scrollIntoView, scrollIntoViewIfNeeded and focus are replaced with
+// versions that scroll only the demo's own panels and the frame's viewport, for the driver and the demo.
 const SHIM = `<script>(function(){var K=1,pn=performance.now.bind(performance),r0=pn(),v0=r0,ST=setTimeout,SI=setInterval,RAF=requestAnimationFrame,DN=Date.now;
 function vn(){return v0+(pn()-r0)*K}
 try{performance.now=function(){return vn()}}catch(e){}
@@ -243,7 +247,23 @@ SI.call(window,css,250);
 window.__film={rt:function(f,ms){return ST.call(window,f,ms)},k:function(){return K},speed:function(k){v0=vn();r0=pn();K=k>0?k:1;css()}};})();
 (function(){function M(){var d={};return{getItem:function(k){return Object.prototype.hasOwnProperty.call(d,k)?d[k]:null},setItem:function(k,v){d[k]=String(v)},removeItem:function(k){delete d[k]},clear:function(){d={}},key:function(i){return Object.keys(d)[i]||null},get length(){return Object.keys(d).length}}}
 ["localStorage","sessionStorage"].forEach(function(n){try{window[n].getItem("x")}catch(e){try{Object.defineProperty(window,n,{value:M(),configurable:true})}catch(e2){}}});
-document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[href]");if(a&&!/^#/.test(a.getAttribute("href")))e.preventDefault()},true);})();</script>`;
+document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[href]");if(a&&!/^#/.test(a.getAttribute("href")))e.preventDefault()},true);})();
+(function(){var D=document;function ax(v){return/(auto|scroll|overlay)/.test(v)}
+function want(lo,hi,a,b,m){if(m==="center")return(lo+hi)/2-(a+b)/2;if(m==="end")return hi-b;if(m==="nearest"){if(lo>=a&&hi<=b)return 0;return lo<a||hi-lo>b-a?lo-a:hi-b}return lo-a}
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v))}
+function into(e,o){if(!o||typeof o!=="object")o={block:o===false?"end":"start",inline:"nearest"};
+var bl=o.block||"start",il=o.inline||"nearest",bh=o.behavior==="smooth"?"smooth":"auto",ox=0,oy=0,he=D.documentElement,go=[];
+for(var n=e.parentElement;n&&n!==he;n=n.parentElement){var s=getComputedStyle(n);if(n===D.body&&getComputedStyle(he).overflowY==="visible")break;
+var sy=ax(s.overflowY)&&n.scrollHeight>n.clientHeight,sx=ax(s.overflowX)&&n.scrollWidth>n.clientWidth;if(!sy&&!sx)continue;
+var r=e.getBoundingClientRect(),q=n.getBoundingClientRect(),t=q.top+n.clientTop,l=q.left+n.clientLeft,ty=n.scrollTop,tx=n.scrollLeft;
+if(sy)ty=clamp(ty+want(r.top-oy,r.bottom-oy,t,t+n.clientHeight,bl),0,n.scrollHeight-n.clientHeight);
+if(sx){var w=n.scrollWidth-n.clientWidth,rtl=s.direction==="rtl";tx=clamp(tx+want(r.left-ox,r.right-ox,l,l+n.clientWidth,il),rtl?-w:0,rtl?0:w)}
+oy+=ty-n.scrollTop;ox+=tx-n.scrollLeft;go.push([n,ty,tx])}
+var g=e.getBoundingClientRect(),wy=want(g.top-oy,g.bottom-oy,0,innerHeight,bl),wx=want(g.left-ox,g.right-ox,0,innerWidth,il);
+go.forEach(function(k){k[0].scrollTo({top:k[1],left:k[2],behavior:bh})});window.scrollBy({top:wy,left:wx,behavior:bh})}
+try{Element.prototype.scrollIntoView=function(o){into(this,o)}}catch(x){}
+try{if(Element.prototype.scrollIntoViewIfNeeded)Element.prototype.scrollIntoViewIfNeeded=function(c){into(this,{block:c===false?"nearest":"center",inline:"nearest"})}}catch(x){}
+try{var FO=HTMLElement.prototype.focus;HTMLElement.prototype.focus=function(o){FO.call(this,Object.assign({},o||{},{preventScroll:true}));if(!(o&&o.preventScroll))try{into(this,{block:"nearest",inline:"nearest"})}catch(x){}}}catch(x){}})();</script>`;
 
 // Plays one action at a time on request from the page (postMessage { film, id, act }) and answers
 // { film, id, ok, error }. The cursor and the click ripple are drawn here, inside the demo.
