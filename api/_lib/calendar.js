@@ -5,7 +5,8 @@
 // downloaded file) of a service account in Pro Algo's own Google Cloud project. In the pro-algo.com
 // Google Workspace admin console (Security > API controls > Domain-wide delegation) that service
 // account's client id needs the scope https://www.googleapis.com/auth/calendar; it then acts as
-// the calendar set on the settings screen (developers@pro-algo.com by default).
+// the calendar set on the settings screen (developers@pro-algo.com by default), which organizes the
+// meetings. Free/busy is read from the availability calendars (yariv@pro-algo.com by default).
 // Without the key, the same calls go through Toro (proAlgoSales /calendar/*) as before.
 import { createSign } from "node:crypto";
 import { callToro } from "./toro.js";
@@ -15,6 +16,12 @@ const API = "https://www.googleapis.com/calendar/v3";
 const TZ = "Asia/Jerusalem";
 
 export const calendarUser = (settings) => settings?.calendar?.user || "developers@pro-algo.com";
+
+/** The calendars checked for free/busy (settings.calendar.availability), else the calendar user itself */
+export function availabilityUsers(settings) {
+  const list = [...new Set((settings?.calendar?.availability || []).map((e) => String(e || "").trim().toLowerCase()).filter(Boolean))];
+  return list.length ? list : [calendarUser(settings)];
+}
 
 function credentials() {
   const raw = process.env.GOOGLE_CALENDAR_CREDENTIALS;
@@ -34,12 +41,13 @@ export function calendarVia() {
   return credentials() ? "google" : "misconfigured";
 }
 
-let cached = null; // { token, exp, key }
+const tokens = new Map(); // `${service account}|${user}` -> { token, exp }
 
 async function accessToken(user) {
   const c = credentials();
   const cacheKey = `${c.email}|${user}`;
-  if (cached && cached.key === cacheKey && cached.exp > Date.now() + 60e3) return cached.token;
+  const cached = tokens.get(cacheKey);
+  if (cached && cached.exp > Date.now() + 60e3) return cached.token;
   const now = Math.floor(Date.now() / 1000);
   const part = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
   const unsigned = `${part({ alg: "RS256", typ: "JWT" })}.${part({ iss: c.email, sub: user, scope: SCOPE, aud: c.tokenUri, iat: now, exp: now + 3600 })}`;
@@ -53,8 +61,8 @@ async function accessToken(user) {
   const data = await r.json().catch(() => ({}));
   // "unauthorized_client" here means the domain-wide delegation is missing or lacks the calendar scope
   if (!r.ok || !data.access_token) throw new Error(data.error_description ? `${data.error}: ${data.error_description}` : data.error || `token_${r.status}`);
-  cached = { token: data.access_token, exp: Date.now() + Number(data.expires_in || 3600) * 1000, key: cacheKey };
-  return cached.token;
+  tokens.set(cacheKey, { token: data.access_token, exp: Date.now() + Number(data.expires_in || 3600) * 1000 });
+  return data.access_token;
 }
 
 async function google(user, path, { method = "GET", body } = {}) {
@@ -71,17 +79,19 @@ async function google(user, path, { method = "GET", body } = {}) {
 
 const failed = (err) => ({ ok: false, error: String(err?.message || err).slice(0, 300) });
 
-/** -> { ok, busy: [{ start, end }] } or { ok: false, error } */
+/** Busy times of every availability calendar, each read as its own user -> { ok, busy: [{ start, end }] } or { ok: false, error } */
 export async function calendarBusy(settings, timeMin, timeMax) {
   const via = calendarVia();
   if (via === "toro") return callToro("/proAlgoSales/calendar/busy", { timeMin, timeMax });
   if (via === "misconfigured") return failed("GOOGLE_CALENDAR_CREDENTIALS is not a service account JSON key");
-  const user = calendarUser(settings);
   try {
-    const data = await google(user, "/freeBusy", { method: "POST", body: { timeMin, timeMax, timeZone: TZ, items: [{ id: user }] } });
-    const cal = data.calendars?.[user];
-    if (cal?.errors?.length) throw new Error(cal.errors.map((e) => e.reason).join(", "));
-    return { ok: true, busy: (cal?.busy || []).map((b) => ({ start: b.start, end: b.end })) };
+    const lists = await Promise.all(availabilityUsers(settings).map(async (user) => {
+      const data = await google(user, "/freeBusy", { method: "POST", body: { timeMin, timeMax, timeZone: TZ, items: [{ id: user }] } });
+      const cal = data.calendars?.[user];
+      if (cal?.errors?.length) throw new Error(`${user}: ${cal.errors.map((e) => e.reason).join(", ")}`);
+      return (cal?.busy || []).map((b) => ({ start: b.start, end: b.end }));
+    }));
+    return { ok: true, busy: lists.flat().sort((a, b) => Date.parse(a.start) - Date.parse(b.start)) };
   } catch (err) {
     return failed(err);
   }

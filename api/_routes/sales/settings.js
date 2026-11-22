@@ -3,18 +3,18 @@
 import { HttpError, json, readJson, route } from "../../_lib/http.js";
 import { requireAdmin } from "../../_lib/auth.js";
 import { DEFAULT_SETTINGS, getSettings, isEmail, saveSettings } from "../../_lib/sales.js";
-import { calendarBusy, calendarUser, calendarVia } from "../../_lib/calendar.js";
+import { availabilityUsers, calendarBusy, calendarUser, calendarVia } from "../../_lib/calendar.js";
 
 export default route(["GET", "PUT"], async (req, res) => {
   requireAdmin(req);
   if (req.method === "GET") {
     const q = new URL(req.url, "http://x").searchParams;
     const settings = await getSettings();
-    // is the developers@ calendar reachable (directly with Google, or through Toro)?
+    // are the availability calendars reachable (directly with Google, or through Toro)?
     let calendar = null;
     if (q.get("check")) {
       const r = await calendarBusy(settings, new Date().toISOString(), new Date(Date.now() + 3600e3).toISOString());
-      calendar = { connected: r.ok, error: r.ok ? null : r.error, via: calendarVia(), user: calendarUser(settings) };
+      calendar = { connected: r.ok, error: r.ok ? null : r.error, via: calendarVia(), user: calendarUser(settings), availability: availabilityUsers(settings) };
     }
     return json(res, 200, { settings, defaults: DEFAULT_SETTINGS, calendar });
   }
@@ -24,6 +24,8 @@ export default route(["GET", "PUT"], async (req, res) => {
   if (!isEmail(s.officeEmail)) throw new HttpError(400, "bad_office_email");
   if (s.calendar?.invitees !== undefined && (!Array.isArray(s.calendar.invitees) || !s.calendar.invitees.every(isEmail)))
     throw new HttpError(400, "bad_invitee");
+  if (s.calendar?.availability !== undefined && (!Array.isArray(s.calendar.availability) || !s.calendar.availability.every(isEmail)))
+    throw new HttpError(400, "bad_availability");
   const vat = Number(s.vatRate);
   if (!(vat >= 0 && vat <= 50)) throw new HttpError(400, "bad_vat");
   await saveSettings(s);

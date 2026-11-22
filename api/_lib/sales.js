@@ -43,6 +43,8 @@ export const DEFAULT_SETTINGS = {
   },
   calendar: {
     user: "developers@pro-algo.com",
+    // the calendars whose busy times block meeting slots (empty = the calendar user above)
+    availability: ["yariv@pro-algo.com"],
     // our team on every spec meeting invitation, next to the client, the client's guests and the calendar user
     invitees: ["sharon@pro-algo.com", "yariv@pro-algo.com", "sales@pro-algo.com"],
     days: [0, 1, 2, 3, 4],          // Sunday..Thursday
