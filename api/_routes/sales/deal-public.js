@@ -15,6 +15,7 @@ import { parseDataUrl } from "../../_lib/sign.js";
 import { generateDealPdf } from "../../_lib/deal-pdf.js";
 import { sha256, specFile, specPageCount } from "../../_lib/spec-pdf.js";
 import { createDealSubscription, firstCharge, subscriptionRow } from "../../_lib/billing.js";
+import { syncSignedDeal } from "../../_lib/collections.js";
 import { israelDate } from "../../_lib/sales-calc.js";
 import { callToro, growReason } from "../../_lib/toro.js";
 
@@ -173,6 +174,8 @@ export default route(["GET", "POST"], async (req, res) => {
 
     // the standing order for the monthly service, waiting for the card (step 3)
     d = await createDealSubscription(d);
+    // the customer and the payment schedule into collections (never fails the signing)
+    await syncSignedDeal(d, logEvent);
 
     const mail = await sendMail({ ...dealSignedMail(d, settings, { fileId: pf.rows[0].id, name: pdfName }), entity: "deal", entityId: d.id, kind: "deal_signed" });
     await logEvent("deal", d.id, "email_sent", { kind: "signed", to: d.client.email, sent: mail.sent });

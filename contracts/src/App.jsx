@@ -17,6 +17,8 @@ import { DiscoveryDetail, DiscoveryList, DiscoveryNew } from './pages/sales/Disc
 import { DealDetail, DealForm, DealsList } from './pages/sales/Deals';
 import { BillingDetail, BillingList, BillingNew } from './pages/sales/Billing';
 import SalesSettings from './pages/sales/Settings';
+import CollectionsBoard from './pages/collections/Board';
+import CollectionsHistory from './pages/collections/History';
 
 // Served at /contracts/ (vite base). /sign is the public page the customer opens; everything
 // under Layout needs the site admin sign-in (api/auth/*).
@@ -41,6 +43,8 @@ const AppRoutes = () => (
         <Route path="/sales/billing/new" element={<BillingNew />} />
         <Route path="/sales/billing/:id" element={<BillingDetail />} />
         <Route path="/sales/settings" element={<SalesSettings />} />
+        <Route path="/collections" element={<CollectionsBoard />} />
+        <Route path="/collections/history" element={<CollectionsHistory />} />
       </Route>
     </Route>
     <Route path="*" element={<PageNotFound />} />

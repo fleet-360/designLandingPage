@@ -9,6 +9,7 @@ const NAV = [
   { to: "/sales/discovery", label: "בקשות איפיון" },
   { to: "/sales/deals", label: "עסקאות" },
   { to: "/sales/billing", label: "הוראות קבע" },
+  { to: "/collections", label: "גבייה" },
   { to: "/sales/settings", label: "הגדרות" },
 ];
 

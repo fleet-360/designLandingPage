@@ -15,6 +15,7 @@ https://www.pro-algorithm.co.il. Hebrew by default, English toggle.
 | `catalog/` | The flipbook catalog from the previous buildalgo site, copied as-is to `/catalog/` |
 | `pay/` | Payment pages `/pay` (Grow checkout) and `/pay-link` (links admin). See `pay/README.md` |
 | `contracts/` | Contracts and signatures app (formerly SignEase), served at `/contracts/`. See `contracts/README.md` |
+| `contracts/src/collections/`, `api/_lib/collections*.js` | גבייה (collections) at `/contracts/collections`: customers, payment schedules, check pickups and history. A signed deal adds its schedule (`syncSignedDeal`); Kaspit's open invoices come in every two hours (`collections-kaspit.js`, `CASPIT_*` in `.env.example`), one payment per document number |
 | `api/` | Vercel functions (Node): `api/auth/*` admin sign-in, `api/pay/*` payment links, `api/contracts/*` contracts. `api/_lib/` is shared code, not routes |
 | `static/` | Copied as is to the site root: files other systems link to by a fixed address (`static/README.md`) |
 | `db/migrations/` | Postgres schema, one schema per module (`pay`, `sign`), applied by `tools/migrate.mjs` after each Vercel build |

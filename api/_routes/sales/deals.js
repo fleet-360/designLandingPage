@@ -32,6 +32,7 @@ import { buildOrder, cleanClient, cleanDealData } from "../../_lib/deal.js";
 import { dealInviteMail, dealOrderMail, firstChargeDateMail } from "../../_lib/sales-mail.js";
 import { addMonths, billingDayOnOrAfter, israelDate } from "../../_lib/sales-calc.js";
 import { createDealSubscription, firstCharge, subscriptionRow } from "../../_lib/billing.js";
+import { dealDepositPaid, syncSignedDeal } from "../../_lib/collections.js";
 
 const iso = (d) => (d ? new Date(d).toISOString() : null);
 
@@ -96,7 +97,10 @@ async function closeManually(d, b, user, settings) {
       JSON.stringify({ order, client: d.client, approval, signature, manual: true }), fileId]);
   if (!u.rows[0]) throw new HttpError(409, "already_signed");
   await logEvent("deal", d.id, "signed_manual", { by: user, on, file: Boolean(fileId) });
-  return createDealSubscription(u.rows[0]);
+  const signed = await createDealSubscription(u.rows[0]);
+  // the customer and the payment schedule into collections (never fails the closing)
+  await syncSignedDeal(signed, logEvent);
+  return signed;
 }
 
 /** The order confirmation to the client (accounting and the office in copy). */
@@ -200,6 +204,7 @@ export default route(["GET", "POST", "PATCH"], async (req, res) => {
     case "mark_deposit_paid":
       await query("UPDATE sales.deals SET deposit_status = 'paid', updated_at = now() WHERE id = $1", [id]);
       await logEvent("deal", id, "deposit_paid", { by: user, ref: str(b.ref, 80) || null });
+      await dealDepositPaid(id);
       break;
     case "mark_project_started": {
       const date = /^\d{4}-\d{2}-\d{2}$/.test(String(b.date || "")) ? b.date : israelDate();

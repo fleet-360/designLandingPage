@@ -1,0 +1,23 @@
+# גבייה (collections): pulls Kaspit's open invoices into /contracts/collections every two hours.
+# The endpoint does the work (api/_routes/collections/kaspit-cron.js) and skips a run when the last good one
+# was under 100 minutes ago. Vercel's Hobby plan runs crons once a day at most, hence GitHub Actions.
+# Run it by hand from the Actions tab ("Run workflow").
+name: Collections - Kaspit sync
+
+on:
+  schedule:
+    - cron: "7 */2 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Sync Kaspit open invoices
+        run: |
+          curl -fsS --retry 2 --retry-delay 20 --max-time 120 -X POST \
+            -H "User-Agent: collections-kaspit-sync" \
+            https://www.pro-algo.com/api/collections/kaspit-cron
