@@ -18,6 +18,15 @@ export const ROUTES = {
   "billing/result": () => import("./_routes/billing/result.js"),
   "billing/subscriptions": () => import("./_routes/billing/subscriptions.js"),
 
+  "collections/activity": () => import("./_routes/collections/activity.js"),
+  "collections/board": () => import("./_routes/collections/board.js"),
+  "collections/customers": () => import("./_routes/collections/customers.js"),
+  "collections/import": () => import("./_routes/collections/import.js"),
+  "collections/kaspit-cron": () => import("./_routes/collections/kaspit-cron.js"),
+  "collections/kaspit-sync": () => import("./_routes/collections/kaspit-sync.js"),
+  "collections/payments": () => import("./_routes/collections/payments.js"),
+  "collections/pickups": () => import("./_routes/collections/pickups.js"),
+
   "contracts/files": () => import("./_routes/contracts/files.js"),
   "contracts/forms": () => import("./_routes/contracts/forms.js"),
   "contracts/notice": () => import("./_routes/contracts/notice.js"),
