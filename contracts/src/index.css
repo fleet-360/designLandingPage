@@ -120,3 +120,8 @@
 @media (prefers-reduced-motion: reduce) {
   .film-orb::before, .film-orb svg, .film-step, .film-bar::after { animation: none; }
 }
+
+/* גבייה (collections): numbers in tabular Heebo, small caps-style labels (src/collections, src/pages/collections) */
+.collections-app { --font-display: 'Heebo', ui-sans-serif, system-ui, sans-serif; }
+.collections-app .amount { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; letter-spacing: -0.01em; }
+.collections-app .micro { font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.06em; color: hsl(var(--muted-foreground)); }

@@ -160,6 +160,11 @@ const ERRORS = {
   bad_script: "התסריט לא תקין",
   video_too_large: "הסרטון גדול מ-60MB. אפשר לכווץ אותו (למשל ב-HandBrake) ולהעלות שוב",
   bad_part: "ההעלאה נקטעה. העלו את הסרטון שוב",
+  doc_number_taken: "מספר המסמך הזה כבר רשום בתשלום אחר",
+  bad_amount: "יש להזין סכום תקין",
+  bad_date: "יש לבחור תאריך",
+  bad_id: "הרשומה לא נמצאה. רעננו את העמוד",
+  not_restorable: "את הפעולה הזו אי אפשר לשחזר",
 };
 export const errorText = (e) => ERRORS[e?.code] || ERRORS.server_error;
 
