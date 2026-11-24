@@ -16,6 +16,7 @@ export default function CustomerRow({
   onDeleteCustomer,
 }) {
   const summary = summarizeCustomer(customer);
+  const receipts = (customer.payments || []).filter((payment) => payment.needs_receipt).length;
 
   return (
     <div className="border-b border-border/70 last:border-b-0">
@@ -47,6 +48,11 @@ export default function CustomerRow({
               <span>{summary.openCount} תשלומים פתוחים</span>
             )}
             {customer.phone && summary.openCount > 0 ? <span>· {summary.openCount} פתוחים</span> : null}
+            {receipts > 0 && (
+              <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-semibold text-amber-700 ring-1 ring-inset ring-amber-600/20">
+                {receipts === 1 ? "קבלה להפקה" : `${receipts} קבלות להפקה`}
+              </span>
+            )}
           </div>
           {customer.notes && (
             <div className="mt-0.5 flex items-center gap-1 text-xs text-amber-700">

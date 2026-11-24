@@ -1,5 +1,7 @@
-import { Check, Pencil, Trash2 } from "lucide-react";
+import { Check, FileText, Pencil, Trash2 } from "lucide-react";
 import StatusBadge from "@/collections/StatusBadge";
+import { documentUrl } from "@/collections/api";
+import { useSync } from "@/collections/queries";
 import {
   amountBeforeVat,
   amountWithVat,
@@ -38,7 +40,13 @@ function docLine(payment) {
   return parts.join(" · ");
 }
 
+// a payment whose document Kaspit can print: tied to a Kaspit document, or with a document number to look up
+export const hasDocument = (payment) => Boolean(payment.kaspit_document_id || payment.doc_number);
+
 export default function PaymentsTable({ payments = [], onMarkPaid, onEdit, onDelete }) {
+  const sync = useSync();
+  const canView = Boolean(sync.data?.configured);
+
   if (!payments.length) {
     return (
       <p className="rounded-md border border-dashed border-border px-4 py-5 text-center text-sm text-muted-foreground">
@@ -55,7 +63,7 @@ export default function PaymentsTable({ payments = [], onMarkPaid, onEdit, onDel
         <span className="w-28 shrink-0">סכום</span>
         <span className="w-28 shrink-0">אמצעי תשלום</span>
         <span className="w-20 shrink-0">סטטוס</span>
-        <span className="ms-auto w-[108px] shrink-0 text-left">פעולות</span>
+        <span className="ms-auto w-[144px] shrink-0 text-left">פעולות</span>
       </div>
 
       {payments.map((payment) => (
@@ -76,7 +84,10 @@ export default function PaymentsTable({ payments = [], onMarkPaid, onEdit, onDel
               {payment.needs_review && <Chip tone="amber">לאימות</Chip>}
               {payment.source === "kaspit" && <Chip tone="blue">מכספית</Chip>}
               {payment.source === "deal" && <Chip tone="blue">מהסכם חתום</Chip>}
-              {payment.kaspit_open === true && payment.source !== "kaspit" && <Chip tone="blue">פתוח בכספית</Chip>}
+              {payment.needs_receipt && <Chip tone="amber">להפיק קבלה בכספית</Chip>}
+              {payment.kaspit_open === true && !payment.needs_receipt && payment.source !== "kaspit" && (
+                <Chip tone="blue">פתוח בכספית</Chip>
+              )}
               {payment.method === "check" && payment.check_received && <Chip tone="green">צ׳קים ביד</Chip>}
             </div>
             <div className="mt-0.5 truncate text-xs text-muted-foreground">
@@ -102,6 +113,18 @@ export default function PaymentsTable({ payments = [], onMarkPaid, onEdit, onDel
           </div>
 
           <div className="ms-auto flex shrink-0 items-center gap-1">
+            {canView && hasDocument(payment) && (
+              <a
+                href={documentUrl(payment.id)}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="צפייה במסמך מכספית"
+                aria-label="צפייה במסמך מכספית"
+                className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sky-50 hover:text-sky-700"
+              >
+                <FileText className="h-4 w-4" />
+              </a>
+            )}
             {payment.status !== "paid" && (
               <button
                 type="button"
