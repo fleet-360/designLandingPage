@@ -22,7 +22,7 @@ export default function ResponsiveSheet({ open, onOpenChange, title, description
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="collections-app max-h-[90vh] max-w-md overflow-y-auto">
-        <DialogHeader className="text-right">
+        <DialogHeader className="pr-8 text-right sm:text-right">
           <DialogTitle className="font-display text-lg font-bold text-foreground">{title}</DialogTitle>
           {description ? (
             <DialogDescription className="text-sm text-muted-foreground">{description}</DialogDescription>

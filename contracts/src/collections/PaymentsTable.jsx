@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { Check, FileText, Pencil, Trash2 } from "lucide-react";
+import InvoiceViewer from "@/collections/InvoiceViewer";
 import StatusBadge from "@/collections/StatusBadge";
-import { documentUrl } from "@/collections/api";
 import { useSync } from "@/collections/queries";
 import {
   amountBeforeVat,
@@ -46,6 +47,7 @@ export const hasDocument = (payment) => Boolean(payment.kaspit_document_id || pa
 export default function PaymentsTable({ payments = [], onMarkPaid, onEdit, onDelete }) {
   const sync = useSync();
   const canView = Boolean(sync.data?.configured);
+  const [viewing, setViewing] = useState(null);
 
   if (!payments.length) {
     return (
@@ -114,16 +116,15 @@ export default function PaymentsTable({ payments = [], onMarkPaid, onEdit, onDel
 
           <div className="ms-auto flex shrink-0 items-center gap-1">
             {canView && hasDocument(payment) && (
-              <a
-                href={documentUrl(payment.id)}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
+                onClick={() => setViewing(payment)}
                 title="צפייה במסמך מכספית"
                 aria-label="צפייה במסמך מכספית"
                 className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sky-50 hover:text-sky-700"
               >
                 <FileText className="h-4 w-4" />
-              </a>
+              </button>
             )}
             {payment.status !== "paid" && (
               <button
@@ -157,6 +158,7 @@ export default function PaymentsTable({ payments = [], onMarkPaid, onEdit, onDel
           </div>
         </div>
       ))}
+      <InvoiceViewer payment={viewing} onClose={() => setViewing(null)} />
     </div>
   );
 }

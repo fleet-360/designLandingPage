@@ -13,7 +13,7 @@ export default function ConfirmDialog({ open, onOpenChange, title, description, 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="collections-app max-w-sm">
-        <AlertDialogHeader className="text-right">
+        <AlertDialogHeader className="text-right sm:text-right">
           <AlertDialogTitle className="font-display text-lg font-bold">{title}</AlertDialogTitle>
           {description ? <AlertDialogDescription>{description}</AlertDialogDescription> : null}
         </AlertDialogHeader>
