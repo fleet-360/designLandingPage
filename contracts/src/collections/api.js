@@ -20,3 +20,8 @@ export const restoreActivity = ({ id }) => api("collections/activity", { method:
 
 export const syncKaspitNow = () => api("collections/kaspit-sync", { method: "POST" });
 export const importLegacy = (data) => api("collections/import", { method: "POST", body: data });
+
+export const listKaspitDocs = () => api("collections/kaspit-docs").then((r) => r.docs);
+
+// a payment's document (invoice) as Kaspit prints it: a PDF the browser opens in a new tab
+export const documentUrl = (id) => `/api/collections/invoice?id=${encodeURIComponent(id)}`;

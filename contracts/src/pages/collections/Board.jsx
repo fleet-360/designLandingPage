@@ -7,7 +7,7 @@ import ConfirmDialog from "@/collections/ConfirmDialog";
 import CustomerAccordion from "@/collections/CustomerAccordion";
 import CustomerDialog from "@/collections/CustomerDialog";
 import PaymentDialog from "@/collections/PaymentDialog";
-import { formatMoney, summarizeCustomer } from "@/collections/format";
+import { amountWithVat, formatMoney, summarizeCustomer } from "@/collections/format";
 import { useAction, useBoard, useCollections, useSync } from "@/collections/queries";
 import {
   deleteCollection,
@@ -76,6 +76,17 @@ export default function CustomersPage() {
     return { open, total, overdue };
   }, [customers]);
 
+  // paid here and still open in Kaspit: the receipt is still to be issued there
+  const receipts = useMemo(
+    () =>
+      customers.flatMap((customer) =>
+        (customer.payments || [])
+          .filter((payment) => payment.needs_receipt)
+          .map((payment) => ({ ...payment, customer_name: customer.name })),
+      ),
+    [customers],
+  );
+
   const findCustomer = (payment) => customers.find((customer) => customer.id === payment.customer_id) || null;
 
   const handleConfirm = () => {
@@ -89,6 +100,17 @@ export default function CustomersPage() {
   return (
     <div className="collections-app pb-20 md:pb-0">
       <SyncBar sync={syncQuery.data} syncing={syncAction.isPending} onSync={() => syncAction.mutate()} />
+      {receipts.length > 0 && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+          <span className="font-semibold">
+            {receipts.length === 1 ? "תשלום אחד שולם" : `${receipts.length} תשלומים שולמו`} אבל עדיין פתוח בכספית. צריך להפיק
+            קבלה:
+          </span>{" "}
+          {receipts
+            .map((payment) => `${payment.customer_name} (${payment.doc_number}, ${formatMoney(amountWithVat(payment))})`)
+            .join(" · ")}
+        </div>
+      )}
 
       <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>

@@ -2,7 +2,16 @@ import { useState } from "react";
 import FormField, { inputClass } from "@/collections/FormField";
 import ResponsiveSheet from "@/collections/ResponsiveSheet";
 import { Textarea } from "@/components/ui/textarea";
-import { DOC_TYPES, PAYMENT_METHODS, PAYMENT_STATUSES } from "@/collections/format";
+import KaspitDocPicker from "@/collections/KaspitDocPicker";
+import { useSync } from "@/collections/queries";
+import {
+  DOC_TYPES,
+  PAYMENT_METHODS,
+  PAYMENT_STATUSES,
+  amountWithVat,
+  docTypeLabel,
+  formatMoney,
+} from "@/collections/format";
 
 export default function PaymentDialog({ open, onOpenChange, customer, payment, onSave, saving }) {
   return (
@@ -67,7 +76,44 @@ function PaymentForm({ customer, payment, onSave, saving, onCancel }) {
     check_received: !!payment?.check_received,
     needs_review: !!payment?.needs_review,
     notes: payment?.notes || "",
+    kaspit_document_id: payment?.kaspit_document_id || "",
   });
+  // the Kaspit document the form is tied to, as the picker shows it
+  const [linked, setLinked] = useState(() =>
+    payment?.kaspit_document_id
+      ? {
+          id: payment.kaspit_document_id,
+          number: payment.doc_number,
+          type_label: docTypeLabel(payment.doc_type) || "מסמך",
+          total: null,
+          date: payment.doc_date,
+          open: payment.kaspit_open ?? null,
+        }
+      : null,
+  );
+  const sync = useSync();
+  const kaspitOn = Boolean(sync.data?.configured);
+
+  const pick = (doc) => {
+    setLinked(doc);
+    setForm((prev) => ({
+      ...prev,
+      kaspit_document_id: doc.id,
+      doc_number: doc.number,
+      doc_type: doc.doc_type,
+      doc_date: doc.date || prev.doc_date,
+      amount: prev.amount || String(doc.total),
+      vat_included: prev.amount ? prev.vat_included : true,
+      description: prev.description || doc.details || "",
+      due_date: prev.due_date || doc.due || "",
+    }));
+  };
+  const unlink = () => {
+    setLinked(null);
+    setForm((prev) => ({ ...prev, kaspit_document_id: "", doc_number: "", doc_date: "" }));
+  };
+  const gross = amountWithVat({ amount: form.amount, vat_included: form.vat_included });
+  const amountDiffers = linked?.total != null && Number(form.amount) > 0 && Math.abs(gross - linked.total) >= 1;
 
   const set = (key) => (event) => setForm((prev) => ({ ...prev, [key]: event.target.value }));
   const toggle = (key) => (value) => setForm((prev) => ({ ...prev, [key]: value }));
@@ -98,6 +144,7 @@ function PaymentForm({ customer, payment, onSave, saving, onCancel }) {
       check_received: isCheck ? form.check_received : false,
       needs_review: form.needs_review,
       notes: form.notes,
+      kaspit_document_id: form.kaspit_document_id,
     });
   };
 
@@ -154,9 +201,17 @@ function PaymentForm({ customer, payment, onSave, saving, onCancel }) {
       </Section>
 
       <Section title="מסמך">
+        {kaspitOn && (
+          <KaspitDocPicker customer={customer} payment={payment} linked={linked} onPick={pick} onUnlink={unlink} />
+        )}
+        {amountDiffers && (
+          <p className="rounded-md bg-amber-50 px-2.5 py-1.5 text-xs text-amber-800">
+            הסכום במסמך בכספית {formatMoney(linked.total)}, וכאן {formatMoney(gross)} כולל מע״מ.
+          </p>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <FormField label="סוג מסמך">
-            <select value={form.doc_type} onChange={set("doc_type")} className={inputClass}>
+            <select value={form.doc_type} onChange={set("doc_type")} className={inputClass} disabled={!!linked}>
               {DOC_TYPES.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
@@ -168,6 +223,7 @@ function PaymentForm({ customer, payment, onSave, saving, onCancel }) {
             <input
               value={form.doc_number}
               onChange={set("doc_number")}
+              disabled={!!linked}
               className={inputClass}
               placeholder="01/3039"
               dir="ltr"
@@ -176,7 +232,14 @@ function PaymentForm({ customer, payment, onSave, saving, onCancel }) {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <FormField label="תאריך מסמך">
-            <input type="date" value={form.doc_date} onChange={set("doc_date")} className={inputClass} dir="ltr" />
+            <input
+              type="date"
+              value={form.doc_date}
+              onChange={set("doc_date")}
+              disabled={!!linked}
+              className={inputClass}
+              dir="ltr"
+            />
           </FormField>
           <FormField label="שם לחשבונית (אם שונה)">
             <input value={form.billing_name} onChange={set("billing_name")} className={inputClass} />

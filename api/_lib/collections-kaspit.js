@@ -8,6 +8,7 @@
 //   3. else a new payment, under the customer with the document's business number (or name), created if needed.
 // A document this sync saw open before and that is no longer open was paid: its payment is marked paid.
 import { query, transaction } from "./db.js";
+import { HttpError } from "./http.js";
 import { VAT_RATE, docNumber, findCustomer, findOrCreateCustomer, isoDate, logActivity, str, syncPickups, taxId } from "./collections.js";
 import { israelDate } from "./sales-calc.js";
 
@@ -27,7 +28,7 @@ async function caspit(path, params) {
   try {
     const r = await fetch(url, { signal: ctrl.signal, headers: { Accept: "application/json" } });
     const text = await r.text();
-    if (!r.ok) throw new Error(`kaspit ${path} http ${r.status}`);
+    if (!r.ok) throw Object.assign(new Error(`kaspit ${path} http ${r.status}`), { httpStatus: r.status });
     try { return JSON.parse(text); } catch { return text; }
   } finally {
     clearTimeout(t);
@@ -117,8 +118,9 @@ export async function syncKaspit(trigger) {
         if (same) {
           await db.query(
             `UPDATE collections.payments SET kaspit_document_id = COALESCE(kaspit_document_id, $2), kaspit_open = true, kaspit_synced_at = now(),
-                    doc_type = CASE WHEN doc_type = '' THEN $3 ELSE doc_type END, doc_date = COALESCE(doc_date, $4)
-              WHERE id = $1`, [same.id, docId, fields.doc_type, fields.doc_date]);
+                    doc_type = CASE WHEN doc_type = '' THEN $3 ELSE doc_type END, doc_date = COALESCE(doc_date, $4),
+                    kaspit_trx_type = COALESCE(kaspit_trx_type, $5)
+              WHERE id = $1`, [same.id, docId, fields.doc_type, fields.doc_date, Number(doc.TrxTypeId)]);
           stats.linked += 1;
           continue;
         }
@@ -136,7 +138,8 @@ export async function syncKaspit(trigger) {
         if (deal) {
           await db.query(
             `UPDATE collections.payments SET doc_number = $2, doc_type = $3, doc_date = $4, kaspit_document_id = $5, kaspit_open = true,
-                    kaspit_synced_at = now(), updated_at = now() WHERE id = $1`, [deal.id, number, fields.doc_type, fields.doc_date, docId]);
+                    kaspit_trx_type = $6, kaspit_synced_at = now(), updated_at = now() WHERE id = $1`,
+            [deal.id, number, fields.doc_type, fields.doc_date, docId, Number(doc.TrxTypeId)]);
           await logActivity(db, SYNC_USER, {
             action: "update", entity: "payment", record_id: deal.id, title: deal.description || "תשלום",
             details: `שויך למסמך ${number} מכספית`, snapshot: deal,
@@ -156,12 +159,12 @@ export async function syncKaspit(trigger) {
         if (created) stats.customersAdded += 1;
         const ins = await db.query(
           `INSERT INTO collections.payments (customer_id, description, amount, vat_included, due_date, method, status, doc_type, doc_number,
-                  doc_date, billing_name, notes, source, kaspit_document_id, kaspit_open, kaspit_synced_at)
-           VALUES ($1,$2,$3,true,$4,'transfer','pending',$5,$6,$7,$8,$9,'kaspit',$10,true,now())
+                  doc_date, billing_name, notes, source, kaspit_document_id, kaspit_open, kaspit_synced_at, kaspit_trx_type)
+           VALUES ($1,$2,$3,true,$4,'transfer','pending',$5,$6,$7,$8,$9,'kaspit',$10,true,now(),$11)
            ON CONFLICT DO NOTHING RETURNING *`,
           [customer.id, describe(doc), total, fields.due, fields.doc_type, number, fields.doc_date,
             str(doc.CustomerBusinessName, 120) !== customer.name ? str(doc.CustomerBusinessName, 120) : "",
-            "יובא מכספית", docId]);
+            "יובא מכספית", docId, Number(doc.TrxTypeId)]);
         if (ins.rows[0]) {
           stats.added += 1;
           touched.add(customer.id);
@@ -210,4 +213,163 @@ export async function syncKaspit(trigger) {
       [run, String(err.message || err).slice(0, 300), JSON.stringify(stats)]).catch(() => {});
     return { ok: false, error: "sync_failed", stats };
   }
+}
+
+// ---- documents for the screen: view an invoice, link a payment to a Kaspit document ----
+
+// Kaspit TrxTypeId <-> our doc_type, for the document kinds a payment can be tied to
+const LINKABLE = { 1: "tax_invoice", 6: "deal_invoice", 7: "invoice_receipt", 2: "receipt" };
+const LINKABLE_LABELS = { 1: "חשבונית מס", 6: "חשבונית עסקה", 7: "חשבונית מס קבלה", 2: "קבלה" };
+const TRX_OF = { tax_invoice: 1, deal_invoice: 6, invoice_receipt: 7, receipt: 2 };
+
+function needKaspit() {
+  if (!process.env.CASPIT_USER || !process.env.CASPIT_PASSWORD || !process.env.CASPIT_OSEK_MORSHE) {
+    throw new HttpError(503, "kaspit_not_configured");
+  }
+}
+
+// a Kaspit call from a screen action: Kaspit being down is a 502 the screen explains, not a 500
+async function kaspitCall(fn) {
+  needKaspit();
+  try {
+    return await fn(await kaspitToken());
+  } catch (err) {
+    if (err instanceof HttpError) throw err;
+    console.error("[collections] kaspit:", err.message);
+    throw new HttpError(502, "kaspit_unavailable");
+  }
+}
+
+async function allDocuments(token, type, onlyOpen) {
+  const out = [];
+  for (let page = 0, pages = 1; page < pages && page < 100; page++) {
+    const q = { token, trxTypeId: type, page };
+    if (onlyOpen) q.onlyOpenDocuments = "true";
+    const r = await caspit("Documents", q);
+    if (!r || typeof r !== "object" || !Array.isArray(r.Results)) throw new Error(`kaspit documents type ${type}: bad answer`);
+    pages = Number(r.TotalPages) || 0;
+    for (const doc of r.Results) {
+      if (Number(doc.TrxTypeId) !== Number(type) || doc.Status === CANCELLED || doc.Status === DRAFT) continue;
+      out.push(doc);
+    }
+  }
+  return out;
+}
+
+const docView = (doc, open) => ({
+  id: str(doc.DocumentId, 80),
+  number: docNumber(doc.Number),
+  trx_type: Number(doc.TrxTypeId),
+  doc_type: LINKABLE[doc.TrxTypeId] || "other",
+  type_label: LINKABLE_LABELS[doc.TrxTypeId] || "מסמך",
+  customer: str(doc.CustomerBusinessName, 120),
+  tax_id: taxId(doc.CustomerOsekMorshe) || "",
+  total: money(doc.Total),
+  date: isoDate(doc.Date) || "",
+  due: isoDate(doc.DueDate) || "",
+  details: describe(doc),
+  open,
+});
+
+/**
+ * The documents a payment can be linked to: invoices (open and paid) and invoice-receipts, newest first, each with
+ * the payment it is already linked to, if any. Documents to the business's own number are left out.
+ */
+export async function kaspitDocuments() {
+  const docs = await kaspitCall(async (token) => {
+    const [inv, deal, ir, open1, open6] = await Promise.all([
+      allDocuments(token, 1, false), allDocuments(token, 6, false), allDocuments(token, 7, false),
+      allDocuments(token, 1, true), allDocuments(token, 6, true),
+    ]);
+    const openIds = new Set([...open1, ...open6].map((d) => str(d.DocumentId, 80)));
+    const own = taxId(process.env.CASPIT_OSEK_MORSHE);
+    return [...inv, ...deal, ...ir]
+      .filter((d) => !(own && taxId(d.CustomerOsekMorshe) === own))
+      .map((d) => docView(d, openIds.has(str(d.DocumentId, 80))));
+  });
+  const linked = await query(
+    `SELECT p.id, p.doc_number, p.kaspit_document_id, c.name AS customer_name
+       FROM collections.payments p JOIN collections.customers c ON c.id = p.customer_id
+      WHERE p.kaspit_document_id IS NOT NULL OR (p.doc_number IS NOT NULL AND p.doc_number <> '')`);
+  const byId = new Map(), byNumber = new Map();
+  for (const r of linked.rows) {
+    const v = { payment_id: r.id, customer_name: r.customer_name };
+    if (r.kaspit_document_id) byId.set(r.kaspit_document_id, v);
+    if (r.doc_number) byNumber.set(r.doc_number, v);
+  }
+  return docs
+    .map((d) => ({ ...d, linked: byId.get(d.id) || byNumber.get(d.number) || null }))
+    .sort((a, b) => Number(b.open) - Number(a.open) || b.date.localeCompare(a.date) || b.number.localeCompare(a.number));
+}
+
+/**
+ * The fields a payment takes from the Kaspit document it is linked to (the payment dialog's "link to Kaspit").
+ * Kaspit is the source of truth for the number, type and date; open = unpaid in Kaspit right now.
+ */
+export async function kaspitLinkFields(documentId) {
+  const id = str(documentId, 80);
+  if (!/^[0-9a-f-]{20,80}$/i.test(id)) throw new HttpError(400, "bad_kaspit_document");
+  return kaspitCall(async (token) => {
+    const doc = await caspit(`Documents/${encodeURIComponent(id)}`, { token }).catch((err) => {
+      if (err.httpStatus === 404) throw new HttpError(404, "kaspit_doc_not_found");
+      throw err;
+    });
+    if (!doc || typeof doc !== "object" || str(doc.DocumentId, 80).toLowerCase() !== id.toLowerCase()) {
+      throw new HttpError(404, "kaspit_doc_not_found");
+    }
+    const type = Number(doc.TrxTypeId);
+    if (!LINKABLE[type] || doc.Status === CANCELLED || doc.Status === DRAFT) throw new HttpError(400, "bad_kaspit_document");
+    const open = type === 1 || type === 6
+      ? (await allDocuments(token, type, true)).some((d) => str(d.DocumentId, 80) === str(doc.DocumentId, 80))
+      : false;
+    return {
+      doc_number: docNumber(doc.Number), doc_type: LINKABLE[type], doc_date: isoDate(doc.Date),
+      kaspit_document_id: str(doc.DocumentId, 80), kaspit_trx_type: type, kaspit_open: open,
+    };
+  });
+}
+
+async function printDocument(token, documentId, type) {
+  const url = `${BASE}Documents/${encodeURIComponent(documentId)}?${new URLSearchParams({ token, trxTypeId: type })}`;
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 25_000);
+  try {
+    const r = await fetch(url, { method: "PRINT", signal: ctrl.signal });
+    const buf = Buffer.from(await r.arrayBuffer());
+    if (!r.ok || buf.subarray(0, 4).toString() !== "%PDF") throw new Error(`kaspit print http ${r.status}`);
+    return buf;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+/**
+ * The PDF of a payment's document, printed by Kaspit. A payment with a document number but no Kaspit id yet (typed
+ * by hand, imported) is looked up by number once, and the id is kept for next time. -> { pdf, name }
+ */
+export async function paymentDocumentPdf(paymentId) {
+  const p = (await query("SELECT * FROM collections.payments WHERE id = $1", [paymentId])).rows[0];
+  if (!p) throw new HttpError(404, "not_found");
+  if (!p.kaspit_document_id && !p.doc_number) throw new HttpError(404, "kaspit_doc_not_found");
+  return kaspitCall(async (token) => {
+    let id = p.kaspit_document_id;
+    let type = p.kaspit_trx_type || TRX_OF[p.doc_type] || 1;
+    if (!id) {
+      const order = [...new Set([TRX_OF[p.doc_type], 1, 7, 6, 2].filter(Boolean))];
+      let found = null;
+      for (const t of order) {
+        found = (await allDocuments(token, t, false)).find((d) => docNumber(d.Number) === p.doc_number);
+        if (found) break;
+      }
+      if (!found) throw new HttpError(404, "kaspit_doc_not_found");
+      id = str(found.DocumentId, 80);
+      type = Number(found.TrxTypeId);
+      // keep it, unless another payment already holds that document
+      await query(
+        `UPDATE collections.payments SET kaspit_document_id = $2, kaspit_trx_type = $3
+          WHERE id = $1 AND kaspit_document_id IS NULL
+            AND NOT EXISTS (SELECT 1 FROM collections.payments WHERE kaspit_document_id = $2)`, [p.id, id, type]).catch(() => {});
+    }
+    return { pdf: await printDocument(token, id, type), name: `${(p.doc_number || "document").replace(/[^\w.-]+/g, "-")}.pdf` };
+  });
 }

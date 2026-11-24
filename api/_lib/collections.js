@@ -57,7 +57,9 @@ export const paymentView = (r) => ({
   receipt_date: d(r.receipt_date), billing_name: r.billing_name, check_number: r.check_number,
   collection_date: d(r.collection_date), check_received: r.check_received, paid_date: d(r.paid_date),
   needs_review: r.needs_review, notes: r.notes, source: r.source, deal_id: r.deal_id, deal_row: r.deal_row,
-  kaspit_open: r.kaspit_open,
+  kaspit_open: r.kaspit_open, kaspit_document_id: r.kaspit_document_id || "",
+  // paid here, still open in Kaspit: the receipt was not issued there yet
+  needs_receipt: r.status === "paid" && r.kaspit_open === true,
 });
 export const pickupView = (r) => ({
   id: r.id, customer_id: r.customer_id, customer_name: r.customer_name, collection_date: d(r.collection_date),
@@ -257,28 +259,54 @@ const PAYMENT_COLS = ["customer_id", "description", "milestone", "amount", "vat_
 // a unique-index violation on the document number, as the error the screen explains
 const docTaken = (err) => {
   if (err?.code === "23505" && /payments_doc_number/.test(err.constraint || err.message)) throw new HttpError(409, "doc_number_taken");
+  if (err?.code === "23505" && /kaspit_document_id/.test(err.constraint || err.message)) throw new HttpError(409, "kaspit_doc_linked");
   throw err;
 };
 
-export async function savePayment(b, user) {
+const KASPIT_COLS = ["kaspit_document_id", "kaspit_trx_type", "kaspit_open"];
+const NO_KASPIT = { kaspit_document_id: null, kaspit_trx_type: null, kaspit_open: null };
+
+/**
+ * The Kaspit link a save writes, or null to leave it as it is. link: the fields of a Kaspit document the payment
+ * was just linked to (kaspitLinkFields). Unlinking (kaspit_document_id: "") or typing another document number
+ * drops the link.
+ */
+function kaspitChange(b, v, before, link) {
+  if (link) {
+    Object.assign(v, { doc_number: link.doc_number, doc_type: link.doc_type, doc_date: link.doc_date || v.doc_date });
+    return { kaspit_document_id: link.kaspit_document_id, kaspit_trx_type: link.kaspit_trx_type, kaspit_open: link.kaspit_open };
+  }
+  if (!before?.kaspit_document_id) return null;
+  if (b.kaspit_document_id === "" || b.kaspit_document_id === null) return NO_KASPIT;
+  if ((v.doc_number || null) !== (before.doc_number || null)) return NO_KASPIT;
+  return null;
+}
+
+/** link: see kaspitChange (the route resolves it with Kaspit before saving). */
+export async function savePayment(b, user, link = null) {
   const v = paymentFields(b);
   return transaction(async (db) => {
     const customer = await one(db, "customers", v.customer_id).catch(() => { throw new HttpError(400, "bad_customer"); });
     const before = b.id ? await one(db, "payments", b.id) : null;
     v.paid_date = v.status === "paid" ? d(before?.paid_date) || israelDate() : null;
+    const kaspit = kaspitChange(b, v, before, link);
+    const cols = kaspit ? [...PAYMENT_COLS, ...KASPIT_COLS] : PAYMENT_COLS;
+    if (kaspit) Object.assign(v, kaspit);
     let row;
     if (before) {
-      const sets = PAYMENT_COLS.map((c, i) => `${c} = $${i + 2}`).join(", ");
-      row = (await db.query(`UPDATE collections.payments SET ${sets}, updated_at = now() WHERE id = $1 RETURNING *`,
-        [b.id, ...PAYMENT_COLS.map((c) => v[c])]).catch(docTaken)).rows[0];
+      const sets = cols.map((c, i) => `${c} = $${i + 2}`).join(", ");
+      row = (await db.query(
+        `UPDATE collections.payments SET ${sets}, ${kaspit ? "kaspit_synced_at = now(), " : ""}updated_at = now() WHERE id = $1 RETURNING *`,
+        [b.id, ...cols.map((c) => v[c])]).catch(docTaken)).rows[0];
     } else {
       row = (await db.query(
-        `INSERT INTO collections.payments (${PAYMENT_COLS.join(", ")}) VALUES (${PAYMENT_COLS.map((_, i) => `$${i + 1}`).join(", ")}) RETURNING *`,
-        PAYMENT_COLS.map((c) => v[c])).catch(docTaken)).rows[0];
+        `INSERT INTO collections.payments (${cols.join(", ")}) VALUES (${cols.map((_, i) => `$${i + 1}`).join(", ")}) RETURNING *`,
+        cols.map((c) => v[c])).catch(docTaken)).rows[0];
     }
+    const linkNote = link ? ` · קושר למסמך ${link.doc_number} בכספית` : kaspit ? " · הקישור לכספית הוסר" : "";
     await logActivity(db, user, {
       action: before ? "update" : "create", entity: "payment", record_id: row.id, title: v.description || "תשלום",
-      customer_name: customer.name, details: before ? "פרטי התשלום עודכנו" : "תשלום חדש נוסף", snapshot: before,
+      customer_name: customer.name, details: (before ? "פרטי התשלום עודכנו" : "תשלום חדש נוסף") + linkNote, snapshot: before,
     });
     await syncPickups(db, v.customer_id);
     if (before && before.customer_id !== v.customer_id) await syncPickups(db, before.customer_id);
@@ -432,7 +460,7 @@ const TABLES = { customer: "customers", payment: "payments", collection: "check_
 // the columns a snapshot may write back (ids and bookkeeping stay as they are)
 const COLUMNS = {
   customers: ["name", "tax_id", "contact_person", "phone", "email", "internal_owner", "project_stages", "notes", "source"],
-  payments: [...PAYMENT_COLS, "source", "deal_id", "deal_row", "kaspit_document_id", "kaspit_open", "kaspit_synced_at"],
+  payments: [...PAYMENT_COLS, "source", "deal_id", "deal_row", "kaspit_document_id", "kaspit_open", "kaspit_synced_at", "kaspit_trx_type"],
   check_pickups: ["customer_id", "customer_name", "collection_date", "status", "check_count", "total_amount", "contact_person", "address", "notes", "manual"],
 };
 
