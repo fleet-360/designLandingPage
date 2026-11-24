@@ -1,5 +1,6 @@
 // GET /api/collections/invoice?id=<payment id>   admin: the payment's document (invoice) as Kaspit prints it, PDF.
-// Opened as a plain link in a new tab, so a failure is a short Hebrew page there (signed out: the admin sign-in).
+// The collections screen fetches it (Accept: application/pdf) and shows it in a dialog: errors are JSON then.
+// Opened as a plain link, a failure is a short Hebrew page instead (signed out: the admin sign-in).
 import { HttpError, route } from "../../_lib/http.js";
 import { requireAdmin } from "../../_lib/auth.js";
 import { paymentDocumentPdf } from "../../_lib/collections-kaspit.js";
@@ -33,7 +34,7 @@ export default route(["GET"], async (req, res) => {
     res.setHeader("Cache-Control", "private, no-store");
     res.end(pdf);
   } catch (err) {
-    if (!(err instanceof HttpError)) throw err;
+    if (!(err instanceof HttpError) || !/text\/html/.test(req.headers.accept || "")) throw err;
     if (err.status === 401) {
       res.statusCode = 302;
       res.setHeader("Location", "/contracts/login");

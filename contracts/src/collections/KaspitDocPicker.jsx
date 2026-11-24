@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { FileText, Link2, Loader2, Search, Unlink, X } from "lucide-react";
-import { documentUrl, listKaspitDocs } from "@/collections/api";
+import { listKaspitDocs } from "@/collections/api";
+import InvoiceViewer from "@/collections/InvoiceViewer";
 import { formatDate, formatMoney } from "@/collections/format";
 import { errorText } from "@/sales/lib";
 import { cn } from "@/lib/utils";
@@ -45,6 +46,7 @@ function OpenTag({ open }) {
  */
 export default function KaspitDocPicker({ customer, payment, linked, onPick, onUnlink }) {
   const [picking, setPicking] = useState(false);
+  const [viewing, setViewing] = useState(false);
   const savedLink = linked && payment?.kaspit_document_id && linked.id === payment.kaspit_document_id;
 
   if (linked && !picking) {
@@ -64,15 +66,14 @@ export default function KaspitDocPicker({ customer, payment, linked, onPick, onU
         </div>
         <div className="flex items-center gap-1">
           {savedLink && (
-            <a
-              href={documentUrl(payment.id)}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => setViewing(true)}
               className="flex h-8 items-center gap-1 rounded-md px-2 text-xs font-semibold text-sky-800 hover:bg-sky-100"
             >
               <FileText className="h-3.5 w-3.5" />
               צפייה
-            </a>
+            </button>
           )}
           <button
             type="button"
@@ -91,6 +92,7 @@ export default function KaspitDocPicker({ customer, payment, linked, onPick, onU
             ניתוק
           </button>
         </div>
+        {savedLink && <InvoiceViewer payment={viewing ? payment : null} onClose={() => setViewing(false)} />}
       </div>
     );
   }
