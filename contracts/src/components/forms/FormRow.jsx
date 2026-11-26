@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { FileText, Eye, Pencil, Users, Share2, Copy, Trash2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { fmtDate } from "@/lib/formUtils";
+import { t } from "@/i18n";
 
 function Action({ to, onClick, icon: Icon, title, danger }) {
   const cls = `grid h-8 w-8 place-items-center rounded-lg transition-colors ${
@@ -29,18 +30,18 @@ export default function FormRow({ form, count, onPublish, onDuplicate, onDelete 
       </Link>
       <div className="flex items-center gap-2">
         <Switch checked={!!form.is_published} onCheckedChange={(v) => onPublish(form, v)} />
-        <span className="text-xs text-muted-foreground">{form.is_published ? "פורסם" : "טיוטה"}</span>
+        <span className="text-xs text-muted-foreground">{form.is_published ? t("פורסם") : t("טיוטה")}</span>
       </div>
       <span className="text-sm text-muted-foreground">{fmtDate(form.created_date)}</span>
       <span className="text-sm text-muted-foreground">{fmtDate(form.published_date)}</span>
       <span className="flex items-center gap-1.5 text-sm"><Users className="h-3.5 w-3.5 text-muted-foreground" />{count}</span>
       <div className="flex items-center justify-end gap-1">
-        <Action to={`/sign?id=${form.id}&preview=1`} icon={Eye} title="תצוגה מקדימה" />
-        <Action to={`/editor?id=${form.id}`} icon={Pencil} title="עריכה" />
-        <Action to={`/submissions?id=${form.id}`} icon={Users} title="תוצאות מילוי" />
-        <Action to={`/share?id=${form.id}`} icon={Share2} title="שיתוף" />
-        <Action onClick={() => onDuplicate(form)} icon={Copy} title="שכפול" />
-        <Action onClick={() => onDelete(form)} icon={Trash2} title="מחיקה" danger />
+        <Action to={`/sign?id=${form.id}&preview=1`} icon={Eye} title={t("תצוגה מקדימה")} />
+        <Action to={`/editor?id=${form.id}`} icon={Pencil} title={t("עריכה")} />
+        <Action to={`/submissions?id=${form.id}`} icon={Users} title={t("תוצאות מילוי")} />
+        <Action to={`/share?id=${form.id}`} icon={Share2} title={t("שיתוף")} />
+        <Action onClick={() => onDuplicate(form)} icon={Copy} title={t("שכפול")} />
+        <Action onClick={() => onDelete(form)} icon={Trash2} title={t("מחיקה")} danger />
       </div>
     </motion.div>
   );

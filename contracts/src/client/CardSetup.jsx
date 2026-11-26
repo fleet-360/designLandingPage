@@ -3,6 +3,7 @@ import { CreditCard, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { dmy, errorText, nis } from "@/sales/lib";
 import { openWidget, warmUp } from "@/sales/grow";
+import { t } from "@/i18n";
 import { ErrorLine } from "./ui.jsx";
 
 // Saving a card for the standing order. Grow keeps the card; we only get a token back (through
@@ -26,7 +27,7 @@ export default function CardSetup({ firstCharge, startKnown, includes, open, che
     }
     setWaiting(false);
     setBusy(false);
-    setError("לא קיבלנו עדיין אישור על שמירת הכרטיס. אם הזנתם את הפרטים, רעננו את הדף בעוד דקה.");
+    setError(t("לא קיבלנו עדיין אישור על שמירת הכרטיס. אם הזנתם את הפרטים, רעננו את הדף בעוד דקה."));
   };
 
   const start = async () => {
@@ -37,10 +38,10 @@ export default function CardSetup({ firstCharge, startKnown, includes, open, che
       if (r.authCode) {
         const ok = await openWidget(r.authCode, {
           onSuccess: () => wait(),
-          onFailure: () => { setBusy(false); setError("הכרטיס לא אושר. בדקו את הפרטים ונסו שוב."); },
+          onFailure: () => { setBusy(false); setError(t("הכרטיס לא אושר. בדקו את הפרטים ונסו שוב.")); },
           onClose: () => setBusy(false),
         });
-        if (!ok) { setBusy(false); setError("לא הצלחנו לפתוח את חלון התשלום המאובטח. רעננו את הדף ונסו שוב."); }
+        if (!ok) { setBusy(false); setError(t("לא הצלחנו לפתוח את חלון התשלום המאובטח. רעננו את הדף ונסו שוב.")); }
       } else if (r.url) {
         window.location.href = r.url;
       } else {
@@ -49,7 +50,7 @@ export default function CardSetup({ firstCharge, startKnown, includes, open, che
     } catch (e) {
       setBusy(false);
       // Grow's own reason when it refused to open the card page (for example a phone number it does not accept)
-      setError(e?.data?.reason ? `דף הכרטיס לא נפתח: ${e.data.reason}` : errorText(e));
+      setError(e?.data?.reason ? t("דף הכרטיס לא נפתח: {reason}", { reason: e.data.reason }) : errorText(e));
     }
   };
 
@@ -58,33 +59,33 @@ export default function CardSetup({ firstCharge, startKnown, includes, open, che
       <div className="rounded-xl bg-secondary p-4">
         {firstCharge ? (
           <>
-            <p className="text-sm text-muted-foreground">החיוב הראשון</p>
-            <p className="text-xl font-bold"><span className="pa-num">{nis(firstCharge.amount)}</span> <span className="text-sm font-medium text-muted-foreground">כולל מע"מ</span></p>
-            <p className="text-sm">{startKnown ? `ב-${dmy(firstCharge.date)}` : "בסיום החודשים הכלולים במחיר הפרויקט. נעדכן אתכם במייל לפני החיוב הראשון."}</p>
+            <p className="text-sm text-muted-foreground">{t("החיוב הראשון")}</p>
+            <p className="text-xl font-bold"><span className="pa-num">{nis(firstCharge.amount)}</span> <span className="text-sm font-medium text-muted-foreground">{t('כולל מע"מ')}</span></p>
+            <p className="text-sm">{startKnown ? t("ב-{date}", { date: dmy(firstCharge.date) }) : t("בסיום החודשים הכלולים במחיר הפרויקט. נעדכן אתכם במייל לפני החיוב הראשון.")}</p>
           </>
         ) : (
-          <p className="text-sm">החיוב מתחיל רק בתום החודשים הכלולים במחיר הפרויקט. נעדכן אתכם במייל לפני החיוב הראשון.</p>
+          <p className="text-sm">{t("החיוב מתחיל רק בתום החודשים הכלולים במחיר הפרויקט. נעדכן אתכם במייל לפני החיוב הראשון.")}</p>
         )}
       </div>
       {includes?.length > 0 && (
         <div>
-          <p className="mb-2 text-sm font-semibold">השירות החודשי כולל</p>
+          <p className="mb-2 text-sm font-semibold">{t("השירות החודשי כולל")}</p>
           <ul className="grid gap-1.5 text-sm sm:grid-cols-2">
             {includes.map((x) => <li key={x} className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" />{x}</li>)}
           </ul>
         </div>
       )}
       <ul className="space-y-1 text-sm text-muted-foreground">
-        <li>· אין חיוב היום. הכרטיס נשמר אצל חברת הסליקה לחיובים החודשיים בלבד.</li>
-        <li>· חשבונית מס קבלה נשלחת במייל אחרי כל חיוב.</li>
-        <li>· אפשר להחליף כרטיס בכל עת דרך הקישור שבמייל.</li>
+        <li>· {t("אין חיוב היום. הכרטיס נשמר אצל חברת הסליקה לחיובים החודשיים בלבד.")}</li>
+        <li>· {t("חשבונית מס קבלה נשלחת במייל אחרי כל חיוב.")}</li>
+        <li>· {t("אפשר להחליף כרטיס בכל עת דרך הקישור שבמייל.")}</li>
       </ul>
       <ErrorLine error={error} />
       <Button size="lg" onClick={start} disabled={busy} className="h-12 w-full rounded-xl text-base font-bold">
-        {waiting ? "שומרים את הכרטיס..." : busy ? "פותח חלון מאובטח..." : <><CreditCard className="ms-2 h-5 w-5" />הזנת כרטיס אשראי</>}
+        {waiting ? t("שומרים את הכרטיס...") : busy ? t("פותח חלון מאובטח...") : <><CreditCard className="ms-2 h-5 w-5" />{t("הזנת כרטיס אשראי")}</>}
       </Button>
-      <p className="flex items-center justify-center gap-1 text-xs text-muted-foreground"><Lock className="h-3.5 w-3.5" />הזנת הכרטיס מתבצעת בחלון מאובטח של Grow. פרטי הכרטיס לא עוברים דרכנו.</p>
-      {onSkip && !busy && <button type="button" onClick={onSkip} className="mx-auto block text-sm text-muted-foreground underline">אעשה את זה מאוחר יותר</button>}
+      <p className="flex items-center justify-center gap-1 text-xs text-muted-foreground"><Lock className="h-3.5 w-3.5" />{t("הזנת הכרטיס מתבצעת בחלון מאובטח של Grow. פרטי הכרטיס לא עוברים דרכנו.")}</p>
+      {onSkip && !busy && <button type="button" onClick={onSkip} className="mx-auto block text-sm text-muted-foreground underline">{t("אעשה את זה מאוחר יותר")}</button>}
     </div>
   );
 }

@@ -3,17 +3,18 @@ import FormField, { inputClass } from "@/collections/FormField";
 import ResponsiveSheet from "@/collections/ResponsiveSheet";
 import { Textarea } from "@/components/ui/textarea";
 import { todayISO } from "@/collections/format";
+import { t } from "@/i18n";
 
 export default function CollectionDialog({ open, onOpenChange, customers = [], collection, onSave, saving }) {
   return (
     <ResponsiveSheet
       open={open}
       onOpenChange={onOpenChange}
-      title={collection ? "עריכת איסוף צ׳קים" : "קביעת איסוף צ׳קים"}
+      title={collection ? t("עריכת איסוף צ׳קים") : t("קביעת איסוף צ׳קים")}
       description={
         collection
-          ? "עדכנו סכום, איש קשר, כתובת או הערות"
-          : "אם תשאירו סכום ומספר צ׳קים ריקים — הם ייקבעו מהצ׳קים הממתינים של הלקוח"
+          ? t("עדכנו סכום, איש קשר, כתובת או הערות")
+          : t("אם תשאירו סכום ומספר צ׳קים ריקים — הם ייקבעו מהצ׳קים הממתינים של הלקוח")
       }
     >
       <CollectionForm
@@ -58,13 +59,13 @@ function CollectionForm({ customers, collection, onSave, saving, onCancel }) {
   };
 
   if (!customers.length) {
-    return <p className="py-4 text-center text-sm text-muted-foreground">הוסיפו לקוח לפני קביעת איסוף.</p>;
+    return <p className="py-4 text-center text-sm text-muted-foreground">{t("הוסיפו לקוח לפני קביעת איסוף.")}</p>;
   }
 
   return (
     <form onSubmit={submit} className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
-        <FormField label="לקוח">
+        <FormField label={t("לקוח")}>
           <select
             value={form.customer_id}
             onChange={set("customer_id")}
@@ -78,7 +79,7 @@ function CollectionForm({ customers, collection, onSave, saving, onCancel }) {
             ))}
           </select>
         </FormField>
-        <FormField label="מועד איסוף">
+        <FormField label={t("מועד איסוף")}>
           <input
             type="date"
             value={form.collection_date}
@@ -90,38 +91,38 @@ function CollectionForm({ customers, collection, onSave, saving, onCancel }) {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <FormField label="מספר צ׳קים">
+        <FormField label={t("מספר צ׳קים")}>
           <input
             value={form.check_count}
             onChange={set("check_count")}
             className={`${inputClass} amount`}
             inputMode="numeric"
-            placeholder="אוטומטי"
+            placeholder={t("אוטומטי")}
             dir="ltr"
           />
         </FormField>
-        <FormField label="סכום (₪)">
+        <FormField label={t("סכום (₪)")}>
           <input
             value={form.total_amount}
             onChange={set("total_amount")}
             className={`${inputClass} amount`}
             inputMode="decimal"
-            placeholder="אוטומטי"
+            placeholder={t("אוטומטי")}
             dir="ltr"
           />
         </FormField>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <FormField label="איש קשר לאיסוף">
+        <FormField label={t("איש קשר לאיסוף")}>
           <input value={form.contact_person} onChange={set("contact_person")} className={inputClass} />
         </FormField>
-        <FormField label="כתובת לאיסוף">
+        <FormField label={t("כתובת לאיסוף")}>
           <input value={form.address} onChange={set("address")} className={inputClass} />
         </FormField>
       </div>
 
-      <FormField label="הערות">
+      <FormField label={t("הערות")}>
         <Textarea
           value={form.notes}
           onChange={set("notes")}
@@ -136,14 +137,14 @@ function CollectionForm({ customers, collection, onSave, saving, onCancel }) {
           disabled={!valid || saving}
           className="h-10 flex-1 rounded-lg bg-slate-900 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:opacity-50"
         >
-          {saving ? "שומר..." : collection ? "שמירה" : "קביעת איסוף"}
+          {saving ? t("שומר...") : collection ? t("שמירה") : t("קביעת איסוף")}
         </button>
         <button
           type="button"
           onClick={onCancel}
           className="h-10 rounded-lg border border-border px-4 text-sm font-semibold text-foreground transition-colors hover:bg-slate-50"
         >
-          ביטול
+          {t("ביטול")}
         </button>
       </div>
     </form>

@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { fetchPaymentDocument } from "@/collections/api";
 import { docTypeLabel } from "@/collections/format";
 import { errorText } from "@/sales/lib";
+import { t, isEn } from "@/i18n";
 
 let pdfjsPromise = null;
 const loadPdfjs = () =>
@@ -33,14 +34,14 @@ async function renderPage(doc, n, width) {
 /** payment: the payment whose document to show, or null (closed). */
 export default function InvoiceViewer({ payment, onClose }) {
   const title = payment
-    ? [docTypeLabel(payment.doc_type) || "מסמך", payment.doc_number].filter(Boolean).join(" ")
+    ? [docTypeLabel(payment.doc_type) || t("מסמך"), payment.doc_number].filter(Boolean).join(" ")
     : "";
   return (
     <Dialog open={!!payment} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent dir="rtl" className="collections-app flex h-[92vh] w-[96vw] max-w-3xl flex-col gap-3 p-4 sm:p-5">
-        <DialogHeader className="pr-8 text-right sm:text-right">
+      <DialogContent dir={isEn ? "ltr" : "rtl"} className="collections-app flex h-[92vh] w-[96vw] max-w-3xl flex-col gap-3 p-4 sm:p-5">
+        <DialogHeader className="pr-8 text-start sm:text-start">
           <DialogTitle className="font-display text-lg font-bold text-foreground">{title}</DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground">כפי שהופק בכספית</DialogDescription>
+          <DialogDescription className="text-sm text-muted-foreground">{t("כפי שהופק בכספית")}</DialogDescription>
         </DialogHeader>
         {payment && <Pages key={payment.id} payment={payment} />}
       </DialogContent>
@@ -68,7 +69,7 @@ function Pages({ payment }) {
           if (alive) setState((s) => ({ ...s, loading: false, pages: [...s.pages, src] }));
         }
       } catch (err) {
-        if (alive) setState((s) => ({ ...s, loading: false, error: err?.status ? errorText(err) : "לא הצלחנו להציג את המסמך" }));
+        if (alive) setState((s) => ({ ...s, loading: false, error: err?.status ? errorText(err) : t("לא הצלחנו להציג את המסמך") }));
       }
     })();
     return () => {
@@ -94,7 +95,7 @@ function Pages({ payment }) {
         ) : state.loading ? (
           <p className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            טוען את המסמך מכספית…
+            {t("טוען את המסמך מכספית…")}
           </p>
         ) : (
           <div className="space-y-2">
@@ -102,7 +103,7 @@ function Pages({ payment }) {
               <img
                 key={i}
                 src={src}
-                alt={`עמוד ${i + 1}`}
+                alt={t("עמוד {n}", { n: i + 1 })}
                 className="mx-auto block w-full max-w-[900px] bg-white shadow-sm"
               />
             ))}
@@ -120,7 +121,7 @@ function Pages({ payment }) {
           }
         >
           <Download className="h-4 w-4" />
-          הורדה
+          {t("הורדה")}
         </a>
       </div>
     </>

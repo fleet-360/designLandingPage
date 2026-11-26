@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { api, fileToDataUrl } from "@/sales/lib";
 import DemoFilm, { VideoFilm } from "../../client/DemoFilm.jsx";
 import { Card, run, useApi } from "./AdminUi.jsx";
+import { t } from "@/i18n";
 
 // The demo film on the client's order page (api/_routes/sales/deal-film.js): sales uploads the demo HTML and
 // the client's logo, Claude writes the script, sales watches it here, fixes what did not play, edits the
@@ -45,26 +46,26 @@ const n = (v) => Number(v || 0).toLocaleString("he-IL");
 // while Claude writes the script (up to about two minutes): what it is doing now, a bar that fills slowly
 // towards the end and never claims to be done, and the time so far
 const STEPS = [
-  [0, "קורא את קוד הדמו"],
-  [12, "מאתר את המסכים, הכפתורים והשדות"],
-  [30, "מתכנן את מהלך הסרטון"],
-  [55, "כותב את הלחיצות וההקלדות לכל סצנה"],
-  [80, "כותב כיתוב קצר לכל סצנה"],
-  [105, "בודק שכל צעד מתאים לדמו"],
+  [0, t("קורא את קוד הדמו")],
+  [12, t("מאתר את המסכים, הכפתורים והשדות")],
+  [30, t("מתכנן את מהלך הסרטון")],
+  [55, t("כותב את הלחיצות וההקלדות לכל סצנה")],
+  [80, t("כותב כיתוב קצר לכל סצנה")],
+  [105, t("בודק שכל צעד מתאים לדמו")],
 ];
 const EXPECT = 120;
 
 export function Writing({ fix }) {
-  const [t, setT] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
     const start = Date.now();
-    const timer = setInterval(() => setT((Date.now() - start) / 1000), 250);
+    const timer = setInterval(() => setElapsed((Date.now() - start) / 1000), 250);
     return () => clearInterval(timer);
   }, []);
-  const step = STEPS.filter(([at]) => t >= at).length - 1;
+  const step = STEPS.filter(([at]) => elapsed >= at).length - 1;
   // eases towards 95%: fast at first, then slower, and keeps creeping past the expected time
-  const pct = Math.min(95, 95 * (1 - Math.exp(-t / (EXPECT / 2.2))));
-  const sec = Math.floor(t);
+  const pct = Math.min(95, 95 * (1 - Math.exp(-elapsed / (EXPECT / 2.2))));
+  const sec = Math.floor(elapsed);
   return (
     <div className="film-writing mt-4 overflow-hidden rounded-xl border border-primary/20 bg-primary/[0.04] p-4" role="status" aria-live="polite">
       <div className="flex items-center gap-3">
@@ -72,7 +73,7 @@ export function Writing({ fix }) {
           <Sparkles className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold">{fix ? "Claude מתקן את התסריט" : "Claude כותב את הסרטון"}</p>
+          <p className="text-sm font-semibold">{fix ? t("Claude מתקן את התסריט") : t("Claude כותב את הסרטון")}</p>
           <p key={step} className="film-step text-sm text-muted-foreground">{STEPS[step][1]}…</p>
         </div>
         <span className="shrink-0 text-xs tabular-nums text-muted-foreground" dir="ltr">{Math.floor(sec / 60)}:{String(sec % 60).padStart(2, "0")}</span>
@@ -86,7 +87,7 @@ export function Writing({ fix }) {
         ))}
       </ol>
       <p className="mt-3 text-xs text-muted-foreground">
-        {t < EXPECT ? "בדרך כלל עד שתי דקות. אפשר להמשיך למלא את שאר הטופס בינתיים." : "לוקח קצת יותר מהרגיל, עוד רגע."}
+        {elapsed < EXPECT ? t("בדרך כלל עד שתי דקות. אפשר להמשיך למלא את שאר הטופס בינתיים.") : t("לוקח קצת יותר מהרגיל, עוד רגע.")}
       </p>
     </div>
   );
@@ -100,9 +101,13 @@ function Usage({ rows }) {
   const usd = (v) => `$${v.toFixed(2)}`;
   return (
     <p className="mt-2 text-xs text-muted-foreground">
-      בקשה אחרונה{last.fix ? " (תיקון)" : ""}: {n(last.input + last.cacheWrite + last.cacheRead)} טוקני קלט
-      {last.cacheRead ? ` (${n(last.cacheRead)} מהמטמון)` : ""}, {n(last.output)} טוקני פלט{last.usd != null ? ` · ${usd(last.usd)}` : ""}.
-      {rows.length > 1 && ` סה"כ לעסקה (${rows.length} בקשות): ${n(sum("input") + sum("cacheWrite") + sum("cacheRead"))} קלט, ${n(sum("output"))} פלט${priced ? ` · ${usd(sum("usd"))}` : ""}.`}
+      {t("בקשה אחרונה{fix}: {input} טוקני קלט{cache}, {output} טוקני פלט{usd}.", {
+        fix: last.fix ? t(" (תיקון)") : "", input: n(last.input + last.cacheWrite + last.cacheRead),
+        cache: last.cacheRead ? t(" ({n} מהמטמון)", { n: n(last.cacheRead) }) : "", output: n(last.output), usd: last.usd != null ? ` · ${usd(last.usd)}` : "",
+      })}
+      {rows.length > 1 && t(' סה"כ לעסקה ({count} בקשות): {input} קלט, {output} פלט{usd}.', {
+        count: rows.length, input: n(sum("input") + sum("cacheWrite") + sum("cacheRead")), output: n(sum("output")), usd: priced ? ` · ${usd(sum("usd"))}` : "",
+      })}
     </p>
   );
 }
@@ -143,14 +148,14 @@ export default function DealFilm({ id, draft, onDraft, project, summary }) {
     const gz = await gzBase64(file).catch(() => null);
     setBusy("");
     if (!gz) return run(() => Promise.reject({ code: "too_large" }));
-    await post({ action: "demo", name: file.name, gz }, "הדמו הועלה", "demo");
+    await post({ action: "demo", name: file.name, gz }, t("הדמו הועלה"), "demo");
   };
 
   const uploadLogo = async (file) => {
     setBusy("logo");
     const up = await run(async () => api("sales/upload", { method: "POST", body: { name: file.name, data_url: await fileToDataUrl(file) } }));
     setBusy("");
-    if (up) await post({ action: "logo", fileId: up.fileId }, "הלוגו נשמר", "logo");
+    if (up) await post({ action: "logo", fileId: up.fileId }, t("הלוגו נשמר"), "logo");
   };
 
   // a ready video, in parts (a request takes up to 4.5MB), one after the other
@@ -164,7 +169,7 @@ export default function DealFilm({ id, draft, onDraft, project, summary }) {
     for (let i = 0; i < total; i++) {
       setSent([i, total]);
       const data = toBase64(await file.slice(i * VIDEO_PART, Math.min(file.size, (i + 1) * VIDEO_PART)).arrayBuffer());
-      r = await run(() => call({ action: "video_part", index: i, total, size: file.size, name: file.name, type, data }), i === total - 1 ? "הסרטון הועלה" : null);
+      r = await run(() => call({ action: "video_part", index: i, total, size: file.size, name: file.name, type, data }), i === total - 1 ? t("הסרטון הועלה") : null);
       if (!r) break;
     }
     setSent(null);
@@ -176,10 +181,10 @@ export default function DealFilm({ id, draft, onDraft, project, summary }) {
   const generate = (fix) => {
     setWritingFix(Boolean(fix));
     return post(fix ? { action: "generate", failures: fix, script: film.script } : { action: "generate" },
-      fix ? "התסריט תוקן" : "התסריט נכתב", "generate").then((r) => { if (r) setWatch((w) => w + 1); });
+      fix ? t("התסריט תוקן") : t("התסריט נכתב"), "generate").then((r) => { if (r) setWatch((w) => w + 1); });
   };
 
-  if (!data) return <Card title="סרטון דמו"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></Card>;
+  if (!data) return <Card title={t("סרטון דמו")}><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></Card>;
 
   const fileUrl = (kind, v) => `/api/sales/deal-file?${where()}&kind=${kind}&v=${v}`;
   const demoUrl = film?.hasDemo ? fileUrl("demo", film.demoV) : null;
@@ -188,44 +193,42 @@ export default function DealFilm({ id, draft, onDraft, project, summary }) {
   const videoUrl = film?.hasVideo ? fileUrl("video", film.videoV) : null;
 
   return (
-    <Card title="סרטון דמו בעמוד ההזמנה" actions={(film?.script || film?.hasVideo) && (
+    <Card title={t("סרטון דמו בעמוד ההזמנה")} actions={(film?.script || film?.hasVideo) && (
       <label className="flex items-center gap-2 text-sm">
-        <Switch checked={film.published} disabled={busy === "save"} onCheckedChange={(v) => post({ action: "save", published: v }, v ? "הסרטון מוצג ללקוח" : "הסרטון הוסתר", "save")} />
-        מוצג ללקוח
+        <Switch checked={film.published} disabled={busy === "save"} onCheckedChange={(v) => post({ action: "save", published: v }, v ? t("הסרטון מוצג ללקוח") : t("הסרטון הוסתר"), "save")} />
+        {t("מוצג ללקוח")}
       </label>
     )}>
       <p className="mb-3 text-sm text-muted-foreground">
-        מעלים את קובץ ה-HTML של הדמו ואת הלוגו של הלקוח. Claude קורא את קוד הדמו וכותב תסריט: איפה ללחוץ, מה להקליד וכיתוב לכל סצנה.
-        בעמוד ההזמנה הדמו האמיתי רץ לבד עם סמן וכיתובים, ומתחתיו הלוגואים של הלקוחות שלנו.
-        אם המתכנת כבר הקליט סרטון, אפשר להעלות אותו במקום, והוא מוצג במקום הסרטון של Claude.
-        {!id && " הסרטון נשמר עם העסקה, והלקוח רואה אותו כבר בכניסה הראשונה לקישור."}
+        {t("מעלים את קובץ ה-HTML של הדמו ואת הלוגו של הלקוח. Claude קורא את קוד הדמו וכותב תסריט: איפה ללחוץ, מה להקליד וכיתוב לכל סצנה. בעמוד ההזמנה הדמו האמיתי רץ לבד עם סמן וכיתובים, ומתחתיו הלוגואים של הלקוחות שלנו. אם המתכנת כבר הקליט סרטון, אפשר להעלות אותו במקום, והוא מוצג במקום הסרטון של Claude.")}
+        {!id && t(" הסרטון נשמר עם העסקה, והלקוח רואה אותו כבר בכניסה הראשונה לקישור.")}
       </p>
-      {!data.configured && <p className="mb-3 rounded-lg bg-amber-50 p-2 text-sm text-amber-900">ANTHROPIC_API_KEY לא מוגדר בשרת, ולכן אי אפשר לכתוב תסריט.</p>}
+      {!data.configured && <p className="mb-3 rounded-lg bg-amber-50 p-2 text-sm text-amber-900">{t("ANTHROPIC_API_KEY לא מוגדר בשרת, ולכן אי אפשר לכתוב תסריט.")}</p>}
 
       <div className="flex flex-wrap items-center gap-2">
-        <FilePick accept=".html,.htm,text/html" label={film?.hasDemo ? "החלפת הדמו" : "העלאת הדמו (HTML)"} busy={busy === "demo"} onFile={uploadDemo} />
-        <FilePick accept="image/png,image/jpeg,image/webp" label={film?.hasLogo ? "החלפת הלוגו" : "לוגו הלקוח"} busy={busy === "logo"} onFile={uploadLogo} />
+        <FilePick accept=".html,.htm,text/html" label={film?.hasDemo ? t("החלפת הדמו") : t("העלאת הדמו (HTML)")} busy={busy === "demo"} onFile={uploadDemo} />
+        <FilePick accept="image/png,image/jpeg,image/webp" label={film?.hasLogo ? t("החלפת הלוגו") : t("לוגו הלקוח")} busy={busy === "logo"} onFile={uploadLogo} />
         {logoUrl && <img src={logoUrl} alt="" className="h-8 max-w-32 rounded border border-border bg-white object-contain p-0.5" />}
         {film?.hasDemo && (
           <Button size="sm" disabled={!data.configured || Boolean(busy)} onClick={() => generate(null)}>
             {busy === "generate" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            {film.script ? "תסריט חדש" : "יצירת הסרטון"}
+            {film.script ? t("תסריט חדש") : t("יצירת הסרטון")}
           </Button>
         )}
-        {film?.hasDemo && <Button size="sm" variant="ghost" className="text-destructive" disabled={Boolean(busy)} onClick={() => post({ action: "remove", what: "demo" }, "הדמו הוסר", "save")}><Trash2 className="h-4 w-4" />הסרת הדמו</Button>}
+        {film?.hasDemo && <Button size="sm" variant="ghost" className="text-destructive" disabled={Boolean(busy)} onClick={() => post({ action: "remove", what: "demo" }, t("הדמו הוסר"), "save")}><Trash2 className="h-4 w-4" />{t("הסרת הדמו")}</Button>}
       </div>
 
       <div className="mt-4 rounded-xl border border-dashed border-border p-3">
         <div className="flex flex-wrap items-center gap-2">
           <Film className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium">סרטון מוכן</span>
-          <FilePick accept="video/mp4,video/webm,video/quicktime,.mp4,.m4v,.webm,.mov" label={film?.hasVideo ? "החלפת הסרטון" : "העלאת סרטון (MP4, עד 60MB)"} busy={busy === "video"} onFile={uploadVideo} />
-          {film?.hasVideo && <Button size="sm" variant="ghost" className="text-destructive" disabled={Boolean(busy)} onClick={() => post({ action: "remove", what: "video" }, "הסרטון הוסר", "save")}><Trash2 className="h-4 w-4" />הסרת הסרטון</Button>}
+          <span className="text-sm font-medium">{t("סרטון מוכן")}</span>
+          <FilePick accept="video/mp4,video/webm,video/quicktime,.mp4,.m4v,.webm,.mov" label={film?.hasVideo ? t("החלפת הסרטון") : t("העלאת סרטון (MP4, עד 60MB)")} busy={busy === "video"} onFile={uploadVideo} />
+          {film?.hasVideo && <Button size="sm" variant="ghost" className="text-destructive" disabled={Boolean(busy)} onClick={() => post({ action: "remove", what: "video" }, t("הסרטון הוסר"), "save")}><Trash2 className="h-4 w-4" />{t("הסרת הסרטון")}</Button>}
         </div>
-        {sent && <p className="mt-2 text-sm text-muted-foreground">מעלה… חלק {sent[0] + 1} מתוך {sent[1]}</p>}
+        {sent && <p className="mt-2 text-sm text-muted-foreground">{t("מעלה… חלק {i} מתוך {total}", { i: sent[0] + 1, total: sent[1] })}</p>}
         {film?.hasVideo && (
           <>
-            <p className="mt-2 text-xs text-muted-foreground">{film.videoName} · {Math.round(film.videoSize / 1024 / 1024 * 10) / 10}MB · זה מה שהלקוח רואה{film.script ? " (במקום הסרטון של Claude)" : ""}</p>
+            <p className="mt-2 text-xs text-muted-foreground">{film.videoName} · {Math.round(film.videoSize / 1024 / 1024 * 10) / 10}MB · {t("זה מה שהלקוח רואה")}{film.script ? t(" (במקום הסרטון של Claude)") : ""}</p>
             <VideoFilm key={film.videoV} video={videoUrl} logo={logoUrl} title={project} className="mt-3 max-w-3xl" />
           </>
         )}
@@ -239,48 +242,48 @@ export default function DealFilm({ id, draft, onDraft, project, summary }) {
           <DemoFilm key={`${watch}-${film.scriptAt}`} demo={demoUrl} logo={logoUrl} script={film.script} title={project} autoplay={false} onDone={setFailures} className="max-w-3xl" />
           {failures && (failures.length ? (
             <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">
-              <p className="font-medium text-amber-900">{failures.length === 1 ? "פעולה אחת לא רצה בצפייה הזו" : `${failures.length} פעולות לא רצו בצפייה הזו`}</p>
+              <p className="font-medium text-amber-900">{failures.length === 1 ? t("פעולה אחת לא רצה בצפייה הזו") : t("{n} פעולות לא רצו בצפייה הזו", { n: failures.length })}</p>
               <ul className="mt-1 list-inside list-disc text-xs text-amber-900/80" dir="ltr">{failures.slice(0, 8).map((f) => <li key={f}>{f}</li>)}</ul>
               <Button size="sm" className="mt-2" disabled={!data.configured || Boolean(busy)} onClick={() => generate(failures)}>
-                {busy === "generate" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}תיקון עם Claude
+                {busy === "generate" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}{t("תיקון עם Claude")}
               </Button>
             </div>
-          ) : <p className="mt-3 text-sm text-emerald-700">כל הפעולות רצו.</p>)}
+          ) : <p className="mt-3 text-sm text-emerald-700">{t("כל הפעולות רצו.")}</p>)}
         </div>
       )}
 
       {film?.script && (
         <div className="mt-5 space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">כיתובים ({scenes.length} סצנות)</p>
-            {!captions && <Button size="sm" variant="ghost" onClick={() => setCaptions(scenes.map((x) => x.caption))}>עריכה</Button>}
+            <p className="text-sm font-medium">{t("כיתובים ({n} סצנות)", { n: scenes.length })}</p>
+            {!captions && <Button size="sm" variant="ghost" onClick={() => setCaptions(scenes.map((x) => x.caption))}>{t("עריכה")}</Button>}
           </div>
           {captions ? (
             <form className="space-y-2" onSubmit={async (e) => {
               e.preventDefault();
               const script = { scenes: scenes.map((x, i) => ({ ...x, caption: captions[i] })) };
-              if (await post({ action: "save", script }, "הכיתובים נשמרו", "save")) setCaptions(null);
+              if (await post({ action: "save", script }, t("הכיתובים נשמרו"), "save")) setCaptions(null);
             }}>
               {captions.map((c, i) => (
                 <div key={i} className="flex items-center gap-2"><span className="w-5 text-xs text-muted-foreground">{i + 1}</span>
                   <Input value={c} maxLength={140} onChange={(e) => setCaptions((cs) => cs.map((x, k) => (k === i ? e.target.value : x)))} /></div>
               ))}
-              <div className="flex gap-2"><Button type="submit" size="sm" disabled={busy === "save"}>שמירה</Button><Button type="button" size="sm" variant="ghost" onClick={() => setCaptions(null)}>ביטול</Button></div>
+              <div className="flex gap-2"><Button type="submit" size="sm" disabled={busy === "save"}>{t("שמירה")}</Button><Button type="button" size="sm" variant="ghost" onClick={() => setCaptions(null)}>{t("ביטול")}</Button></div>
             </form>
           ) : (
             <ol className="list-inside list-decimal space-y-1 text-sm">{scenes.map((x, i) => <li key={i}>{x.caption}</li>)}</ol>
           )}
           <details className="text-sm" onToggle={(e) => setJson(e.currentTarget.open ? JSON.stringify(film.script, null, 2) : null)}>
-            <summary className="cursor-pointer text-muted-foreground">התסריט המלא (JSON)</summary>
+            <summary className="cursor-pointer text-muted-foreground">{t("התסריט המלא (JSON)")}</summary>
             {json !== null && (
               <form className="mt-2 space-y-2" onSubmit={async (e) => {
                 e.preventDefault();
                 let script;
                 try { script = JSON.parse(json); } catch { return run(() => Promise.reject({ code: "bad_script" })); }
-                await post({ action: "save", script }, "התסריט נשמר", "save");
+                await post({ action: "save", script }, t("התסריט נשמר"), "save");
               }}>
                 <Textarea dir="ltr" rows={12} className="font-mono text-xs" value={json} onChange={(e) => setJson(e.target.value)} />
-                <Button type="submit" size="sm" variant="outline" disabled={busy === "save"}>שמירת התסריט</Button>
+                <Button type="submit" size="sm" variant="outline" disabled={busy === "save"}>{t("שמירת התסריט")}</Button>
               </form>
             )}
           </details>

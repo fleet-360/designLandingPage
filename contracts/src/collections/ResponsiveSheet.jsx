@@ -9,7 +9,7 @@ export default function ResponsiveSheet({ open, onOpenChange, title, description
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="collections-app max-h-[90vh]">
-          <DrawerHeader className="border-b border-border pb-3 text-right">
+          <DrawerHeader className="border-b border-border pb-3 text-start">
             <DrawerTitle className="font-display text-lg font-bold text-foreground">{title}</DrawerTitle>
             {description ? <p className="mt-1 text-sm text-muted-foreground">{description}</p> : null}
           </DrawerHeader>
@@ -22,7 +22,7 @@ export default function ResponsiveSheet({ open, onOpenChange, title, description
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="collections-app max-h-[90vh] max-w-md overflow-y-auto">
-        <DialogHeader className="pr-8 text-right sm:text-right">
+        <DialogHeader className="pr-8 text-start sm:text-start">
           <DialogTitle className="font-display text-lg font-bold text-foreground">{title}</DialogTitle>
           {description ? (
             <DialogDescription className="text-sm text-muted-foreground">{description}</DialogDescription>

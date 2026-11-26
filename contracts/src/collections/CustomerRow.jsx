@@ -3,6 +3,7 @@ import PaymentsTable from "@/collections/PaymentsTable";
 import StatusBadge from "@/collections/StatusBadge";
 import { formatDate, formatMoney, summarizeCustomer } from "@/collections/format";
 import { cn } from "@/lib/utils";
+import { t } from "@/i18n";
 
 export default function CustomerRow({
   customer,
@@ -25,7 +26,7 @@ export default function CustomerRow({
         onClick={() => onToggle?.(customer.id)}
         aria-expanded={open}
         className={cn(
-          "flex w-full items-center gap-3 px-3 py-3.5 text-right transition-colors sm:px-4",
+          "flex w-full items-center gap-3 px-3 py-3.5 text-start transition-colors sm:px-4",
           open ? "bg-slate-50" : "hover:bg-slate-50/70",
         )}
       >
@@ -45,12 +46,12 @@ export default function CustomerRow({
                 {customer.phone}
               </span>
             ) : (
-              <span>{summary.openCount} תשלומים פתוחים</span>
+              <span>{t("{n} תשלומים פתוחים", { n: summary.openCount })}</span>
             )}
-            {customer.phone && summary.openCount > 0 ? <span>· {summary.openCount} פתוחים</span> : null}
+            {customer.phone && summary.openCount > 0 ? <span>· {t("{n} פתוחים", { n: summary.openCount })}</span> : null}
             {receipts > 0 && (
               <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-semibold text-amber-700 ring-1 ring-inset ring-amber-600/20">
-                {receipts === 1 ? "קבלה להפקה" : `${receipts} קבלות להפקה`}
+                {receipts === 1 ? t("קבלה להפקה") : t("{n} קבלות להפקה", { n: receipts })}
               </span>
             )}
           </div>
@@ -62,16 +63,16 @@ export default function CustomerRow({
           )}
         </div>
 
-        <div className="hidden w-32 shrink-0 text-left sm:block">
-          <div className="text-xs text-muted-foreground">נותר לגבייה</div>
+        <div className="hidden w-32 shrink-0 text-end sm:block">
+          <div className="text-xs text-muted-foreground">{t("נותר לגבייה")}</div>
           <div className="amount mt-0.5 font-display text-sm font-extrabold text-foreground">
             {formatMoney(summary.remaining)}
           </div>
-          <div className="amount text-[11px] text-muted-foreground">מתוך {formatMoney(summary.total)}</div>
+          <div className="amount text-[11px] text-muted-foreground">{t("מתוך {amount}", { amount: formatMoney(summary.total) })}</div>
         </div>
 
-        <div className="hidden w-24 shrink-0 text-left md:block">
-          <div className="text-xs text-muted-foreground">תשלום הבא</div>
+        <div className="hidden w-24 shrink-0 text-end md:block">
+          <div className="text-xs text-muted-foreground">{t("תשלום הבא")}</div>
           <div className="mt-0.5 text-sm tabular-nums text-foreground">{formatDate(summary.nextDate)}</div>
         </div>
 
@@ -92,13 +93,13 @@ export default function CustomerRow({
       {open && (
         <div className="border-t border-border/70 bg-slate-50/60 px-3 pb-4 pt-3 sm:px-4">
           <div className="mb-2 flex items-center justify-between gap-2">
-            <h4 className="micro">לוח תשלומים</h4>
+            <h4 className="micro">{t("לוח תשלומים")}</h4>
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => onDeleteCustomer?.(customer)}
-                title="מחיקת לקוח"
-                aria-label="מחיקת לקוח"
+                title={t("מחיקת לקוח")}
+                aria-label={t("מחיקת לקוח")}
                 className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -109,7 +110,7 @@ export default function CustomerRow({
                 className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-white hover:text-foreground"
               >
                 <Settings2 className="h-3.5 w-3.5" />
-                פרטי לקוח
+                {t("פרטי לקוח")}
               </button>
               <button
                 type="button"
@@ -117,7 +118,7 @@ export default function CustomerRow({
                 className="flex items-center gap-1.5 rounded-md bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-slate-800"
               >
                 <Plus className="h-3.5 w-3.5" />
-                תשלום
+                {t("תשלום")}
               </button>
             </div>
           </div>
@@ -126,7 +127,7 @@ export default function CustomerRow({
             <div className="mb-3 rounded-md border border-border bg-white px-3 py-2">
               {customer.internal_owner && (
                 <p className="text-xs text-muted-foreground">
-                  אחראי פנימי: <span className="font-semibold text-foreground">{customer.internal_owner}</span>
+                  {t("אחראי פנימי:")} <span className="font-semibold text-foreground">{customer.internal_owner}</span>
                 </p>
               )}
               {customer.project_stages && (
@@ -150,17 +151,17 @@ export default function CustomerRow({
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
             <span>
-              נותר לגבייה:{" "}
+              {t("נותר לגבייה:")}{" "}
               <span className="amount font-semibold text-foreground">{formatMoney(summary.remaining)}</span>
-              {" "}מתוך <span className="amount font-semibold text-foreground">{formatMoney(summary.total)}</span>
-              {" "}(כולל מע״מ)
+              {" "}{t("מתוך")} <span className="amount font-semibold text-foreground">{formatMoney(summary.total)}</span>
+              {" "}{t("(כולל מע״מ)")}
             </span>
             <span>
-              תשלום הבא: <span className="font-semibold text-foreground">{formatDate(summary.nextDate)}</span>
+              {t("תשלום הבא:")} <span className="font-semibold text-foreground">{formatDate(summary.nextDate)}</span>
             </span>
             {summary.blockedTotal > 0 && (
               <span>
-                מתוכם לא לגבות כרגע:{" "}
+                {t("מתוכם לא לגבות כרגע:")}{" "}
                 <span className="amount font-semibold text-foreground">{formatMoney(summary.blockedTotal)}</span>
               </span>
             )}

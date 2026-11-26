@@ -18,7 +18,7 @@ import { HttpError, json, origin, readJson, route } from "../../_lib/http.js";
 import { query } from "../../_lib/db.js";
 import { requireAdmin } from "../../_lib/auth.js";
 import { uuidParam } from "../../_lib/sign.js";
-import { events, getSettings, isEmail, logEvent, mailsFor, markDiscoveryPaid, money, newToken, sendMail, str } from "../../_lib/sales.js";
+import { ccOf, events, getSettings, isEmail, logEvent, mailsFor, markDiscoveryPaid, money, newToken, sendMail, str } from "../../_lib/sales.js";
 import { discoveryInviteMail } from "../../_lib/sales-mail.js";
 import { israelDate, withVat } from "../../_lib/sales-calc.js";
 import { israelTime } from "../../_lib/slots.js";
@@ -239,8 +239,8 @@ export default route(["GET", "POST", "PATCH"], async (req, res) => {
     if (b.showBooking === false || b.showPayment === false) d = await applyManual(d.id, b, user);
     let mail = null;
     if (b.sendEmail && d.email) {
-      mail = await sendMail({ ...discoveryInviteMail(d, settings, `${base}/discovery/${d.token}`), entity: "discovery", entityId: d.id, kind: "discovery_invite" });
-      await logEvent("discovery", d.id, "email_sent", { kind: "invite", sent: mail.sent });
+      mail = await sendMail({ ...discoveryInviteMail(d, settings, `${base}/discovery/${d.token}`), cc: ccOf(b), entity: "discovery", entityId: d.id, kind: "discovery_invite" });
+      await logEvent("discovery", d.id, "email_sent", { kind: "invite", cc: ccOf(b), sent: mail.sent });
     }
     return json(res, 201, { item: discoveryRow(d, base), mail });
   }
@@ -259,8 +259,8 @@ export default route(["GET", "POST", "PATCH"], async (req, res) => {
     await markDiscoveryPaid(id, { via: "manual", ref: str(b.ref, 80) || `by ${user}` });
   } else if (b.action === "send_email") {
     if (!d.email) throw new HttpError(400, "no_email");
-    const mail = await sendMail({ ...discoveryInviteMail(d, settings, `${base}/discovery/${d.token}`), entity: "discovery", entityId: id, kind: "discovery_invite" });
-    await logEvent("discovery", id, "email_sent", { kind: "invite", sent: mail.sent });
+    const mail = await sendMail({ ...discoveryInviteMail(d, settings, `${base}/discovery/${d.token}`), cc: ccOf(b), entity: "discovery", entityId: id, kind: "discovery_invite" });
+    await logEvent("discovery", id, "email_sent", { kind: "invite", cc: ccOf(b), sent: mail.sent });
   } else if (b.action === "manual") {
     await applyManual(id, b, user);
   } else if (b.action === "update") {

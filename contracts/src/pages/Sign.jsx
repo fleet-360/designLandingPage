@@ -7,6 +7,8 @@ import { CheckCircle2, FileX, RefreshCw } from "lucide-react";
 import Loader from "@/components/Loader";
 import SignBlock from "@/components/sign/SignBlock";
 import { formVersion, isBlockVisible } from "@/lib/formUtils";
+import { t } from "@/i18n";
+import LangSwitch from "@/components/LangSwitch";
 
 export default function Sign() {
   const params = new URLSearchParams(window.location.search);
@@ -35,7 +37,7 @@ export default function Sign() {
     const ids = new Set((latest.blocks || []).map((b) => b.id));
     setValues((v) => Object.fromEntries(Object.entries(v).filter(([k]) => ids.has(k))));
     setMissingFields([]);
-    setNotice("הטופס עודכן בזמן שהיה פתוח — מוצגת כעת הגרסה העדכנית ביותר. אנא עברו עליו לפני השליחה.");
+    setNotice(t("הטופס עודכן בזמן שהיה פתוח — מוצגת כעת הגרסה העדכנית ביותר. אנא עברו עליו לפני השליחה."));
     return true;
   };
 
@@ -51,9 +53,10 @@ export default function Sign() {
   if (!form || (!form.is_published && !preview))
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 text-center">
+        <LangSwitch className="fixed end-3 top-3 z-10 bg-card" />
         <FileX className="h-10 w-10 text-muted-foreground" />
-        <h1 className="text-2xl font-semibold">הטופס אינו זמין</h1>
-        <p className="text-sm text-muted-foreground">הטופס לא פורסם או שהקישור אינו תקין</p>
+        <h1 className="text-2xl font-semibold">{t("הטופס אינו זמין")}</h1>
+        <p className="text-sm text-muted-foreground">{t("הטופס לא פורסם או שהקישור אינו תקין")}</p>
       </div>
     );
 
@@ -64,15 +67,15 @@ export default function Sign() {
     const missing = blocks.filter((b) => b.type === "field" && b.required && !(values[b.id] || "").trim());
     if (missing.length > 0) {
       setMissingFields(missing.map((b) => b.id));
-      const labels = missing.map((b) => `${b.label || "שדה"}`).join(", ");
-      return setError(`יש למלא את ${missing.length} שדות החובה הבאים: ${labels}.`);
+      const labels = missing.map((b) => b.label || t("שדה")).join(", ");
+      return setError(t("יש למלא את {n} שדות החובה הבאים: {labels}.", { n: missing.length, labels }));
     }
     // כל בלוק חתימה מוצג מקבל חתימה משלו — בלוקים מוסתרים (תנאי / PDF בלבד) אינם נדרשים
     const sigBlocks = blocks.filter((b) => b.type === "signature" && b.display !== "pdf" && isBlockVisible(b, values));
     const unsigned = sigBlocks.filter((b) => !padRefs.current[b.id] || padRefs.current[b.id].isEmpty());
     if (unsigned.length > 0) {
       setMissingFields(unsigned.map((b) => b.id));
-      return setError(unsigned.length > 1 ? `יש לחתום ב-${unsigned.length} שדות החתימה המסומנים` : "יש לחתום לפני השליחה");
+      return setError(unsigned.length > 1 ? t("יש לחתום ב-{n} שדות החתימה המסומנים", { n: unsigned.length }) : t("יש לחתום לפני השליחה"));
     }
     setMissingFields([]);
     setBusy(true);
@@ -94,14 +97,14 @@ export default function Sign() {
         const changed = await reloadLatest().catch(() => null);
         if (changed === false) return submit(true); // הטופס המוצג הוא כבר העדכני ביותר
         setBusy(false);
-        if (changed === null) setError("הטופס עודכן — טענו מחדש את העמוד ונסו שוב");
+        if (changed === null) setError(t("הטופס עודכן — טענו מחדש את העמוד ונסו שוב"));
         window.scrollTo({ top: 0, behavior: "smooth" });
         return;
       }
       const msg =
-        code === "too_many_submissions" ? "נשלחו יותר מדי חתימות לטופס זה, נסו שוב מאוחר יותר"
-        : code === "form_not_published" ? "הטופס אינו זמין יותר"
-        : "שגיאה בשליחת החתימה, נסו שוב";
+        code === "too_many_submissions" ? t("נשלחו יותר מדי חתימות לטופס זה, נסו שוב מאוחר יותר")
+        : code === "form_not_published" ? t("הטופס אינו זמין יותר")
+        : t("שגיאה בשליחת החתימה, נסו שוב");
       setError(msg);
       setBusy(false);
     }
@@ -112,25 +115,26 @@ export default function Sign() {
       <div className="flex min-h-screen items-center justify-center px-4">
         <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="paper max-w-md rounded-3xl bg-card p-10 text-center">
           <CheckCircle2 className="mx-auto h-12 w-12 text-primary" />
-          <h1 className="mt-4 text-3xl font-semibold">המסמך נחתם בהצלחה</h1>
-          <p className="mt-2 text-sm text-muted-foreground">החתימה נקלטה במערכת בהצלחה.</p>
+          <h1 className="mt-4 text-3xl font-semibold">{t("המסמך נחתם בהצלחה")}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{t("החתימה נקלטה במערכת בהצלחה.")}</p>
         </motion.div>
       </div>
     );
 
   return (
     <div className="min-h-screen bg-background px-4 py-10">
+      <LangSwitch className="fixed end-3 top-3 z-10 bg-card" />
       {preview && (
         <div className="mx-auto mb-4 flex max-w-3xl items-center justify-between rounded-full bg-accent px-4 py-2 text-xs text-accent-foreground">
-          <span>תצוגה מקדימה — כך הלקוח יראה את הטופס</span>
-          <Link to={`/editor?id=${id}`} className="font-medium underline">חזרה לעריכה</Link>
+          <span>{t("תצוגה מקדימה — כך הלקוח יראה את הטופס")}</span>
+          <Link to={`/editor?id=${id}`} className="font-medium underline">{t("חזרה לעריכה")}</Link>
         </div>
       )}
       {notice && (
         <div className="mx-auto mb-4 flex max-w-3xl items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           <RefreshCw className="mt-0.5 h-4 w-4 shrink-0" />
           <span className="flex-1">{notice}</span>
-          <button type="button" onClick={() => setNotice("")} className="text-xs font-medium underline">הבנתי</button>
+          <button type="button" onClick={() => setNotice("")} className="text-xs font-medium underline">{t("הבנתי")}</button>
         </div>
       )}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="paper mx-auto max-w-3xl rounded-2xl bg-card px-6 py-10 sm:px-12 sm:py-14">
@@ -153,7 +157,7 @@ export default function Sign() {
         {!preview && (
           <div className="mt-10 flex flex-col items-center gap-3">
             {error && <p className="text-center text-sm text-destructive">{error}</p>}
-            <Button onClick={() => submit()} disabled={busy} size="lg" className="rounded-full px-10">{busy ? "שולח..." : "אישור וחתימה"}</Button>
+            <Button onClick={() => submit()} disabled={busy} size="lg" className="rounded-full px-10">{busy ? t("שולח...") : t("אישור וחתימה")}</Button>
           </div>
         )}
       </motion.div>

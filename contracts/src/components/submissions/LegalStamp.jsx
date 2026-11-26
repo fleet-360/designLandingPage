@@ -1,9 +1,10 @@
 import React from "react";
+import { t } from "@/i18n";
 
 // חותמת משפטית ויזואלית על גבי המסמך החתום — לפי חוק חתימה אלקטרונית, תשס"א-2001
 // מקבלת את נתוני החותם והחתימה מתוך רשומת ה-Submission
 
-const LEGAL_HEADER = `מסמך זה נחתם בחתימה אלקטרונית מאובטחת בהתאם לחוק חתימה אלקטרונית, תשס"א-2001.`;
+const LEGAL_HEADER = t('מסמך זה נחתם בחתימה אלקטרונית מאובטחת בהתאם לחוק חתימה אלקטרונית, תשס"א-2001.');
 
 function formatStampDate(iso) {
   if (!iso) return "—";
@@ -40,19 +41,19 @@ export default function LegalStamp({ submission }) {
         {LEGAL_HEADER}
       </div>
       <div style={rowStyle}>
-        <span style={labelStyle}>פרטי החותם:</span>
-        <span>{signerName}{signerId !== "—" ? ` | ח.פ / ת.ז: ${signerId}` : ""}</span>
+        <span style={labelStyle}>{t("פרטי החותם:")}</span>
+        <span>{signerName}{signerId !== "—" ? ` | ${t("ח.פ / ת.ז:")} ${signerId}` : ""}</span>
       </div>
       <div style={rowStyle}>
-        <span style={labelStyle}>תאריך ושעת חתימה:</span>
+        <span style={labelStyle}>{t("תאריך ושעת חתימה:")}</span>
         <span>{signedAt}</span>
       </div>
       <div style={rowStyle}>
-        <span style={labelStyle}>כתובת IP:</span>
+        <span style={labelStyle}>{t("כתובת IP:")}</span>
         <span style={{ direction: "ltr", unicodeBidi: "plaintext" }}>{ip}</span>
       </div>
       <div style={rowStyle}>
-        <span style={labelStyle}>מזהה מערכת ייחודי:</span>
+        <span style={labelStyle}>{t("מזהה מערכת ייחודי:")}</span>
         <span style={{ direction: "ltr", unicodeBidi: "plaintext", fontSize: 9 }}>{guid}</span>
       </div>
     </div>

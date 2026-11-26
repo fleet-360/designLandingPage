@@ -11,6 +11,7 @@ import FormCard from "@/components/forms/FormCard";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import Loader from "@/components/Loader";
 import { defaultForm } from "@/lib/formUtils";
+import { t } from "@/i18n";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -33,31 +34,31 @@ export default function Home() {
   const publish = (f, v) =>
     base44.entities.Form.update(f.id, { is_published: v, published_date: v ? new Date().toISOString() : f.published_date }).then(refresh);
   const duplicate = (f) =>
-    base44.entities.Form.create({ title: `${f.title} - עותק`, blocks: f.blocks, is_published: false, submission_count: 0 }).then(refresh);
+    base44.entities.Form.create({ title: t("{title} - עותק", { title: f.title }), blocks: f.blocks, is_published: false, submission_count: 0 }).then(refresh);
   const remove = (f) => base44.entities.Form.delete(f.id).then(refresh);
 
   // אישור לפני מחיקה או שינוי סטטוס פרסום
   const confirmPublish = (f, v) => setConfirm({
-    title: v ? "פרסום טופס?" : "העברה לטיוטה?",
+    title: v ? t("פרסום טופס?") : t("העברה לטיוטה?"),
     description: v
-      ? `האם אתה בטוח שברצונך לפרסם את „${f.title}"?`
-      : `האם אתה בטוח שברצונך להעביר את „${f.title}" לטיוטה?`,
+      ? t('האם אתה בטוח שברצונך לפרסם את „{title}"?', { title: f.title })
+      : t('האם אתה בטוח שברצונך להעביר את „{title}" לטיוטה?', { title: f.title }),
     actions: [
-      { label: "ביטול", variant: "outline", onClick: () => setConfirm(null) },
-      { label: "אישור", variant: "default", onClick: () => { publish(f, v); setConfirm(null); } },
+      { label: t("ביטול"), variant: "outline", onClick: () => setConfirm(null) },
+      { label: t("אישור"), variant: "default", onClick: () => { publish(f, v); setConfirm(null); } },
     ],
   });
   const confirmDelete = (f) => setConfirm({
-    title: "מחיקת טופס?",
-    description: `האם אתה בטוח שברצונך למחוק את „${f.title}"? פעולה זו אינה הפיכה וכל החתימות שנאספו יימחקו גם הן.`,
+    title: t("מחיקת טופס?"),
+    description: t('האם אתה בטוח שברצונך למחוק את „{title}"? פעולה זו אינה הפיכה וכל החתימות שנאספו יימחקו גם הן.', { title: f.title }),
     actions: [
-      { label: "ביטול", variant: "outline", onClick: () => setConfirm(null) },
-      { label: "מחיקה", variant: "destructive", onClick: () => { remove(f); setConfirm(null); } },
+      { label: t("ביטול"), variant: "outline", onClick: () => setConfirm(null) },
+      { label: t("מחיקה"), variant: "destructive", onClick: () => { remove(f); setConfirm(null); } },
     ],
   });
 
   const published = forms.filter((f) => f.is_published).length;
-  const tabs = [["all", "הכל", forms.length], ["published", "פורסם", published], ["draft", "טיוטה", forms.length - published]];
+  const tabs = [["all", t("הכל"), forms.length], ["published", t("פורסם"), published], ["draft", t("טיוטה"), forms.length - published]];
   const filtered = forms.filter(
     (f) => (tab === "all" || (tab === "published") === !!f.is_published) && (f.title || "").toLowerCase().includes(q.toLowerCase())
   );
@@ -66,11 +67,11 @@ export default function Home() {
     <div className="space-y-8">
       <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-4xl font-semibold tracking-tight">הטפסים שלי</h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">צרו טפסים, שתפו עם לקוחות וקבלו חתימות דיגיטליות</p>
+          <h1 className="text-4xl font-semibold tracking-tight">{t("הטפסים שלי")}</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">{t("צרו טפסים, שתפו עם לקוחות וקבלו חתימות דיגיטליות")}</p>
         </div>
         <Button onClick={create} disabled={creating} className="gap-2 rounded-full px-5 shadow-sm">
-          <Plus className="h-4 w-4" /> יצירת טופס חדש
+          <Plus className="h-4 w-4" /> {t("יצירת טופס חדש")}
         </Button>
       </div>
 
@@ -87,8 +88,8 @@ export default function Home() {
           ))}
         </div>
         <div className="relative w-full sm:w-72">
-          <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="חיפוש טופס בשם..." className="rounded-full bg-card pr-9" />
+          <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("חיפוש טופס בשם...")} className="rounded-full bg-card ps-9" />
         </div>
       </div>
 
@@ -97,14 +98,14 @@ export default function Home() {
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border py-20 text-center">
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-secondary text-muted-foreground"><FileText className="h-5 w-5" /></span>
-          <p className="font-medium">אין טפסים להצגה</p>
-          <p className="text-sm text-muted-foreground">התחילו ביצירת טופס חדש</p>
+          <p className="font-medium">{t("אין טפסים להצגה")}</p>
+          <p className="text-sm text-muted-foreground">{t("התחילו ביצירת טופס חדש")}</p>
         </div>
       ) : (
         <>
           <div className="hidden overflow-x-auto pb-2 xl:block">
             <div className="grid grid-cols-[1fr_110px_160px_160px_80px_220px] gap-3 px-5 pb-2 text-xs font-medium text-muted-foreground">
-              <span>שם הטופס</span><span>מפורסם</span><span>תאריך יצירה</span><span>תאריך פרסום</span><span>חתימות</span><span />
+              <span>{t("שם הטופס")}</span><span>{t("מפורסם")}</span><span>{t("תאריך יצירה")}</span><span>{t("תאריך פרסום")}</span><span>{t("חתימות")}</span><span />
             </div>
             <div className="space-y-2">
               {filtered.map((f) => (

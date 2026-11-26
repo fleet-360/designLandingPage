@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
+import { t } from '@/i18n';
 
 const DefaultFallback = () => (
   <div className="fixed inset-0 flex items-center justify-center">
@@ -9,8 +10,8 @@ const DefaultFallback = () => (
 
 const NotConfigured = () => (
   <div className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center">
-    <h1 className="text-2xl font-semibold">המערכת לא מוגדרת בשרת הזה</h1>
-    <p className="text-sm text-muted-foreground">חסרים פרטי ההתחברות או החיבור לדאטהבייס.</p>
+    <h1 className="text-2xl font-semibold">{t("המערכת לא מוגדרת בשרת הזה")}</h1>
+    <p className="text-sm text-muted-foreground">{t("חסרים פרטי ההתחברות או החיבור לדאטהבייס.")}</p>
   </div>
 );
 

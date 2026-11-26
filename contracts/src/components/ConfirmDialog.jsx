@@ -14,8 +14,8 @@ export default function ConfirmDialog({ open, title, description, actions = [], 
     <AlertDialog open={open} onOpenChange={(o) => !o && onClose?.()}>
       <AlertDialogContent className="max-w-md">
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-right">{title}</AlertDialogTitle>
-          {description && <AlertDialogDescription className="text-right whitespace-pre-line">{description}</AlertDialogDescription>}
+          <AlertDialogTitle className="text-start">{title}</AlertDialogTitle>
+          {description && <AlertDialogDescription className="text-start whitespace-pre-line">{description}</AlertDialogDescription>}
         </AlertDialogHeader>
         <AlertDialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           {actions.map((a, i) => (

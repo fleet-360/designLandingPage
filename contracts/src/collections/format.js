@@ -1,35 +1,37 @@
+import { t } from "@/i18n";
+
 export const PAYMENT_METHODS = [
-  { value: "check", label: "צ'ק" },
-  { value: "transfer", label: "העברה בנקאית" },
-  { value: "cash", label: "מזומן" },
-  { value: "credit", label: "כרטיס אשראי" },
-  { value: "other", label: "אחר" },
+  { value: "check", label: t("צ'ק") },
+  { value: "transfer", label: t("העברה בנקאית") },
+  { value: "cash", label: t("מזומן") },
+  { value: "credit", label: t("כרטיס אשראי") },
+  { value: "other", label: t("אחר") },
 ];
 
 export const PAYMENT_STATUSES = [
-  { value: "pending", label: "ממתין" },
-  { value: "paid", label: "שולם" },
-  { value: "blocked", label: "לא לגבות" },
-  { value: "cancelled", label: "בוטל" },
+  { value: "pending", label: t("ממתין") },
+  { value: "paid", label: t("שולם") },
+  { value: "blocked", label: t("לא לגבות") },
+  { value: "cancelled", label: t("בוטל") },
 ];
 
 export const COLLECTION_STATUSES = [
-  { value: "scheduled", label: "מתוכנן" },
-  { value: "collected", label: "נאסף" },
-  { value: "cancelled", label: "בוטל" },
+  { value: "scheduled", label: t("מתוכנן") },
+  { value: "collected", label: t("נאסף") },
+  { value: "cancelled", label: t("בוטל") },
 ];
 
 export const DOC_TYPES = [
-  { value: "tax_invoice", label: "חשבונית מס" },
-  { value: "deal_invoice", label: "חשבונית עסקה" },
-  { value: "invoice_receipt", label: "חשבונית מס קבלה" },
-  { value: "receipt", label: "קבלה" },
-  { value: "other", label: "אחר" },
+  { value: "tax_invoice", label: t("חשבונית מס") },
+  { value: "deal_invoice", label: t("חשבונית עסקה") },
+  { value: "invoice_receipt", label: t("חשבונית מס קבלה") },
+  { value: "receipt", label: t("קבלה") },
+  { value: "other", label: t("אחר") },
 ];
 
 export const VAT_RATE = 0.18;
 
-export const methodLabel = (value) => PAYMENT_METHODS.find((m) => m.value === value)?.label || "אחר";
+export const methodLabel = (value) => PAYMENT_METHODS.find((m) => m.value === value)?.label || t("אחר");
 
 export const docTypeLabel = (value) => DOC_TYPES.find((d) => d.value === value)?.label || "";
 
@@ -65,14 +67,14 @@ export function formatDate(value) {
   return `${d}/${m}/${y.slice(2)}`;
 }
 
-const WEEKDAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
+const WEEKDAYS = [t("יום ראשון"), t("יום שני"), t("יום שלישי"), t("יום רביעי"), t("יום חמישי"), t("יום שישי"), t("יום שבת")];
 
 export function formatDateLong(value) {
   if (!value) return "—";
   const [y, m, d] = String(value).slice(0, 10).split("-").map(Number);
   if (!y || !m || !d) return String(value);
   const day = new Date(y, m - 1, d).getDay();
-  return `יום ${WEEKDAYS[day]}, ${formatDate(value)}`;
+  return `${WEEKDAYS[day]}, ${formatDate(value)}`;
 }
 
 export function paymentState(payment, today = todayISO()) {

@@ -110,6 +110,9 @@ export async function events(entity, entityId) {
 
 const cleanList = (v) => [...new Set([].concat(v || []).map((s) => String(s || "").trim()).filter((s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s)))];
 
+// the copies sales adds to an invite (more addresses, the sender), from the request body
+export const ccOf = (b) => cleanList(b.cc).slice(0, 10);
+
 // mail: { entity, entityId, kind, to, cc, replyTo, subject, html, attachments: [{ filename, fileId }] }
 // -> { id, sent, error }
 export async function sendMail(mail) {

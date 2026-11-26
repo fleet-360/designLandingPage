@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import SignaturePad from "@/components/sign/SignaturePad";
 import { blockStyleToCss, cleanOptions, isBlockVisible } from "@/lib/formUtils";
+import { t as tr, isEn } from "@/i18n";
 
 export default function SignBlock({ block, value, onChange, padRef, allValues = {}, invalid }) {
   // conditional display
@@ -40,14 +41,14 @@ export default function SignBlock({ block, value, onChange, padRef, allValues = 
             className={`h-9 w-full rounded-md border bg-white px-3 text-sm focus:outline-none focus:ring-1 ${invalid ? "border-destructive focus:ring-destructive" : "border-input focus:ring-ring"}`}
             style={style}
           >
-            <option value="">בחרו...</option>
+            <option value="">{tr("בחרו...")}</option>
             {cleanOptions(block.options).map((opt, i) => (
               <option key={i} value={opt}>{opt}</option>
             ))}
           </select>
         ) : t === "textarea"
-          ? <Textarea {...common} placeholder="הקלידו כאן..." className={`min-h-[90px] resize-y bg-white ${invalidCls}`} />
-          : <Input {...common} dir={t === "email" || t === "tel" || t === "date" || t === "number" ? "ltr" : "rtl"} type={t} placeholder="הקלידו..." />}
+          ? <Textarea {...common} placeholder={tr("הקלידו כאן...")} className={`min-h-[90px] resize-y bg-white ${invalidCls}`} />
+          : <Input {...common} dir={t === "email" || t === "tel" || t === "date" || t === "number" ? "ltr" : isEn ? "ltr" : "rtl"} type={t} placeholder={tr("הקלידו...")} />}
       </div>
     );
   }
