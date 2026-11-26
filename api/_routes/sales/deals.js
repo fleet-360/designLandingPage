@@ -7,7 +7,8 @@
 //          signMode "manual": the client already signed outside the link. With signedOn, fileId (the signed
 //          contract, uploaded through /api/sales/upload), sendOrderMail, attachContract: see close_manual
 //   PATCH  ?id= { action, ... }
-//     update { data, client }        before the client approved
+//     update { data, client, cc }    before the client signed; an approved order is reopened and the
+//                                    invite is emailed again (cc: copies, as in POST)
 //     send_email                     the invite with the link
 //     mark_deposit_paid { ref }
 //     mark_project_started { date }  sets the standing order's first charge when it had none
@@ -185,14 +186,26 @@ export default route(["GET", "POST", "PATCH"], async (req, res) => {
 
   switch (b.action) {
     case "update": {
-      if (d.approved_at) throw new HttpError(409, "already_approved");
+      // until the client signs. An approved order is reopened: the client approves the new one again
+      // (the old approval stays in the events) and gets the link by email.
+      if (d.signed_at) throw new HttpError(409, "already_signed");
+      if (d.canceled_at) throw new HttpError(409, "canceled");
       const data = cleanDealData(b.data || d.data, settings);
       const client = cleanClient(b.client || d.client);
-      await query(
+      const reopen = Boolean(d.approved_at);
+      const u = await query(
         `UPDATE sales.deals SET data = $2, client = $3, card_status = CASE WHEN card_status IN ('not_required','pending') THEN $4 ELSE card_status END,
-                updated_at = now() WHERE id = $1`,
+                approved_at = NULL, approval = NULL, snapshot = NULL,
+                order_status = CASE WHEN approved_at IS NULL THEN order_status WHEN viewed_at IS NULL THEN 'sent' ELSE 'viewed' END,
+                updated_at = now() WHERE id = $1 AND signed_at IS NULL RETURNING *`,
         [id, JSON.stringify(data), JSON.stringify(client), data.standingOrder.enabled ? "pending" : "not_required"]);
+      if (!u.rows[0]) throw new HttpError(409, "already_signed");   // the client signed meanwhile
       await logEvent("deal", id, "updated", { by: user });
+      if (reopen) {
+        await logEvent("deal", id, "reopened", { by: user, approval: d.approval });
+        const mail = await sendMail({ ...dealInviteMail(u.rows[0], settings, `${base}/deal/${d.token}`), cc: ccOf(b), entity: "deal", entityId: id, kind: "deal_invite" });
+        await logEvent("deal", id, "email_sent", { kind: "invite", to: client.email, cc: ccOf(b), sent: mail.sent });
+      }
       break;
     }
     case "send_email": {

@@ -417,6 +417,7 @@ export function DealForm() {
   const v = (path) => path.split(".").reduce((o, k) => o?.[k], f) ?? "";
   const bind = (path, extra = {}) => ({ value: v(path), onChange: (e) => setF((s) => setIn(s, path, e.target.value)), ...extra });
   const ap = f.data.appendix;
+  const approved = Boolean(id && existing.data?.item.approvedAt);   // saving reopens it for the client
 
   // the spec: sales picks its pages (SpecPagePicker), and only those are uploaded as Appendix B
   const specPicked = (file, r) => {
@@ -446,12 +447,21 @@ export function DealForm() {
     const gap = agorot(f.data.price.amount) - pays.reduce((a, p) => a + agorot(p.amount), 0);
     if (gap) return setError(t('סכום התשלומים לא שווה למחיר: {diff} {amount} לפני מע"מ', { diff: gap > 0 ? t("חסרים") : t("עודף של"), amount: nis(Math.abs(gap) / 100) }));
     if (f.data.service.enabled && !f.data.standingOrder.startDate) return setError(t("יש לבחור את תאריך החיוב הראשון של השירות החודשי"));
-    const cp = !id && !manual.on && sendEmail ? copiesOf(copies) : { cc: [] };
+    const cp = (!id && !manual.on && sendEmail) || approved ? copiesOf(copies) : { cc: [] };
     if (cp.error) return setError(cp.error);
+    if (approved) return setConfirm({
+      title: t("לבטל את אישור הלקוח?"),
+      description: t("הלקוח כבר אישר את ההזמנה. אחרי השמירה הוא יצטרך לאשר אותה מחדש לפני החתימה, ויקבל מייל עם הקישור."),
+      onConfirm: () => send(cp),
+    });
+    return send(cp);
+  };
+
+  const send = async (cp) => {
     setBusy(true);
     try {
       if (id) {
-        await api(`sales/deals?id=${id}`, { method: "PATCH", body: { action: "update", ...f } });
+        await api(`sales/deals?id=${id}`, { method: "PATCH", body: { action: "update", ...f, cc: cp.cc } });
         navigate(`/sales/deals/${id}`);
       } else {
         const r = await api("sales/deals", { method: "POST", body: { ...f, sendEmail, cc: cp.cc, paymentNote, pitch: pitchBody(pitch), ...(filmDraft && { filmDraft }), ...(manual.on && { signMode: "manual", ...manualPayload(manual) }) } });
@@ -680,6 +690,10 @@ export function DealForm() {
             {!id && !manual.on && <label className="flex items-center gap-2 text-sm"><Switch checked={sendEmail} onCheckedChange={setSendEmail} />{t("לשלוח ללקוח מייל עם הקישור")}</label>}
             {!id && !manual.on && sendEmail && <MailCopies c={copies} onChange={setCopies} />}
             {!id && manual.on && <OrderMailOptions m={manual} setM={setManual} hasFile={Boolean(manual.file)} />}
+            {approved && <>
+              <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">{t("הלקוח כבר אישר את ההזמנה. שמירת השינויים תבטל את האישור, והלקוח יקבל מייל עם הקישור כדי לאשר מחדש.")}</p>
+              <MailCopies c={copies} onChange={setCopies} />
+            </>}
             {error && <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
             <Button className="w-full" disabled={busy} onClick={save}>{busy ? t("שומר...") : id ? t("שמירת השינויים") : manual.on ? t("שמירת העסקה החתומה") : t("יצירת העסקה")}</Button>
           </div>
@@ -713,7 +727,7 @@ export function DealDetail() {
       <PageHeader title={`${x.client.companyName || x.client.signerName} · ${x.data.project.name}`} subtitle={t("עסקה מס' {n}", { n: x.number })}>
         <Pill tone={tone}>{label}</Pill>
         {x.signMode === "manual" && <Pill>{t("נחתם מחוץ לקישור")}</Pill>}
-        {!x.approvedAt && !x.status.canceled && <Button size="sm" variant="outline" asChild><Link to={`/sales/deals/${id}/edit`}>{t("עריכה")}</Link></Button>}
+        {!x.signedAt && !x.status.canceled && <Button size="sm" variant="outline" asChild><Link to={`/sales/deals/${id}/edit`}>{t("עריכה")}</Link></Button>}
       </PageHeader>
 
       <Card title={t("הקישור ללקוח")} actions={!x.status.canceled && <Button size="sm" variant="outline" onClick={() => act({ action: "send_email", cc: selfCc() }, t("המייל נשלח לתור"))}>{t("שליחה במייל")}</Button>}>

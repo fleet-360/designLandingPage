@@ -345,4 +345,7 @@ export default {
   "חיוב נכשל": "Charge failed",
   "בוטל": "Canceled",
   "הסתיים": "Ended",
+  "לבטל את אישור הלקוח?": "Cancel the client's approval?",
+  "הלקוח כבר אישר את ההזמנה. אחרי השמירה הוא יצטרך לאשר אותה מחדש לפני החתימה, ויקבל מייל עם הקישור.": "The client already approved this order. After you save, they'll need to approve it again before signing, and they'll get the link by email.",
+  "הלקוח כבר אישר את ההזמנה. שמירת השינויים תבטל את האישור, והלקוח יקבל מייל עם הקישור כדי לאשר מחדש.": "The client already approved this order. Saving your changes cancels the approval, and the client gets the link by email to approve again.",
 };
