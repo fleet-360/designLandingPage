@@ -100,7 +100,7 @@ export function LinkBox({ url, phone, message }) {
 
 const EVENT_LABELS = {
   created: t("נוצר"), updated: t("עודכן"), viewed: t("הלקוח פתח את הקישור"), visit: t("הלקוח נכנס שוב לקישור"), paid: t("שולם"), canceled: t("בוטל"), booked: t("נקבעה פגישה"),
-  calendar_failed: t("היומן לא זמין, נשלח זימון במייל"), charged: t("חיוב הצליח"), ended: t("הסתיים"), email_sent: t("נשלח מייל"), approved: t("הלקוח אישר את הזמנת העבודה"),
+  calendar_failed: t("היומן לא זמין, נשלח זימון במייל"), charged: t("חיוב הצליח"), ended: t("הסתיים"), email_sent: t("נשלח מייל"), approved: t("הלקוח אישר את הזמנת העבודה"), reopened: t("ההזמנה נפתחה לעריכה, האישור בוטל"),
   signed: t("ההסכם נחתם"), deposit_paid: t("המקדמה סומנה כשולמה"), project_started: t("הפרויקט התחיל"), delivered: t("המערכת נמסרה"),
   card_set: t("נשמר כרטיס"), card_page_opened: t("הלקוח פתח את דף הכרטיס"), card_page_failed: t("פתיחת דף הכרטיס נכשלה"),
   start_date_set: t("נקבע מועד החיוב הראשון"), charge_paid: t("חיוב הצליח"), charge_failed: t("חיוב נכשל"), pause: t("הושהה"), resume: t("חודש"),

@@ -266,4 +266,5 @@ export default {
   "אפשרויות לשירות החודשי": "Monthly service options",
   "שורה לכל רכיב": "One line per item",
   "בכל עסקה איש המכירות מסמן מתוך הרשימה מה כלול": "In each deal the salesperson checks what's included from this list",
+  "ההזמנה נפתחה לעריכה, האישור בוטל": "Order reopened for editing, approval canceled",
 };
