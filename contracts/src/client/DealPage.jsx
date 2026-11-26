@@ -372,6 +372,8 @@ const Rows = ({ rows }) => (
 function Appendix({ d }) {
   const ap = d.agreement.appendix;
   const o = d.order;
+  // the first paid month of the service, shown with the project price
+  const monthly = o.service?.enabled && o.service.rows?.find((r) => r.price > 0);
   return (
     <section id="appendix" className="pa-card scroll-mt-4 space-y-5 p-5 sm:p-7">
       <div>
@@ -399,6 +401,7 @@ function Appendix({ d }) {
       <div>
         <h3 className="mb-2 font-bold">{t("ד. מחיר ותשלום")}</h3>
         <p className="mb-3 text-[15px]">{t("מחיר הפרויקט:")} <span className="pa-num font-semibold">{nis(o.price.amount)}</span> {t('לפני מע"מ')}{o.price.listAmount > o.price.amount && <> {t("אחרי הנחה של")} <span className="pa-num">{nis(o.price.discount)}</span> {t("ממחיר של")} <span className="pa-num">{nis(o.price.listAmount)}</span></>} (<span className="pa-num">{nis(o.price.total)}</span> {t('כולל מע"מ')}).
+          {monthly && <> {t("ובנוסף שירות חודשי:")} <span className="pa-num font-semibold">{nis(monthly.price)}</span> {t('לחודש לפני מע"מ')} (<span className="pa-num">{nis(monthly.priceWithVat)}</span> {t('כולל מע"מ')}){o.standingOrder?.startDate && <>, {t("החל מ-{date}", { date: dmy(o.standingOrder.startDate) })}</>}.</>}
           {ap.hourlyRates?.length > 0 && <> {t('תעריפי שעה לשינויים ולחישוב בביטול, לפני מע"מ:')} {ap.hourlyRates.map((r, i) => <span key={i}>{i > 0 && " · "}{r.role} <span className="pa-num">{nis(r.rate)}</span></span>)}.</>}
           {!ap.hourlyRates && ap.hourlyRate ? <> {t("תעריף שעה לשינויים ולחישוב בביטול:")} <span className="pa-num">{nis(ap.hourlyRate)}</span> {t('לפני מע"מ')}.</> : null}
           {o.payInfo ? ` ${t("כל תשלום בתאריך ובאמצעי התשלום שבטבלה.")}` : <> {t("אמצעי תשלום היתרה:")} {ap.balanceMethod === "checks" ? t("שיקים דחויים") : t("העברות בנקאיות")}{ap.bankAccount && ap.balanceMethod !== "checks" ? ` (${ap.bankAccount})` : ""}.</>}</p>

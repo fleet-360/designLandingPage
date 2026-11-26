@@ -209,4 +209,7 @@ export default {
   "הזנת כרטיס אשראי": "Enter a credit card",
   "הזנת הכרטיס מתבצעת בחלון מאובטח של Grow. פרטי הכרטיס לא עוברים דרכנו.": "You enter the card in a secure Grow window. The card details never pass through us.",
   "אעשה את זה מאוחר יותר": "I'll do it later",
+  "ובנוסף שירות חודשי:": "plus a monthly service:",
+  "לחודש לפני מע\"מ": "per month before VAT",
+  "החל מ-{date}": "starting {date}",
 };
