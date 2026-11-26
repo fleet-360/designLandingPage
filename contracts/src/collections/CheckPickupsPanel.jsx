@@ -2,6 +2,7 @@ import { Check, Pencil, Plus, Trash2 } from "lucide-react";
 import StatusBadge from "@/collections/StatusBadge";
 import { formatDateLong, formatMoney } from "@/collections/format";
 import { cn } from "@/lib/utils";
+import { t } from "@/i18n";
 
 export default function CheckPickupsPanel({
   collections = [],
@@ -17,15 +18,15 @@ export default function CheckPickupsPanel({
   return (
     <section className="overflow-hidden rounded-lg border border-border bg-white">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <h2 className="font-display text-sm font-bold text-foreground">איסופי צ׳קים</h2>
+        <h2 className="font-display text-sm font-bold text-foreground">{t("איסופי צ׳קים")}</h2>
         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          מסונכרן
+          {t("מסונכרן")}
         </span>
       </div>
 
       {shown.length === 0 ? (
-        <p className="px-4 py-8 text-center text-sm text-muted-foreground">אין איסופים מתוכננים</p>
+        <p className="px-4 py-8 text-center text-sm text-muted-foreground">{t("אין איסופים מתוכננים")}</p>
       ) : (
         <ul className="max-h-[26rem] divide-y divide-border/70 overflow-y-auto">
           {shown.map((collection) => (
@@ -34,7 +35,7 @@ export default function CheckPickupsPanel({
                 <div className="truncate text-sm font-semibold text-foreground">{collection.customer_name}</div>
                 <div className="mt-0.5 text-xs text-muted-foreground">{formatDateLong(collection.collection_date)}</div>
                 <div className="mt-1 text-xs text-muted-foreground">
-                  {collection.check_count} צ׳קים ·{" "}
+                  {t("{n} צ׳קים", { n: collection.check_count })} ·{" "}
                   <span className="amount font-semibold text-foreground">{formatMoney(collection.total_amount)}</span>
                 </div>
                 {(collection.contact_person || collection.address) && (
@@ -54,8 +55,8 @@ export default function CheckPickupsPanel({
                     <button
                       type="button"
                       onClick={() => onToggleCollected?.(collection)}
-                      title="סמן כנאסף"
-                      aria-label="סמן כנאסף"
+                      title={t("סמן כנאסף")}
+                      aria-label={t("סמן כנאסף")}
                       className={cn(
                         "flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors",
                         "hover:bg-emerald-50 hover:text-emerald-700",
@@ -67,8 +68,8 @@ export default function CheckPickupsPanel({
                   <button
                     type="button"
                     onClick={() => onEdit?.(collection)}
-                    title="עריכה"
-                    aria-label="עריכת איסוף"
+                    title={t("עריכה")}
+                    aria-label={t("עריכת איסוף")}
                     className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-slate-100 hover:text-foreground"
                   >
                     <Pencil className="h-3.5 w-3.5" />
@@ -76,8 +77,8 @@ export default function CheckPickupsPanel({
                   <button
                     type="button"
                     onClick={() => onDelete?.(collection)}
-                    title="מחיקה"
-                    aria-label="מחיקת איסוף"
+                    title={t("מחיקה")}
+                    aria-label={t("מחיקת איסוף")}
                     className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -96,7 +97,7 @@ export default function CheckPickupsPanel({
           className="flex w-full items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-slate-50"
         >
           <Plus className="h-3.5 w-3.5" />
-          קביעת איסוף צ׳קים
+          {t("קביעת איסוף צ׳קים")}
         </button>
       </div>
     </section>

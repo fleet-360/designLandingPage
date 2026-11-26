@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 // השרת מחזיר תאריכי מערכת (created_date וכו') ב-UTC ללא ציון אזור זמן — מוסיפים Z
 // כדי שהדפדפן יפרש אותם כ-UTC ויציג בשעון המקומי, ולא כשעה מקומית.
 export const parseDate = (d) => {
@@ -16,45 +17,45 @@ export const fmtDate = (d) => {
 export const uid = () => Math.random().toString(36).slice(2, 10);
 
 export const SIGNER_FIELDS = {
-  name: "שם מלא",
-  id_number: "ת.ז.",
-  email: "דואר אלקטרוני",
-  phone: "מספר נייד",
-  address: "כתובת",
+  name: t("שם מלא"),
+  id_number: t("ת.ז."),
+  email: t("דואר אלקטרוני"),
+  phone: t("מספר נייד"),
+  address: t("כתובת"),
 };
 
 export const FIELD_TYPES = {
-  text: "טקסט קצר",
-  textarea: "טקסט ארוך",
-  email: "אימייל",
-  tel: "טלפון",
-  date: "תאריך",
-  number: "מספר",
-  select: "בחירה מרשימה",
+  text: t("טקסט קצר"),
+  textarea: t("טקסט ארוך"),
+  email: t("אימייל"),
+  tel: t("טלפון"),
+  date: t("תאריך"),
+  number: t("מספר"),
+  select: t("בחירה מרשימה"),
 };
 
 export const newBlock = (type) => ({
   id: uid(),
   type,
   content: "",
-  label: type === "field" ? "שדה למילוי" : type === "signature" ? "חתימת הלקוח" : "",
+  label: type === "field" ? t("שדה למילוי") : type === "signature" ? t("חתימת הלקוח") : "",
   input_type: type === "field" ? "text" : undefined,
   required: type === "field" || type === "signature",
 });
 
 export const defaultForm = () => ({
-  title: "טופס חדש",
+  title: t("טופס חדש"),
   is_published: false,
   signer_fields: ["name", "id_number", "email", "phone"],
   blocks: [
-    { id: uid(), type: "title", content: "הסכם למתן שירותים" },
+    { id: uid(), type: "title", content: t("הסכם למתן שירותים") },
     {
       id: uid(),
       type: "text",
-      content: "מסמך זה מהווה הסכם בין הצדדים. ניתן לערוך את הטקסט, להוסיף סעיפים, תמונות ושדות למילוי.",
+      content: t("מסמך זה מהווה הסכם בין הצדדים. ניתן לערוך את הטקסט, להוסיף סעיפים, תמונות ושדות למילוי."),
     },
     { id: uid(), type: "separator" },
-    { id: uid(), type: "signature", label: "חתימת הלקוח", required: true },
+    { id: uid(), type: "signature", label: t("חתימת הלקוח"), required: true },
   ],
 });
 
@@ -62,44 +63,44 @@ export const defaultForm = () => ({
 export const signLink = (id) => `${window.location.origin}${import.meta.env.BASE_URL.replace(/\/$/, "")}/sign?id=${id}`;
 
 export const FONT_SIZES = [
-  { value: "default", label: "ברירת מחדל" },
-  { value: "12px", label: "קטן (12)" },
-  { value: "14px", label: "רגיל (14)" },
-  { value: "16px", label: "בינוני (16)" },
-  { value: "18px", label: "גדול (18)" },
-  { value: "24px", label: "כותרת (24)" },
-  { value: "32px", label: "כותרת גדולה (32)" },
+  { value: "default", label: t("ברירת מחדל") },
+  { value: "12px", label: t("קטן (12)") },
+  { value: "14px", label: t("רגיל (14)") },
+  { value: "16px", label: t("בינוני (16)") },
+  { value: "18px", label: t("גדול (18)") },
+  { value: "24px", label: t("כותרת (24)") },
+  { value: "32px", label: t("כותרת גדולה (32)") },
 ];
 
 export const FONT_FAMILIES = [
-  { value: "default", label: "לפי הגדרות הטופס" },
-  { value: "var(--font-body)", label: "Heebo (גוף)" },
-  { value: "var(--font-heading)", label: "Frank Ruhl Libre (כותרת)" },
+  { value: "default", label: t("לפי הגדרות הטופס") },
+  { value: "var(--font-body)", label: t("Heebo (גוף)") },
+  { value: "var(--font-heading)", label: t("Frank Ruhl Libre (כותרת)") },
 ];
 
 export const ALIGN_OPTIONS = [
-  { value: "start", label: "ימין", icon: "AlignRight" },
-  { value: "center", label: "מרכז", icon: "AlignCenter" },
-  { value: "end", label: "שמאל", icon: "AlignLeft" },
+  { value: "start", label: t("ימין"), icon: "AlignRight" },
+  { value: "center", label: t("מרכז"), icon: "AlignCenter" },
+  { value: "end", label: t("שמאל"), icon: "AlignLeft" },
 ];
 
 export const DIRECTION_OPTIONS = [
-  { value: "", label: "ברירת מחדל" },
+  { value: "", label: t("ברירת מחדל") },
   { value: "rtl", label: "RTL" },
   { value: "ltr", label: "LTR" },
-  { value: "auto", label: "אוטומטי" },
+  { value: "auto", label: t("אוטומטי") },
 ];
 
 export const DISPLAY_OPTIONS = [
-  { value: "both", label: "הצגה בגרסת מילוי + גרסת PDF" },
-  { value: "fill", label: "הצגה בגרסת מילוי בלבד" },
-  { value: "pdf", label: "הצגה בגרסת PDF בלבד" },
+  { value: "both", label: t("הצגה בגרסת מילוי + גרסת PDF") },
+  { value: "fill", label: t("הצגה בגרסת מילוי בלבד") },
+  { value: "pdf", label: t("הצגה בגרסת PDF בלבד") },
 ];
 
 export const HEADING_LEVELS = [
-  { value: "h1", label: "כותרת ראשית" },
-  { value: "h2", label: "כותרת משנית" },
-  { value: "h3", label: "כותרת שלישית" },
+  { value: "h1", label: t("כותרת ראשית") },
+  { value: "h2", label: t("כותרת משנית") },
+  { value: "h3", label: t("כותרת שלישית") },
 ];
 
 export const defaultStyle = () => ({

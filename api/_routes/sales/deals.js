@@ -27,7 +27,7 @@ import { pitchOf } from "./discovery.js";
 import { query } from "../../_lib/db.js";
 import { requireAdmin } from "../../_lib/auth.js";
 import { uuidParam } from "../../_lib/sign.js";
-import { events, getSettings, isEmail, logEvent, mailsFor, newToken, sendMail, str } from "../../_lib/sales.js";
+import { ccOf, events, getSettings, isEmail, logEvent, mailsFor, newToken, sendMail, str } from "../../_lib/sales.js";
 import { buildOrder, cleanClient, cleanDealData } from "../../_lib/deal.js";
 import { dealInviteMail, dealOrderMail, firstChargeDateMail } from "../../_lib/sales-mail.js";
 import { addMonths, billingDayOnOrAfter, israelDate } from "../../_lib/sales-calc.js";
@@ -170,8 +170,8 @@ export default route(["GET", "POST", "PATCH"], async (req, res) => {
       d = await closeManually(d, b, user, settings);
       if (b.sendOrderMail) mail = await sendOrder(d, settings, base, b.attachContract !== false);
     } else if (b.sendEmail) {
-      mail = await sendMail({ ...dealInviteMail(d, settings, `${base}/deal/${d.token}`), entity: "deal", entityId: d.id, kind: "deal_invite" });
-      await logEvent("deal", d.id, "email_sent", { kind: "invite", to: client.email, sent: mail.sent });
+      mail = await sendMail({ ...dealInviteMail(d, settings, `${base}/deal/${d.token}`), cc: ccOf(b), entity: "deal", entityId: d.id, kind: "deal_invite" });
+      await logEvent("deal", d.id, "email_sent", { kind: "invite", to: client.email, cc: ccOf(b), sent: mail.sent });
     }
     return json(res, 201, { item: dealRow(d, base), mail });
   }
@@ -197,8 +197,8 @@ export default route(["GET", "POST", "PATCH"], async (req, res) => {
     }
     case "send_email": {
       if (d.canceled_at) throw new HttpError(409, "canceled");
-      const mail = await sendMail({ ...dealInviteMail(d, settings, `${base}/deal/${d.token}`), entity: "deal", entityId: id, kind: "deal_invite" });
-      await logEvent("deal", id, "email_sent", { kind: "invite", to: d.client.email, sent: mail.sent });
+      const mail = await sendMail({ ...dealInviteMail(d, settings, `${base}/deal/${d.token}`), cc: ccOf(b), entity: "deal", entityId: id, kind: "deal_invite" });
+      await logEvent("deal", id, "email_sent", { kind: "invite", to: d.client.email, cc: ccOf(b), sent: mail.sent });
       break;
     }
     case "mark_deposit_paid":

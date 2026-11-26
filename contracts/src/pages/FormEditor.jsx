@@ -12,6 +12,7 @@ import BlockSettings from "@/components/editor/BlockSettings";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { newBlock, ensureBlockStyle, cleanBlocksForSave } from "@/lib/formUtils";
+import { t } from "@/i18n";
 
 const formSig = (f) => JSON.stringify({ title: f?.title, blocks: f?.blocks });
 
@@ -55,8 +56,8 @@ export default function FormEditor() {
     return () => document.removeEventListener("pointerdown", handler);
   }, [activeId]);
 
-  if (!id) return <div className="py-20 text-center text-muted-foreground">לא נבחר טופס — חזרו לרשימה ובחרו טופס לעריכה.</div>;
-  if (form === null) return <div className="py-20 text-center text-muted-foreground">הטופס לא נמצא.</div>;
+  if (!id) return <div className="py-20 text-center text-muted-foreground">{t("לא נבחר טופס — חזרו לרשימה ובחרו טופס לעריכה.")}</div>;
+  if (form === null) return <div className="py-20 text-center text-muted-foreground">{t("הטופס לא נמצא.")}</div>;
   if (!form) return <Loader />;
 
   const blocks = (form.blocks || []).map(ensureBlockStyle);
@@ -88,7 +89,7 @@ export default function FormEditor() {
     setSavedForm(updated);
     qc.invalidateQueries({ queryKey: ["forms"] });
     setSaving(false);
-    toast({ title: extra.is_published ? "הטופס פורסם ומוכן לשיתוף" : "הטופס נשמר" });
+    toast({ title: extra.is_published ? t("הטופס פורסם ומוכן לשיתוף") : t("הטופס נשמר") });
   };
 
   const save = () => doSave();
@@ -123,45 +124,45 @@ export default function FormEditor() {
     if (!dialog) return null;
     if (dialog.type === "unsaved") {
       return {
-        title: "שינויים שלא נשמרו",
-        description: "יש שינויים בטופס שטרם נשמרו. מה ברצונך לעשות?",
+        title: t("שינויים שלא נשמרו"),
+        description: t("יש שינויים בטופס שטרם נשמרו. מה ברצונך לעשות?"),
         actions: [
-          { label: "ביטול", variant: "outline", onClick: closeDialog },
-          { label: "לא לשמור", variant: "ghost", onClick: () => { const p = dialog.path; closeDialog(); navigate(p); } },
-          { label: "שמור והמשך", variant: "default", onClick: async () => { await doSave(); const p = dialog.path; closeDialog(); navigate(p); } },
+          { label: t("ביטול"), variant: "outline", onClick: closeDialog },
+          { label: t("לא לשמור"), variant: "ghost", onClick: () => { const p = dialog.path; closeDialog(); navigate(p); } },
+          { label: t("שמור והמשך"), variant: "default", onClick: async () => { await doSave(); const p = dialog.path; closeDialog(); navigate(p); } },
         ],
       };
     }
     if (dialog.type === "publish-confirm") {
       return {
-        title: dialog.publishValue ? "פרסום טופס?" : "העברה לטיוטה?",
+        title: dialog.publishValue ? t("פרסום טופס?") : t("העברה לטיוטה?"),
         description: dialog.publishValue
-          ? "האם אתה בטוח שברצונך לפרסם את הטופס? לאחר הפרסום, לקוחות יוכלו לחתום עליו."
-          : "האם אתה בטוח שברצונך להעביר את הטופס לטיוטה? לקוחות לא יוכלו לחתום עליו עד לפרסום מחדש.",
+          ? t("האם אתה בטוח שברצונך לפרסם את הטופס? לאחר הפרסום, לקוחות יוכלו לחתום עליו.")
+          : t("האם אתה בטוח שברצונך להעביר את הטופס לטיוטה? לקוחות לא יוכלו לחתום עליו עד לפרסום מחדש."),
         actions: [
-          { label: "ביטול", variant: "outline", onClick: closeDialog },
-          { label: "אישור", variant: "default", onClick: async () => { const v = dialog.publishValue; closeDialog(); await publish(v); } },
+          { label: t("ביטול"), variant: "outline", onClick: closeDialog },
+          { label: t("אישור"), variant: "default", onClick: async () => { const v = dialog.publishValue; closeDialog(); await publish(v); } },
         ],
       };
     }
     if (dialog.type === "publish-unsaved") {
       return {
-        title: "פרסום טופס?",
-        description: "יש שינויים שלא נשמרו. מה ברצונך לעשות?",
+        title: t("פרסום טופס?"),
+        description: t("יש שינויים שלא נשמרו. מה ברצונך לעשות?"),
         actions: [
-          { label: "ביטול", variant: "outline", onClick: closeDialog },
-          { label: "שמור בלבד", variant: "secondary", onClick: async () => { closeDialog(); await doSave(); } },
-          { label: "שמור ופרסם", variant: "default", onClick: async () => { const v = dialog.publishValue; closeDialog(); await publish(v); } },
+          { label: t("ביטול"), variant: "outline", onClick: closeDialog },
+          { label: t("שמור בלבד"), variant: "secondary", onClick: async () => { closeDialog(); await doSave(); } },
+          { label: t("שמור ופרסם"), variant: "default", onClick: async () => { const v = dialog.publishValue; closeDialog(); await publish(v); } },
         ],
       };
     }
     if (dialog.type === "delete") {
       return {
-        title: "מחיקת טופס?",
-        description: "האם אתה בטוח שברצונך למחוק את הטופס? פעולה זו אינה הפיכה וכל החתימות שנאספו יימחקו גם הן.",
+        title: t("מחיקת טופס?"),
+        description: t("האם אתה בטוח שברצונך למחוק את הטופס? פעולה זו אינה הפיכה וכל החתימות שנאספו יימחקו גם הן."),
         actions: [
-          { label: "ביטול", variant: "outline", onClick: closeDialog },
-          { label: "מחיקה", variant: "destructive", onClick: async () => { closeDialog(); await doDelete(); } },
+          { label: t("ביטול"), variant: "outline", onClick: closeDialog },
+          { label: t("מחיקה"), variant: "destructive", onClick: async () => { closeDialog(); await doDelete(); } },
         ],
       };
     }
@@ -178,7 +179,7 @@ export default function FormEditor() {
           <BlockPalette onAdd={(type) => setBlocks((b) => [...b, newBlock(type)])} />
         </aside>
         <section className="paper mx-auto w-full max-w-3xl rounded-2xl bg-card px-6 py-10 sm:px-12 sm:py-14">
-          {blocks.length === 0 && <p className="py-16 text-center text-sm text-muted-foreground">המסמך ריק — הוסיפו אלמנטים מהתפריט</p>}
+          {blocks.length === 0 && <p className="py-16 text-center text-sm text-muted-foreground">{t("המסמך ריק — הוסיפו אלמנטים מהתפריט")}</p>}
           <DragDropContext onDragEnd={onDragEnd}>
             <Droppable droppableId="blocks">
               {(provided) => (

@@ -1,8 +1,11 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Check, Copy, Loader2, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/use-toast";
-import { api, copyText, dateTime, errorText, whatsappLink } from "@/sales/lib";
+import { api, copyText, dateTime, errorText, isEmail, whatsappLink } from "@/sales/lib";
+import { t } from "@/i18n";
 
 // Loads an admin API path; reload() after an action
 export function useApi(path) {
@@ -46,7 +49,7 @@ export const Spinner = () => <div className="grid min-h-[40vh] place-items-cente
 export const LoadError = ({ error, reload }) => (
   <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-6 text-center">
     <p>{errorText(error)}</p>
-    <Button variant="outline" className="mt-3" onClick={reload}>נסו שוב</Button>
+    <Button variant="outline" className="mt-3" onClick={reload}>{t("נסו שוב")}</Button>
   </div>
 );
 
@@ -87,35 +90,35 @@ export function LinkBox({ url, phone, message }) {
     <div className="flex flex-wrap items-center gap-2">
       <code className="w-full min-w-0 truncate sm:w-auto sm:flex-1 rounded-lg bg-secondary px-3 py-2 text-xs" dir="ltr">{url}</code>
       <Button size="sm" variant="outline" onClick={async () => { if (await copyText(url)) { setCopied(true); setTimeout(() => setCopied(false), 1500); } }}>
-        {copied ? <Check className="ms-1 h-4 w-4" /> : <Copy className="ms-1 h-4 w-4" />}{copied ? "הועתק" : "העתקה"}
+        {copied ? <Check className="ms-1 h-4 w-4" /> : <Copy className="ms-1 h-4 w-4" />}{copied ? t("הועתק") : t("העתקה")}
       </Button>
-      {phone && <Button size="sm" variant="outline" asChild><a href={whatsappLink(phone, `${message}\n${url}`)} target="_blank" rel="noreferrer"><MessageCircle className="ms-1 h-4 w-4" />וואטסאפ</a></Button>}
-      <Button size="sm" variant="ghost" asChild><a href={url} target="_blank" rel="noreferrer">פתיחה</a></Button>
+      {phone && <Button size="sm" variant="outline" asChild><a href={whatsappLink(phone, `${message}\n${url}`)} target="_blank" rel="noreferrer"><MessageCircle className="ms-1 h-4 w-4" />{t("וואטסאפ")}</a></Button>}
+      <Button size="sm" variant="ghost" asChild><a href={url} target="_blank" rel="noreferrer">{t("פתיחה")}</a></Button>
     </div>
   );
 }
 
 const EVENT_LABELS = {
-  created: "נוצר", updated: "עודכן", viewed: "הלקוח פתח את הקישור", visit: "הלקוח נכנס שוב לקישור", paid: "שולם", canceled: "בוטל", booked: "נקבעה פגישה",
-  calendar_failed: "היומן לא זמין, נשלח זימון במייל", charged: "חיוב הצליח", ended: "הסתיים", email_sent: "נשלח מייל", approved: "הלקוח אישר את הזמנת העבודה",
-  signed: "ההסכם נחתם", deposit_paid: "המקדמה סומנה כשולמה", project_started: "הפרויקט התחיל", delivered: "המערכת נמסרה",
-  card_set: "נשמר כרטיס", card_page_opened: "הלקוח פתח את דף הכרטיס", card_page_failed: "פתיחת דף הכרטיס נכשלה",
-  start_date_set: "נקבע מועד החיוב הראשון", charge_paid: "חיוב הצליח", charge_failed: "חיוב נכשל", pause: "הושהה", resume: "חודש",
-  cancel: "בוטל", update: "עודכן", charge_now: "חיוב יזום", charge_requested: "נשלחה בקשת חיוב", invoice_failed: "הפקת החשבונית נכשלה",
-  reminder_sent: "נשלחה תזכורת", underpaid: "התקבל תשלום נמוך מהמחיר", charge_settled: "חיוב סומן ידנית",
-  held: "הלקוח בחר מועד", hold_lost: "המועד שנבחר נתפס", manual: "פגישה או תשלום עודכנו ידנית",
-  signed_manual: "סומן כנחתם מחוץ לקישור", signed_file: "קובץ החוזה החתום עודכן", payment_note: "אופן התשלום עודכן",
+  created: t("נוצר"), updated: t("עודכן"), viewed: t("הלקוח פתח את הקישור"), visit: t("הלקוח נכנס שוב לקישור"), paid: t("שולם"), canceled: t("בוטל"), booked: t("נקבעה פגישה"),
+  calendar_failed: t("היומן לא זמין, נשלח זימון במייל"), charged: t("חיוב הצליח"), ended: t("הסתיים"), email_sent: t("נשלח מייל"), approved: t("הלקוח אישר את הזמנת העבודה"),
+  signed: t("ההסכם נחתם"), deposit_paid: t("המקדמה סומנה כשולמה"), project_started: t("הפרויקט התחיל"), delivered: t("המערכת נמסרה"),
+  card_set: t("נשמר כרטיס"), card_page_opened: t("הלקוח פתח את דף הכרטיס"), card_page_failed: t("פתיחת דף הכרטיס נכשלה"),
+  start_date_set: t("נקבע מועד החיוב הראשון"), charge_paid: t("חיוב הצליח"), charge_failed: t("חיוב נכשל"), pause: t("הושהה"), resume: t("חודש"),
+  cancel: t("בוטל"), update: t("עודכן"), charge_now: t("חיוב יזום"), charge_requested: t("נשלחה בקשת חיוב"), invoice_failed: t("הפקת החשבונית נכשלה"),
+  reminder_sent: t("נשלחה תזכורת"), underpaid: t("התקבל תשלום נמוך מהמחיר"), charge_settled: t("חיוב סומן ידנית"),
+  held: t("הלקוח בחר מועד"), hold_lost: t("המועד שנבחר נתפס"), manual: t("פגישה או תשלום עודכנו ידנית"),
+  signed_manual: t("סומן כנחתם מחוץ לקישור"), signed_file: t("קובץ החוזה החתום עודכן"), payment_note: t("אופן התשלום עודכן"),
 };
 // the device a visit came from, by its user agent
-const device = (ua) => (!ua ? "" : /iPad|Tablet/i.test(ua) ? "מטאבלט" : /Mobi|Android|iPhone/i.test(ua) ? "מהטלפון" : "מהמחשב");
-const MAIL_STATUS = { sent: ["green", "נשלח"], queued: ["amber", "בתור"], fetched: ["amber", "בשליחה"], failed: ["red", "נכשל"] };
+const device = (ua) => (!ua ? "" : /iPad|Tablet/i.test(ua) ? t("מטאבלט") : /Mobi|Android|iPhone/i.test(ua) ? t("מהטלפון") : t("מהמחשב"));
+const MAIL_STATUS = { sent: ["green", t("נשלח")], queued: ["amber", t("בתור")], fetched: ["amber", t("בשליחה")], failed: ["red", t("נכשל")] };
 
 export function History({ events = [], mails = [] }) {
   const items = [
     ...events.filter((e) => e.type !== "email_sent").map((e) => ({ at: e.at, text: [EVENT_LABELS[e.type] || e.type, e.type === "visit" && device(e.detail?.userAgent)].filter(Boolean).join(" "), detail: e.detail })),   // emails are listed from the outbox below
-    ...mails.map((m) => ({ at: m.at, text: `מייל: ${m.subject}`, sub: (m.to || []).join(", "), mail: m })),
+    ...mails.map((m) => ({ at: m.at, text: t("מייל: {subject}", { subject: m.subject }), sub: (m.to || []).join(", "), mail: m })),
   ].sort((a, b) => (a.at < b.at ? 1 : -1));
-  if (!items.length) return <p className="text-sm text-muted-foreground">אין עדיין פעילות.</p>;
+  if (!items.length) return <p className="text-sm text-muted-foreground">{t("אין עדיין פעילות.")}</p>;
   return (
     <ol className="space-y-2.5 text-sm">
       {items.map((x, i) => (
@@ -141,3 +144,38 @@ export const FieldRow = ({ label, hint, children, className = "" }) => (
     {hint && <span className="block text-xs text-muted-foreground">{hint}</span>}
   </label>
 );
+
+// Who else gets the email with the link: more addresses, and a copy to the sender. The site has one
+// shared admin login, so "me" is the address this browser remembers.
+// ponytail: per-browser address; read it from the session once each salesperson has their own login
+const ME_KEY = "sales.myEmail";
+const storedMe = () => { try { return localStorage.getItem(ME_KEY) || ""; } catch { return ""; } };
+export const blankCopies = () => ({ extra: "", self: true, me: storedMe() });
+
+// -> { cc } or { error }
+export function copiesOf(c) {
+  const extra = c.extra.split(/[\s,;]+/).filter(Boolean);
+  const bad = extra.find((e) => !isEmail(e));
+  if (bad) return { error: t("כתובת אימייל לא תקינה: {email}", { email: bad }) };
+  if (!c.self) return { cc: extra };
+  const me = c.me.trim();
+  if (!isEmail(me)) return { error: t("כדי לשלוח עותק אליך צריך את האימייל שלך") };
+  try { localStorage.setItem(ME_KEY, me); } catch { /* private window: asked again next time */ }
+  return { cc: [...extra, me] };
+}
+
+// the "send by email" buttons: a copy to the sender when this browser knows the address
+export const selfCc = () => (isEmail(storedMe()) ? [storedMe()] : []);
+
+export function MailCopies({ c, onChange }) {
+  const set = (k) => (v) => onChange({ ...c, [k]: v });
+  return (
+    <div className="space-y-2">
+      <FieldRow label={t("מיילים נוספים")} hint={t("אפשר כמה, מופרדים בפסיק. יקבלו את אותו המייל")}>
+        <Input value={c.extra} onChange={(e) => set("extra")(e.target.value)} dir="ltr" placeholder="name@company.com, ..." />
+      </FieldRow>
+      <label className="flex items-center gap-3 text-sm"><Switch checked={c.self} onCheckedChange={set("self")} />{t("שלח לעצמי")}</label>
+      {c.self && <Input value={c.me} onChange={(e) => set("me")(e.target.value)} type="email" dir="ltr" placeholder={t("האימייל שלך, למשל sharon@pro-algo.com")} aria-label={t("האימייל שלך")} />}
+    </div>
+  );
+}

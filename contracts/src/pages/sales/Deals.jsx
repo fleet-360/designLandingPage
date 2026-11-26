@@ -7,8 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/use-toast";
 import { api, dateTime, dmy, errorText, FIELD_ERRORS, fileToDataUrl, isEmail, mobileIL, nis, taxIdIL } from "@/sales/lib";
-import { Card, FieldRow, History, Info, LinkBox, LoadError, PageHeader, Pill, Spinner, run, useApi } from "./AdminUi.jsx";
+import { Card, FieldRow, History, Info, LinkBox, LoadError, MailCopies, PageHeader, Pill, Spinner, blankCopies, copiesOf, run, selfCc, useApi } from "./AdminUi.jsx";
 import { Confirm, PitchFields, pitchBody, pitchFrom } from "./Discovery.jsx";
+import { t } from "@/i18n";
 import SpecPagePicker from "./SpecPagePicker.jsx";
 import DealFilm from "./DealFilm.jsx";
 
@@ -19,15 +20,15 @@ const MAX_UPLOAD = 3 * 1024 * 1024;
 async function uploadContract(file) {
   if (!file) return null;
   if (file.size > MAX_UPLOAD) { toast({ title: errorText({ code: "file_too_large" }), variant: "destructive" }); return null; }
-  const r = await run(async () => api("sales/upload", { method: "POST", body: { name: file.name, data_url: await fileToDataUrl(file) } }), "החוזה הועלה");
+  const r = await run(async () => api("sales/upload", { method: "POST", body: { name: file.name, data_url: await fileToDataUrl(file) } }), t("החוזה הועלה"));
   return r ? { fileId: r.fileId, name: file.name } : null;
 }
 
-function ContractUpload({ file, onFile, label = "העלאת החוזה החתום" }) {
+function ContractUpload({ file, onFile, label = t("העלאת החוזה החתום") }) {
   const [busy, setBusy] = useState(false);
   return (
     <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm hover:bg-secondary">
-      <Upload className="h-4 w-4" />{busy ? "מעלה..." : file ? `${file.name} · החלפה` : label}
+      <Upload className="h-4 w-4" />{busy ? t("מעלה...") : file ? t("{name} · החלפה", { name: file.name }) : label}
       <input type="file" accept="application/pdf,image/png,image/jpeg" className="hidden" disabled={busy}
         onChange={async (e) => { const f = e.target.files?.[0]; e.target.value = ""; setBusy(true); const r = await uploadContract(f); setBusy(false); if (r) onFile(r); }} />
     </label>
@@ -38,8 +39,8 @@ function ContractUpload({ file, onFile, label = "העלאת החוזה החתו�
 function ManualClose({ m, setM }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      <FieldRow label="תאריך החתימה" hint="לוח התשלומים מחושב מהתאריך הזה"><Input type="date" value={m.signedOn} max={todayIL()} onChange={(e) => setM({ ...m, signedOn: e.target.value })} /></FieldRow>
-      <FieldRow label="החוזה החתום" hint="PDF או תמונה, עד 3MB. אפשר להעלות גם אחר כך">
+      <FieldRow label={t("תאריך החתימה")} hint={t("לוח התשלומים מחושב מהתאריך הזה")}><Input type="date" value={m.signedOn} max={todayIL()} onChange={(e) => setM({ ...m, signedOn: e.target.value })} /></FieldRow>
+      <FieldRow label={t("החוזה החתום")} hint={t("PDF או תמונה, עד 3MB. אפשר להעלות גם אחר כך")}>
         <div><ContractUpload file={m.file} onFile={(file) => setM({ ...m, file, attachContract: true })} /></div>
       </FieldRow>
     </div>
@@ -49,17 +50,17 @@ function ManualClose({ m, setM }) {
 function OrderMailOptions({ m, setM, hasFile }) {
   return (
     <div className="space-y-2">
-      <label className="flex items-center gap-2 text-sm"><Switch checked={m.sendOrderMail} onCheckedChange={(v) => setM({ ...m, sendOrderMail: v })} />לשלוח ללקוח אישור הזמנה במייל</label>
+      <label className="flex items-center gap-2 text-sm"><Switch checked={m.sendOrderMail} onCheckedChange={(v) => setM({ ...m, sendOrderMail: v })} />{t("לשלוח ללקוח אישור הזמנה במייל")}</label>
       {m.sendOrderMail && (
         <label className={`flex items-center gap-2 text-sm ${hasFile ? "" : "text-muted-foreground"}`}>
-          <Switch checked={hasFile && m.attachContract} disabled={!hasFile} onCheckedChange={(v) => setM({ ...m, attachContract: v })} />לצרף את החוזה החתום{!hasFile && " (לא הועלה)"}
+          <Switch checked={hasFile && m.attachContract} disabled={!hasFile} onCheckedChange={(v) => setM({ ...m, attachContract: v })} />{t("לצרף את החוזה החתום")}{!hasFile && t(" (לא הועלה)")}
         </label>
       )}
     </div>
   );
 }
 // ---- the payment schedule: every payment with its date, amount (before VAT) and method ----
-const METHODS = [["transfer", "העברה בנקאית"], ["check", "שיק"], ["card", "כרטיס אשראי"]];
+const METHODS = [["transfer", t("העברה בנקאית")], ["check", t("שיק")], ["card", t("כרטיס אשראי")]];
 const methodName = (m) => METHODS.find(([k]) => k === m)?.[1] || "";
 const agorot = (v) => Math.round(Number(v || 0) * 100);
 const isoAddDays = (iso, n) => { const d = new Date(`${iso}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
@@ -114,13 +115,13 @@ function PaymentsEditor({ price, vatRate, payments, setPayments, pickupDate, set
   return (
     <div className="space-y-4">
       <div className="rounded-xl bg-secondary/60 p-3">
-        <p className="mb-2 text-sm font-medium">חלוקה מהירה</p>
+        <p className="mb-2 text-sm font-medium">{t("חלוקה מהירה")}</p>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-sm">
-          <span>מקדמה</span>
+          <span>{t("מקדמה")}</span>
           {split.depositUnit === "amount"
-            ? <Input value={split.depositAmount} onChange={(e) => setSplit({ ...split, depositAmount: e.target.value })} inputMode="decimal" dir="ltr" placeholder="₪" className="h-8 w-24" aria-label='סכום המקדמה לפני מע"מ' />
-            : <Input value={split.depositPercent} onChange={(e) => setSplit({ ...split, depositPercent: e.target.value })} inputMode="numeric" dir="ltr" className="h-8 w-16" aria-label="אחוז מקדמה" />}
-          <select value={split.depositUnit} className="h-8 rounded-md border border-input bg-transparent px-1.5" aria-label="מקדמה באחוזים או בסכום"
+            ? <Input value={split.depositAmount} onChange={(e) => setSplit({ ...split, depositAmount: e.target.value })} inputMode="decimal" dir="ltr" placeholder="₪" className="h-8 w-24" aria-label={t('סכום המקדמה לפני מע"מ')} />
+            : <Input value={split.depositPercent} onChange={(e) => setSplit({ ...split, depositPercent: e.target.value })} inputMode="numeric" dir="ltr" className="h-8 w-16" aria-label={t("אחוז מקדמה")} />}
+          <select value={split.depositUnit} className="h-8 rounded-md border border-input bg-transparent px-1.5" aria-label={t("מקדמה באחוזים או בסכום")}
             onChange={(e) => {
               const unit = e.target.value;
               // switching keeps the same deposit: 30% of 50,000 becomes 15,000 and back
@@ -128,31 +129,31 @@ function PaymentsEditor({ price, vatRate, payments, setPayments, pickupDate, set
               if (unit === "amount") setSplit({ ...split, depositUnit: unit, depositAmount: split.depositAmount || (total ? splitDeposit(total, split) / 100 : "") });
               else setSplit({ ...split, depositUnit: unit, depositPercent: total && Number(split.depositAmount) > 0 ? Math.round((agorot(split.depositAmount) / total) * 1000) / 10 : split.depositPercent });
             }}>
-            <option value="percent">%</option><option value="amount">₪ לפני מע"מ</option>
+            <option value="percent">%</option><option value="amount">{t('₪ לפני מע"מ')}</option>
           </select>
-          <span>ב-</span><Input type="date" value={split.depositDate} onChange={(e) => setSplit({ ...split, depositDate: e.target.value })} className="h-8 w-40" aria-label="תאריך המקדמה" />
-          <select value={split.depositMethod} onChange={(e) => setSplit({ ...split, depositMethod: e.target.value })} className="h-8 rounded-md border border-input bg-transparent px-2" aria-label="אמצעי תשלום המקדמה">
+          <span>{t("ב-")}</span><Input type="date" value={split.depositDate} onChange={(e) => setSplit({ ...split, depositDate: e.target.value })} className="h-8 w-40" aria-label={t("תאריך המקדמה")} />
+          <select value={split.depositMethod} onChange={(e) => setSplit({ ...split, depositMethod: e.target.value })} className="h-8 rounded-md border border-input bg-transparent px-2" aria-label={t("אמצעי תשלום המקדמה")}>
             {METHODS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
           </select>
-          <span>ואז</span>
-          <Input value={split.count} onChange={(e) => setSplit({ ...split, count: e.target.value })} inputMode="numeric" dir="ltr" className="h-8 w-14" aria-label="מספר תשלומים" />
-          <span>תשלומים חודשיים מ-</span><Input type="date" value={split.firstDate} onChange={(e) => setSplit({ ...split, firstDate: e.target.value })} className="h-8 w-40" aria-label="תאריך התשלום הראשון" />
-          <select value={split.method} onChange={(e) => setSplit({ ...split, method: e.target.value })} className="h-8 rounded-md border border-input bg-transparent px-2" aria-label="אמצעי תשלום היתרה">
+          <span>{t("ואז")}</span>
+          <Input value={split.count} onChange={(e) => setSplit({ ...split, count: e.target.value })} inputMode="numeric" dir="ltr" className="h-8 w-14" aria-label={t("מספר תשלומים")} />
+          <span>{t("תשלומים חודשיים מ-")}</span><Input type="date" value={split.firstDate} onChange={(e) => setSplit({ ...split, firstDate: e.target.value })} className="h-8 w-40" aria-label={t("תאריך התשלום הראשון")} />
+          <select value={split.method} onChange={(e) => setSplit({ ...split, method: e.target.value })} className="h-8 rounded-md border border-input bg-transparent px-2" aria-label={t("אמצעי תשלום היתרה")}>
             {METHODS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
           </select>
           <Button type="button" size="sm" variant="outline" disabled={!(target > 0) || !split.depositDate || (Number(split.count) > 0 && !split.firstDate) || (split.depositUnit === "amount" && !(Number(split.depositAmount) > 0))}
-            onClick={() => setPayments(splitPayments(price, split))}>{rows.length ? "חלוקה מחדש" : "מילוי הטבלה"}</Button>
+            onClick={() => setPayments(splitPayments(price, split))}>{rows.length ? t("חלוקה מחדש") : t("מילוי הטבלה")}</Button>
         </div>
         <p className="mt-1.5 text-xs text-muted-foreground">
-          ממלא את הטבלה למטה. אחר כך אפשר לשנות כל תשלום בנפרד.
-          {split.depositUnit === "amount" && agorot(split.depositAmount) > target && target > 0 && <span className="text-amber-700"> המקדמה גבוהה מהמחיר, ותוגבל למחיר.</span>}
+          {t("ממלא את הטבלה למטה. אחר כך אפשר לשנות כל תשלום בנפרד.")}
+          {split.depositUnit === "amount" && agorot(split.depositAmount) > target && target > 0 && <span className="text-amber-700">{t(" המקדמה גבוהה מהמחיר, ותוגבל למחיר.")}</span>}
         </p>
       </div>
 
       {rows.length > 0 && (
         <div className="space-y-2">
           <div className="hidden grid-cols-[72px_150px_1fr_1fr_150px_36px] gap-2 px-1 text-xs text-muted-foreground sm:grid">
-            <span /> <span>תאריך</span><span>סכום לפני מע"מ</span><span>כולל מע"מ</span><span>אמצעי תשלום</span><span />
+            <span /> <span>{t("תאריך")}</span><span>{t('סכום לפני מע"מ')}</span><span>{t('כולל מע"מ')}</span><span>{t("אמצעי תשלום")}</span><span />
           </div>
           {rows.map((p, i) => {
             const late = p.date && p.date < today;
@@ -162,46 +163,46 @@ function PaymentsEditor({ price, vatRate, payments, setPayments, pickupDate, set
             return (
               <div key={i}>
                 <div className="grid grid-cols-2 items-center gap-2 rounded-xl border border-border p-2 sm:grid-cols-[72px_150px_1fr_1fr_150px_36px] sm:border-0 sm:p-0 sm:px-1">
-                  <span className="text-sm font-medium">{i === 0 ? "מקדמה" : `תשלום ${i}`}</span>
-                  <Input type="date" value={p.date} onChange={(e) => set(i, "date", e.target.value)} aria-label="תאריך" className="h-9" />
+                  <span className="text-sm font-medium">{i === 0 ? t("מקדמה") : t("תשלום {n}", { n: i })}</span>
+                  <Input type="date" value={p.date} onChange={(e) => set(i, "date", e.target.value)} aria-label={t("תאריך")} className="h-9" />
                   <div className="flex items-center gap-1.5">
-                    <Input value={p.amount} onChange={(e) => set(i, "amount", e.target.value)} inputMode="decimal" dir="ltr" placeholder="₪" aria-label='סכום לפני מע"מ' className="h-9 min-w-0" />
+                    <Input value={p.amount} onChange={(e) => set(i, "amount", e.target.value)} inputMode="decimal" dir="ltr" placeholder="₪" aria-label={t('סכום לפני מע"מ')} className="h-9 min-w-0" />
                     {fill !== null && (
-                      <Button type="button" size="sm" variant="outline" className="h-9 shrink-0 px-2.5" title={`היתרה: ${nis(fill)} לפני מע"מ`} onClick={() => set(i, "amount", fill)}>השלם</Button>
+                      <Button type="button" size="sm" variant="outline" className="h-9 shrink-0 px-2.5" title={t('היתרה: {amount} לפני מע"מ', { amount: nis(fill) })} onClick={() => set(i, "amount", fill)}>{t("השלם")}</Button>
                     )}
                   </div>
                   <span className="text-sm tabular-nums text-muted-foreground" dir="ltr">{Number(p.amount) > 0 ? nis(totals[i]) : ""}</span>
-                  <select value={p.method} onChange={(e) => set(i, "method", e.target.value)} className={sel} aria-label="אמצעי תשלום">
-                    <option value="">אמצעי תשלום...</option>
+                  <select value={p.method} onChange={(e) => set(i, "method", e.target.value)} className={sel} aria-label={t("אמצעי תשלום")}>
+                    <option value="">{t("אמצעי תשלום...")}</option>
                     {METHODS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
                   </select>
-                  <Button type="button" size="icon" variant="ghost" onClick={() => setPayments(rows.filter((_, j) => j !== i))} aria-label="הסרת התשלום"><Trash2 className="h-4 w-4" /></Button>
+                  <Button type="button" size="icon" variant="ghost" onClick={() => setPayments(rows.filter((_, j) => j !== i))} aria-label={t("הסרת התשלום")}><Trash2 className="h-4 w-4" /></Button>
                 </div>
-                {(late || order) && <p className="px-1 pt-0.5 text-xs text-amber-700">{late ? "התאריך כבר עבר" : "התאריך מוקדם מהתשלום הקודם"}</p>}
+                {(late || order) && <p className="px-1 pt-0.5 text-xs text-amber-700">{late ? t("התאריך כבר עבר") : t("התאריך מוקדם מהתשלום הקודם")}</p>}
               </div>
             );
           })}
           <Button type="button" size="sm" variant="outline" onClick={() => setPayments([...rows, {
             date: rows.length && rows[rows.length - 1].date ? isoAddMonths(rows[rows.length - 1].date, 1) : soonWorkday(),
             amount: diff > 0 ? diff / 100 : "", method: rows[rows.length - 1]?.method || "transfer",
-          }])}><Plus className="ms-1 h-4 w-4" />תשלום</Button>
+          }])}><Plus className="ms-1 h-4 w-4" />{t("תשלום")}</Button>
         </div>
       )}
 
       {rows.length > 0 && target > 0 && (
         <div className={`flex flex-wrap items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm ${diff === 0 ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`} role="status">
           <span>
-            {diff === 0 ? "✓ " : ""}סה"כ <span className="tabular-nums font-semibold">{nis(sum / 100)}</span> מתוך <span className="tabular-nums">{nis(target / 100)}</span> לפני מע"מ
-            {diff > 0 && <> · חסרים <span className="tabular-nums font-semibold">{nis(diff / 100)}</span></>}
-            {diff < 0 && <> · עודף של <span className="tabular-nums font-semibold">{nis(-diff / 100)}</span></>}
-            {diff === 0 && <> · <span className="tabular-nums">{nis(totals.reduce((a, b) => a + b, 0))}</span> כולל מע"מ</>}
+            {diff === 0 ? "✓ " : ""}{t('סה"כ')} <span className="tabular-nums font-semibold">{nis(sum / 100)}</span> {t("מתוך")} <span className="tabular-nums">{nis(target / 100)}</span> {t('לפני מע"מ')}
+            {diff > 0 && <> · {t("חסרים")} <span className="tabular-nums font-semibold">{nis(diff / 100)}</span></>}
+            {diff < 0 && <> · {t("עודף של")} <span className="tabular-nums font-semibold">{nis(-diff / 100)}</span></>}
+            {diff === 0 && <> · <span className="tabular-nums">{nis(totals.reduce((a, b) => a + b, 0))}</span> {t('כולל מע"מ')}</>}
           </span>
-          {diff !== 0 && agorot(rows[rows.length - 1].amount) + diff > 0 && <span className="text-xs">"השלם" בתשלום האחרון ממלא בו את היתרה</span>}
+          {diff !== 0 && agorot(rows[rows.length - 1].amount) + diff > 0 && <span className="text-xs">{t('"השלם" בתשלום האחרון ממלא בו את היתרה')}</span>}
         </div>
       )}
 
       {hasChecks && (
-        <FieldRow label="איסוף השיקים על ידי שליח" hint="הלקוח יראה את התאריך ואת הסכומים המדויקים, כדי שיכין את השיקים מראש. אפשר להשאיר ריק ולתאם בהמשך">
+        <FieldRow label={t("איסוף השיקים על ידי שליח")} hint={t("הלקוח יראה את התאריך ואת הסכומים המדויקים, כדי שיכין את השיקים מראש. אפשר להשאיר ריק ולתאם בהמשך")}>
           <Input type="date" value={pickupDate || ""} onChange={(e) => setPickupDate(e.target.value)} className="max-w-48" />
         </FieldRow>
       )}
@@ -247,29 +248,29 @@ function PriceFields({ price, setPrice }) {
   const off = on && l > 0 && a > 0 && a < l;
   return (
     <div className="space-y-3 sm:col-span-3">
-      <label className="flex items-center gap-2 text-sm"><Switch checked={on} onCheckedChange={toggle} />הנחה</label>
+      <label className="flex items-center gap-2 text-sm"><Switch checked={on} onCheckedChange={toggle} />{t("הנחה")}</label>
       {!on ? (
         <div className="grid gap-3 sm:grid-cols-3">
-          <FieldRow label='מחיר לפני מע"מ *'><Input value={price.amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" dir="ltr" /></FieldRow>
+          <FieldRow label={t('מחיר לפני מע"מ *')}><Input value={price.amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" dir="ltr" /></FieldRow>
         </div>
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-3">
-            <FieldRow label='מחיר מקורי לפני מע"מ'><Input value={price.listAmount} onChange={(e) => setList(e.target.value)} inputMode="decimal" dir="ltr" /></FieldRow>
-            <FieldRow label="הנחה">
+            <FieldRow label={t('מחיר מקורי לפני מע"מ')}><Input value={price.listAmount} onChange={(e) => setList(e.target.value)} inputMode="decimal" dir="ltr" /></FieldRow>
+            <FieldRow label={t("הנחה")}>
               <div className="flex gap-1.5">
-                <Input value={disc} onChange={(e) => setDiscount(e.target.value)} inputMode="decimal" dir="ltr" className="min-w-0" aria-label="הנחה" />
-                <select value={unit} className="h-10 rounded-md border border-input bg-transparent px-2 text-sm" aria-label="הנחה בסכום או באחוזים"
+                <Input value={disc} onChange={(e) => setDiscount(e.target.value)} inputMode="decimal" dir="ltr" className="min-w-0" aria-label={t("הנחה")} />
+                <select value={unit} className="h-10 rounded-md border border-input bg-transparent px-2 text-sm" aria-label={t("הנחה בסכום או באחוזים")}
                   onChange={(e) => { setUnit(e.target.value); setDisc(discountText(price.listAmount, price.amount, e.target.value)); }}>
                   <option value="amount">₪</option><option value="percent">%</option>
                 </select>
               </div>
             </FieldRow>
-            <FieldRow label='מחיר אחרי הנחה, לפני מע"מ *'><Input value={price.amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" dir="ltr" /></FieldRow>
+            <FieldRow label={t('מחיר אחרי הנחה, לפני מע"מ *')}><Input value={price.amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" dir="ltr" /></FieldRow>
           </div>
           <p className={`text-xs ${off || !(l > 0) ? "text-muted-foreground" : "text-amber-700"}`}>
-            {off ? `הנחה של ${nis(round2(l - a))} (${trimNum((1 - a / l) * 100)}%). הלקוח יראה את המחיר המקורי מחוק ואת ההנחה.`
-              : l > 0 && a >= l ? "המחיר אחרי ההנחה לא נמוך מהמחיר המקורי, ולכן לא תוצג הנחה." : "מזינים את המחיר המקורי, ואז את ההנחה או את המחיר אחריה."}
+            {off ? t("הנחה של {amount} ({pct}%). הלקוח יראה את המחיר המקורי מחוק ואת ההנחה.", { amount: nis(round2(l - a)), pct: trimNum((1 - a / l) * 100) })
+              : l > 0 && a >= l ? t("המחיר אחרי ההנחה לא נמוך מהמחיר המקורי, ולכן לא תוצג הנחה.") : t("מזינים את המחיר המקורי, ואז את ההנחה או את המחיר אחריה.")}
           </p>
         </>
       )}
@@ -281,13 +282,13 @@ const blankManual = () => ({ on: false, signedOn: todayIL(), file: null, sendOrd
 const manualPayload = (m) => ({ signedOn: m.signedOn, fileId: m.file?.fileId || undefined, sendOrderMail: m.sendOrderMail, attachContract: Boolean(m.file) && m.attachContract });
 
 export function dealStatus(x) {
-  if (x.status.canceled) return ["gray", "בוטלה"];
-  if (x.status.project === "delivered") return ["green", "נמסר"];
-  if (x.status.project === "started") return ["green", "בפיתוח"];
-  if (x.signedAt) return x.status.card === "pending" ? ["blue", "נחתם, ממתין לכרטיס"] : ["green", "נחתם"];
-  if (x.approvedAt) return ["blue", "ההזמנה אושרה, ממתין לחתימה"];
-  if (x.viewedAt) return ["amber", "נצפה"];
-  return ["gray", "נשלח"];
+  if (x.status.canceled) return ["gray", t("בוטלה")];
+  if (x.status.project === "delivered") return ["green", t("נמסר")];
+  if (x.status.project === "started") return ["green", t("בפיתוח")];
+  if (x.signedAt) return x.status.card === "pending" ? ["blue", t("נחתם, ממתין לכרטיס")] : ["green", t("נחתם")];
+  if (x.approvedAt) return ["blue", t("ההזמנה אושרה, ממתין לחתימה")];
+  if (x.viewedAt) return ["amber", t("נצפה")];
+  return ["gray", t("נשלח")];
 }
 
 export function DealsList() {
@@ -298,17 +299,17 @@ export function DealsList() {
   const items = data.items.filter((x) => !q || `${x.number} ${x.client.companyName} ${x.client.signerName} ${x.data.project.name}`.toLowerCase().includes(q.toLowerCase()));
   return (
     <>
-      <PageHeader title="עסקאות" subtitle="הזמנת עבודה, הסכם לחתימה והוראת קבע לשירות החודשי">
-        <Button asChild><Link to="/sales/deals/new"><Plus className="ms-1 h-4 w-4" />עסקה חדשה</Link></Button>
+      <PageHeader title={t("עסקאות")} subtitle={t("הזמנת עבודה, הסכם לחתימה והוראת קבע לשירות החודשי")}>
+        <Button asChild><Link to="/sales/deals/new"><Plus className="ms-1 h-4 w-4" />{t("עסקה חדשה")}</Link></Button>
       </PageHeader>
-      <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="חיפוש לפי מספר, לקוח או פרויקט" className="mb-4 max-w-sm" />
-      {items.length === 0 ? <p className="py-16 text-center text-muted-foreground">{data.items.length ? "לא נמצאו תוצאות" : "עדיין אין עסקאות."}</p> : (
+      <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("חיפוש לפי מספר, לקוח או פרויקט")} className="mb-4 max-w-sm" />
+      {items.length === 0 ? <p className="py-16 text-center text-muted-foreground">{data.items.length ? t("לא נמצאו תוצאות") : t("עדיין אין עסקאות.")}</p> : (
         <div className="overflow-x-auto rounded-2xl border border-border bg-card">
           <table className="w-full min-w-[640px] text-sm">
             <thead><tr className="border-b border-border text-muted-foreground">
-              <th className="p-3 text-start font-medium">#</th><th className="p-3 text-start font-medium">לקוח ופרויקט</th>
-              <th className="p-3 text-start font-medium">מחיר</th><th className="p-3 text-start font-medium">סטטוס</th>
-              <th className="p-3 text-start font-medium">מקדמה</th><th className="p-3 text-start font-medium">נוצר</th><th className="p-3"><span className="sr-only">פעולות</span></th>
+              <th className="p-3 text-start font-medium">#</th><th className="p-3 text-start font-medium">{t("לקוח ופרויקט")}</th>
+              <th className="p-3 text-start font-medium">{t("מחיר")}</th><th className="p-3 text-start font-medium">{t("סטטוס")}</th>
+              <th className="p-3 text-start font-medium">{t("מקדמה")}</th><th className="p-3 text-start font-medium">{t("נוצר")}</th><th className="p-3"><span className="sr-only">{t("פעולות")}</span></th>
             </tr></thead>
             <tbody>
               {items.map((x) => {
@@ -319,9 +320,9 @@ export function DealsList() {
                     <td className="p-3"><Link to={`/sales/deals/${x.id}`} className="font-medium hover:underline">{x.client.companyName || x.client.signerName}</Link><div className="text-xs text-muted-foreground">{x.data.project.name}</div></td>
                     <td className="p-3 tabular-nums">{nis(x.data.price.amount)}</td>
                     <td className="p-3"><Pill tone={tone}>{label}</Pill></td>
-                    <td className="p-3">{x.status.deposit === "paid" ? <Pill tone="green">שולמה</Pill> : x.signedAt ? <Pill tone="amber">ממתינה</Pill> : "—"}</td>
+                    <td className="p-3">{x.status.deposit === "paid" ? <Pill tone="green">{t("שולמה")}</Pill> : x.signedAt ? <Pill tone="amber">{t("ממתינה")}</Pill> : "—"}</td>
                     <td className="p-3 text-xs text-muted-foreground tabular-nums">{dateTime(x.createdAt)}</td>
-                    <td className="p-3 text-end"><Button asChild variant="outline" size="sm"><Link to={`/sales/deals/${x.id}`}>הצג</Link></Button></td>
+                    <td className="p-3 text-end"><Button asChild variant="outline" size="sm"><Link to={`/sales/deals/${x.id}`}>{t("הצג")}</Link></Button></td>
                   </tr>
                 );
               })}
@@ -366,6 +367,7 @@ export function DealForm() {
   const existing = useApi(id ? `sales/deals?id=${id}` : null);
   const [f, setF] = useState(null);
   const [sendEmail, setSendEmail] = useState(true);
+  const [copies, setCopies] = useState(blankCopies);
   const [manual, setManual] = useState(blankManual);
   const [paymentNote, setPaymentNote] = useState("");
   const [preview, setPreview] = useState(null);
@@ -421,36 +423,38 @@ export function DealForm() {
     setSpecFile(null);
     setF((s) => ["specFileId", "specPages", "specPageCount"].reduce((x, k) => setIn(x, `data.project.${k}`, r[k]),
       setIn(s, "data.project.specName", s.data.project.specName || file.name.replace(/\.pdf$/i, ""))));
-    toast({ title: "העמודים צורפו להסכם" });
+    toast({ title: t("העמודים צורפו להסכם") });
   };
   const sp = f.data.project;
 
   const save = async () => {
     setError("");
-    if (!f.data.project.name.trim()) return setError("יש להזין שם לפרויקט");
-    if (!(Number(f.data.price.amount) > 0)) return setError("יש להזין מחיר");
-    if (!f.client.companyName.trim() && !f.client.signerName.trim()) return setError("יש להזין שם חברה או שם החותם");
+    if (!f.data.project.name.trim()) return setError(t("יש להזין שם לפרויקט"));
+    if (!(Number(f.data.price.amount) > 0)) return setError(t("יש להזין מחיר"));
+    if (!f.client.companyName.trim() && !f.client.signerName.trim()) return setError(t("יש להזין שם חברה או שם החותם"));
     // a deal signed outside the link needs the email only for the order confirmation
-    if ((!manual.on || manual.sendOrderMail || f.client.email.trim()) && !isEmail(f.client.email)) return setError("יש להזין אימייל תקין של הלקוח");
+    if ((!manual.on || manual.sendOrderMail || f.client.email.trim()) && !isEmail(f.client.email)) return setError(t("יש להזין אימייל תקין של הלקוח"));
     // the client can still correct them on the page, but Grow (invoices, card) refuses invalid ones
-    if (f.client.phone.trim() && !mobileIL(f.client.phone)) return setError(`טלפון הלקוח: ${FIELD_ERRORS.phone}`);
-    if (f.client.taxId.trim() && !taxIdIL(f.client.taxId)) return setError(`ח.פ הלקוח: ${FIELD_ERRORS.taxId}`);
-    if (f.client.authorizedContact?.email && !isEmail(f.client.authorizedContact.email)) return setError(`איש הקשר המוסמך: ${FIELD_ERRORS.email}`);
+    if (f.client.phone.trim() && !mobileIL(f.client.phone)) return setError(t("טלפון הלקוח: {e}", { e: FIELD_ERRORS.phone }));
+    if (f.client.taxId.trim() && !taxIdIL(f.client.taxId)) return setError(t("ח.פ הלקוח: {e}", { e: FIELD_ERRORS.taxId }));
+    if (f.client.authorizedContact?.email && !isEmail(f.client.authorizedContact.email)) return setError(t("איש הקשר המוסמך: {e}", { e: FIELD_ERRORS.email }));
     const pays = f.data.price.payments;
-    if (!pays.length) return setError("יש להזין את לוח התשלומים (אפשר בחלוקה המהירה)");
-    if (pays.some((p) => !p.date)) return setError("יש להזין תאריך לכל תשלום");
-    if (pays.some((p) => !(Number(p.amount) > 0))) return setError("יש להזין סכום לכל תשלום");
-    if (pays.some((p) => !p.method)) return setError("יש לבחור אמצעי תשלום לכל תשלום, כולל המקדמה");
+    if (!pays.length) return setError(t("יש להזין את לוח התשלומים (אפשר בחלוקה המהירה)"));
+    if (pays.some((p) => !p.date)) return setError(t("יש להזין תאריך לכל תשלום"));
+    if (pays.some((p) => !(Number(p.amount) > 0))) return setError(t("יש להזין סכום לכל תשלום"));
+    if (pays.some((p) => !p.method)) return setError(t("יש לבחור אמצעי תשלום לכל תשלום, כולל המקדמה"));
     const gap = agorot(f.data.price.amount) - pays.reduce((a, p) => a + agorot(p.amount), 0);
-    if (gap) return setError(`סכום התשלומים לא שווה למחיר: ${gap > 0 ? "חסרים" : "עודף של"} ${nis(Math.abs(gap) / 100)} לפני מע"מ`);
-    if (f.data.service.enabled && !f.data.standingOrder.startDate) return setError("יש לבחור את תאריך החיוב הראשון של השירות החודשי");
+    if (gap) return setError(t('סכום התשלומים לא שווה למחיר: {diff} {amount} לפני מע"מ', { diff: gap > 0 ? t("חסרים") : t("עודף של"), amount: nis(Math.abs(gap) / 100) }));
+    if (f.data.service.enabled && !f.data.standingOrder.startDate) return setError(t("יש לבחור את תאריך החיוב הראשון של השירות החודשי"));
+    const cp = !id && !manual.on && sendEmail ? copiesOf(copies) : { cc: [] };
+    if (cp.error) return setError(cp.error);
     setBusy(true);
     try {
       if (id) {
         await api(`sales/deals?id=${id}`, { method: "PATCH", body: { action: "update", ...f } });
         navigate(`/sales/deals/${id}`);
       } else {
-        const r = await api("sales/deals", { method: "POST", body: { ...f, sendEmail, paymentNote, pitch: pitchBody(pitch), ...(filmDraft && { filmDraft }), ...(manual.on && { signMode: "manual", ...manualPayload(manual) }) } });
+        const r = await api("sales/deals", { method: "POST", body: { ...f, sendEmail, cc: cp.cc, paymentNote, pitch: pitchBody(pitch), ...(filmDraft && { filmDraft }), ...(manual.on && { signMode: "manual", ...manualPayload(manual) }) } });
         navigate(`/sales/deals/${r.item.id}`);
       }
     } catch (e) { setBusy(false); setError(errorText(e)); }
@@ -466,119 +470,119 @@ export function DealForm() {
 
   return (
     <div>
-      <Link to={id ? `/sales/deals/${id}` : "/sales/deals"} className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowRight className="h-4 w-4" />{id ? "חזרה לעסקה" : "עסקאות"}</Link>
-      <PageHeader title={id ? `עריכת עסקה ${existing.data?.item.number || ""}` : "עסקה חדשה"}
-        subtitle={manual.on ? "הלקוח כבר חתם: מזינים את פרטי ההזמנה, מעלים את החוזה החתום ושולחים לו אישור הזמנה" : "הלקוח יקבל קישור: סיכום ההזמנה, ההסכם לחתימה, ואז כרטיס להוראת קבע"} />
+      <Link to={id ? `/sales/deals/${id}` : "/sales/deals"} className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowRight className="h-4 w-4 ltr:-scale-x-100" />{id ? t("חזרה לעסקה") : t("עסקאות")}</Link>
+      <PageHeader title={id ? t("עריכת עסקה {n}", { n: existing.data?.item.number || "" }) : t("עסקה חדשה")}
+        subtitle={manual.on ? t("הלקוח כבר חתם: מזינים את פרטי ההזמנה, מעלים את החוזה החתום ושולחים לו אישור הזמנה") : t("הלקוח יקבל קישור: סיכום ההזמנה, ההסכם לחתימה, ואז כרטיס להוראת קבע")} />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0 space-y-5">
           {!id && (
-            <Card title="איך נסגרת העסקה">
+            <Card title={t("איך נסגרת העסקה")}>
               <label className="flex items-center gap-3 text-sm font-medium">
-                <Switch checked={!manual.on} onCheckedChange={(v) => setManual((m) => ({ ...m, on: !v }))} />הלקוח מאשר את ההזמנה וחותם על ההסכם דרך הקישור
+                <Switch checked={!manual.on} onCheckedChange={(v) => setManual((m) => ({ ...m, on: !v }))} />{t("הלקוח מאשר את ההזמנה וחותם על ההסכם דרך הקישור")}
               </label>
               {manual.on && (
                 <div className="mt-4 space-y-3">
-                  <p className="text-sm text-muted-foreground">תהליך מקוצר: ההזמנה נשמרת כמאושרת וחתומה, בלי פרטי ההזמנה שבהסכם ובלי מסך החתימה. אם יש הוראת קבע, הלקוח יגדיר כרטיס דרך הקישור שבאישור ההזמנה.</p>
+                  <p className="text-sm text-muted-foreground">{t("תהליך מקוצר: ההזמנה נשמרת כמאושרת וחתומה, בלי פרטי ההזמנה שבהסכם ובלי מסך החתימה. אם יש הוראת קבע, הלקוח יגדיר כרטיס דרך הקישור שבאישור ההזמנה.")}</p>
                   <ManualClose m={manual} setM={setManual} />
                 </div>
               )}
             </Card>
           )}
-          <Card title="הלקוח">
+          <Card title={t("הלקוח")}>
             <div className="grid gap-3 sm:grid-cols-2">
-              <FieldRow label="שם החברה"><Input {...bind("client.companyName")} /></FieldRow>
-              <FieldRow label="ח.פ / ע.מ" hint="אפשר להשאיר ריק. הלקוח ימלא באישור"><Input {...bind("client.taxId")} dir="ltr" /></FieldRow>
-              <FieldRow label="אימייל (לשם יישלח הקישור) *"><Input {...bind("client.email")} type="email" dir="ltr" /></FieldRow>
-              <FieldRow label="טלפון נייד" hint="אפשר להשאיר ריק. הלקוח ימלא באישור"><Input {...bind("client.phone")} dir="ltr" /></FieldRow>
-              <FieldRow label="שם החותם" hint="הלקוח יראה ויוכל לשנות לפני החתימה"><Input {...bind("client.signerName")} /></FieldRow>
-              <FieldRow label="תפקיד החותם"><Input {...bind("client.signerRole")} /></FieldRow>
-              <FieldRow label="אימייל הנהלת חשבונות" hint="אפשר להשאיר ריק. הלקוח ימלא באישור"><Input {...bind("client.accountingEmail")} type="email" dir="ltr" /></FieldRow>
+              <FieldRow label={t("שם החברה")}><Input {...bind("client.companyName")} /></FieldRow>
+              <FieldRow label={t("ח.פ / ע.מ")} hint={t("אפשר להשאיר ריק. הלקוח ימלא באישור")}><Input {...bind("client.taxId")} dir="ltr" /></FieldRow>
+              <FieldRow label={t("אימייל (לשם יישלח הקישור) *")}><Input {...bind("client.email")} type="email" dir="ltr" /></FieldRow>
+              <FieldRow label={t("טלפון נייד")} hint={t("אפשר להשאיר ריק. הלקוח ימלא באישור")}><Input {...bind("client.phone")} dir="ltr" /></FieldRow>
+              <FieldRow label={t("שם החותם")} hint={t("הלקוח יראה ויוכל לשנות לפני החתימה")}><Input {...bind("client.signerName")} /></FieldRow>
+              <FieldRow label={t("תפקיד החותם")}><Input {...bind("client.signerRole")} /></FieldRow>
+              <FieldRow label={t("אימייל הנהלת חשבונות")} hint={t("אפשר להשאיר ריק. הלקוח ימלא באישור")}><Input {...bind("client.accountingEmail")} type="email" dir="ltr" /></FieldRow>
             </div>
             <div className="mt-4 border-t border-border pt-4">
-              <p className="text-sm font-medium">איש קשר מוסמך לשינויים ולבקשות פיתוח</p>
-              <p className="mb-2 text-xs text-muted-foreground">מי שמעביר אלינו שינויים ובקשות פיתוח ומאשר אותם בשם הלקוח. אפשר להשאיר ריק, הלקוח ימלא באישור.</p>
+              <p className="text-sm font-medium">{t("איש קשר מוסמך לשינויים ולבקשות פיתוח")}</p>
+              <p className="mb-2 text-xs text-muted-foreground">{t("מי שמעביר אלינו שינויים ובקשות פיתוח ומאשר אותם בשם הלקוח. אפשר להשאיר ריק, הלקוח ימלא באישור.")}</p>
               <div className="grid gap-3 sm:grid-cols-4">
-                <Input {...bind("client.authorizedContact.name")} placeholder="שם" />
-                <Input {...bind("client.authorizedContact.role")} placeholder="תפקיד" />
-                <Input {...bind("client.authorizedContact.phone")} placeholder="טלפון" dir="ltr" />
-                <Input {...bind("client.authorizedContact.email")} placeholder="אימייל" dir="ltr" />
+                <Input {...bind("client.authorizedContact.name")} placeholder={t("שם")} />
+                <Input {...bind("client.authorizedContact.role")} placeholder={t("תפקיד")} />
+                <Input {...bind("client.authorizedContact.phone")} placeholder={t("טלפון")} dir="ltr" />
+                <Input {...bind("client.authorizedContact.email")} placeholder={t("אימייל")} dir="ltr" />
               </div>
             </div>
           </Card>
 
           {!id && !manual.on && (
-            <Card title="משפטי מפתח בראש העמוד של הלקוח">
-              <p className="mb-3 text-sm text-muted-foreground">מופיעים בראש הזמנת העבודה ובמייל ההזמנה, במקום תיאור הפרויקט. אפשר להשאיר ריק.</p>
+            <Card title={t("משפטי מפתח בראש העמוד של הלקוח")}>
+              <p className="mb-3 text-sm text-muted-foreground">{t("מופיעים בראש הזמנת העבודה ובמייל ההזמנה, במקום תיאור הפרויקט. אפשר להשאיר ריק.")}</p>
               <PitchFields p={pitch} onChange={setPitch} stage="deal" />
             </Card>
           )}
-          <Card title="הפרויקט">
+          <Card title={t("הפרויקט")}>
             <div className="grid gap-3 sm:grid-cols-2">
-              <FieldRow label="שם הפרויקט *" className="sm:col-span-2"><Input {...bind("data.project.name")} /></FieldRow>
-              <FieldRow label="מה מפתחים (בשתי-שלוש שורות)" className="sm:col-span-2" hint="מופיע בראש העמוד של הלקוח"><Textarea {...bind("data.project.summary")} rows={3} /></FieldRow>
+              <FieldRow label={t("שם הפרויקט *")} className="sm:col-span-2"><Input {...bind("data.project.name")} /></FieldRow>
+              <FieldRow label={t("מה מפתחים (בשתי-שלוש שורות)")} className="sm:col-span-2" hint={t("מופיע בראש העמוד של הלקוח")}><Textarea {...bind("data.project.summary")} rows={3} /></FieldRow>
               <div className="sm:col-span-2">
                 <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm hover:bg-secondary">
-                  <Upload className="h-4 w-4" />{sp.specFileId ? `האפיון מצורף${sp.specName ? ` (${sp.specName})` : ""} · החלפה` : "צירוף קובץ האפיון (PDF)"}
+                  <Upload className="h-4 w-4" />{sp.specFileId ? t("האפיון מצורף{name} · החלפה", { name: sp.specName ? ` (${sp.specName})` : "" }) : t("צירוף קובץ האפיון (PDF)")}
                   <input type="file" accept="application/pdf" className="hidden" onChange={(e) => { const x = e.target.files?.[0]; e.target.value = ""; if (x) setSpecFile(x); }} />
                 </label>
                 {sp.specFileId && (
                   <p className="mt-1 text-sm">
                     {sp.specPages?.length
-                      ? `נספח ב' בהסכם: ${sp.specPages.length === 1 ? "עמוד" : "עמודים"} ${sp.specPages.join(", ")}${sp.specPageCount ? ` מתוך ${sp.specPageCount}` : ""}.`
-                      : "נספח ב' בהסכם: כל הקובץ שצורף."}
-                    {id && <> <a href={`/api/sales/deal-file?id=${id}&kind=spec`} target="_blank" rel="noreferrer" className="text-primary underline">תצוגה כפי שהלקוח יראה</a></>}
+                      ? t("נספח ב' בהסכם: {pages} {list}{of}.", { pages: sp.specPages.length === 1 ? t("עמוד") : t("עמודים"), list: sp.specPages.join(", "), of: sp.specPageCount ? t(" מתוך {n}", { n: sp.specPageCount }) : "" })
+                      : t("נספח ב' בהסכם: כל הקובץ שצורף.")}
+                    {id && <> <a href={`/api/sales/deal-file?id=${id}&kind=spec`} target="_blank" rel="noreferrer" className="text-primary underline">{t("תצוגה כפי שהלקוח יראה")}</a></>}
                   </p>
                 )}
-                <p className="mt-1 text-xs text-muted-foreground">קובץ ה-PDF של האפיון מ-Canva. אחרי הבחירה בוחרים אילו עמודים ממנו מצורפים להסכם כנספח ב'. כדי לשנות את העמודים, מצרפים את הקובץ שוב.</p>
+                <p className="mt-1 text-xs text-muted-foreground">{t("קובץ ה-PDF של האפיון מ-Canva. אחרי הבחירה בוחרים אילו עמודים ממנו מצורפים להסכם כנספח ב'. כדי לשנות את העמודים, מצרפים את הקובץ שוב.")}</p>
                 {specFile && <SpecPagePicker file={specFile} onClose={() => setSpecFile(null)} onSave={(r) => specPicked(specFile, r)} />}
               </div>
-              <FieldRow label="יעד פיתוח משוער (שבועות)"><Input {...bind("data.project.targetWeeks")} inputMode="numeric" dir="ltr" /></FieldRow>
-              <FieldRow label="מה נצטרך מהלקוח לפתיחה" className="sm:col-span-2"><Textarea {...bind("data.project.kickoffNeeds")} rows={2} /></FieldRow>
+              <FieldRow label={t("יעד פיתוח משוער (שבועות)")}><Input {...bind("data.project.targetWeeks")} inputMode="numeric" dir="ltr" /></FieldRow>
+              <FieldRow label={t("מה נצטרך מהלקוח לפתיחה")} className="sm:col-span-2"><Textarea {...bind("data.project.kickoffNeeds")} rows={2} /></FieldRow>
             </div>
           </Card>
 
           {!manual.on && (id
             ? <DealFilm id={id} project={sp.name} />
             : <DealFilm draft={filmDraft} onDraft={setFilmDraft} project={sp.name} summary={sp.summary} />)}
-          <Card title="מחיר ותשלומים">
+          <Card title={t("מחיר ותשלומים")}>
             <div className="grid gap-3 sm:grid-cols-3">
               <PriceFields price={f.data.price} setPrice={(p) => setF((s) => setIn(s, "data.price", p))} />
-              <FieldRow label='מע"מ %'><Input {...bind("data.price.vatRate")} inputMode="decimal" dir="ltr" /></FieldRow>
+              <FieldRow label={t('מע"מ %')}><Input {...bind("data.price.vatRate")} inputMode="decimal" dir="ltr" /></FieldRow>
               <div className="sm:col-span-3">
-                <p className="text-sm font-medium">לוח התשלומים *</p>
-                <p className="mb-3 text-xs text-muted-foreground">כל תשלום עם התאריך המדויק, הסכום ואמצעי התשלום. הראשון הוא המקדמה. הלקוח רואה את הטבלה כמו שהיא.</p>
+                <p className="text-sm font-medium">{t("לוח התשלומים *")}</p>
+                <p className="mb-3 text-xs text-muted-foreground">{t("כל תשלום עם התאריך המדויק, הסכום ואמצעי התשלום. הראשון הוא המקדמה. הלקוח רואה את הטבלה כמו שהיא.")}</p>
                 <PaymentsEditor price={f.data.price.amount} vatRate={f.data.price.vatRate} legacy={f.data.price}
                   payments={f.data.price.payments} setPayments={(p) => setF((s) => setIn(s, "data.price.payments", p))}
                   pickupDate={f.data.price.checksPickupDate} setPickupDate={(d) => setF((s) => setIn(s, "data.price.checksPickupDate", d))} />
               </div>
               {!id && (
-                <FieldRow label="איך הלקוח משלם או שילם (פנימי)" className="sm:col-span-3" hint="למשל: המקדמה הועברה ב-12/11, השירות החודשי בהעברה. אפשר לעדכן בהמשך במסך העסקה">
+                <FieldRow label={t("איך הלקוח משלם או שילם (פנימי)")} className="sm:col-span-3" hint={t("למשל: המקדמה הועברה ב-12/11, השירות החודשי בהעברה. אפשר לעדכן בהמשך במסך העסקה")}>
                   <Textarea value={paymentNote} onChange={(e) => setPaymentNote(e.target.value)} rows={2} />
                 </FieldRow>
               )}
             </div>
           </Card>
 
-          <Card title="שירות חודשי והוראת קבע" actions={<label className="flex items-center gap-2 text-sm"><Switch checked={f.data.service.enabled} onCheckedChange={(x) => setF((s) => setIn(s, "data.service.enabled", x))} />שירות חודשי</label>}>
+          <Card title={t("שירות חודשי והוראת קבע")} actions={<label className="flex items-center gap-2 text-sm"><Switch checked={f.data.service.enabled} onCheckedChange={(x) => setF((s) => setIn(s, "data.service.enabled", x))} />{t("שירות חודשי")}</label>}>
             {f.data.service.enabled ? (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">תקופות בתשלום (לפני מע"מ)</p>
+                  <p className="text-sm font-medium">{t('תקופות בתשלום (לפני מע"מ)')}</p>
                   {f.data.service.periods.map((p, i) => (
                     <div key={i} className="flex items-center gap-2">
-                      <Input value={p.months ?? ""} onChange={(e) => setF((s) => setIn(s, `data.service.periods.${i}.months`, e.target.value ? Number(e.target.value) : null))} placeholder="ללא הגבלה" inputMode="numeric" dir="ltr" className="w-28" aria-label="חודשים" />
-                      <span className="text-sm text-muted-foreground">חודשים ב-</span>
-                      <Input value={p.price} onChange={(e) => setF((s) => setIn(s, `data.service.periods.${i}.price`, e.target.value))} placeholder="₪ לחודש" inputMode="decimal" dir="ltr" className="w-32" aria-label="מחיר לחודש" />
-                      <Button type="button" size="icon" variant="ghost" onClick={() => periods.remove(i)} aria-label="הסרה"><Trash2 className="h-4 w-4" /></Button>
+                      <Input value={p.months ?? ""} onChange={(e) => setF((s) => setIn(s, `data.service.periods.${i}.months`, e.target.value ? Number(e.target.value) : null))} placeholder={t("ללא הגבלה")} inputMode="numeric" dir="ltr" className="w-28" aria-label={t("חודשים")} />
+                      <span className="text-sm text-muted-foreground">{t("חודשים ב-")}</span>
+                      <Input value={p.price} onChange={(e) => setF((s) => setIn(s, `data.service.periods.${i}.price`, e.target.value))} placeholder={t("₪ לחודש")} inputMode="decimal" dir="ltr" className="w-32" aria-label={t("מחיר לחודש")} />
+                      <Button type="button" size="icon" variant="ghost" onClick={() => periods.remove(i)} aria-label={t("הסרה")}><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   ))}
-                  <Button type="button" size="sm" variant="outline" onClick={periods.add}><Plus className="ms-1 h-4 w-4" />תקופה</Button>
-                  <p className="text-xs text-muted-foreground">תקופה בלי מספר חודשים נמשכת עד שמפסיקים. התקופה האחרונה היא בדרך כלל כזו.</p>
+                  <Button type="button" size="sm" variant="outline" onClick={periods.add}><Plus className="ms-1 h-4 w-4" />{t("תקופה")}</Button>
+                  <p className="text-xs text-muted-foreground">{t("תקופה בלי מספר חודשים נמשכת עד שמפסיקים. התקופה האחרונה היא בדרך כלל כזו.")}</p>
                 </div>
-                <FieldRow label="תאריך החיוב הראשון *" hint={f.data.standingOrder.startDate ? `עד אז השירות כלול במחיר הפרויקט. החיובים הבאים ב-${Number(f.data.standingOrder.startDate.slice(8, 10))} בכל חודש. התאריך נכתב בהסכם.` : "עד התאריך הזה השירות כלול במחיר הפרויקט. התאריך נכתב בהסכם."}>
+                <FieldRow label={t("תאריך החיוב הראשון *")} hint={f.data.standingOrder.startDate ? t("עד אז השירות כלול במחיר הפרויקט. החיובים הבאים ב-{day} בכל חודש. התאריך נכתב בהסכם.", { day: Number(f.data.standingOrder.startDate.slice(8, 10)) }) : t("עד התאריך הזה השירות כלול במחיר הפרויקט. התאריך נכתב בהסכם.")}>
                   <Input {...bind("data.standingOrder.startDate")} type="date" className="max-w-48" />
                 </FieldRow>
-                <FieldRow label="מה השירות החודשי כולל">
+                <FieldRow label={t("מה השירות החודשי כולל")}>
                   <div className="grid gap-1.5 sm:grid-cols-2">
                     {(settings.data?.settings?.service?.includes || []).map((x) => {
                       const on = ap.serviceComponents.includes(x);
@@ -590,93 +594,94 @@ export function DealForm() {
                     })}
                   </div>
                 </FieldRow>
-                <label className="flex items-center gap-2 text-sm"><Switch checked={f.data.standingOrder.enabled} onCheckedChange={(x) => setF((s) => setIn(s, "data.standingOrder.enabled", x))} />גבייה בהוראת קבע בכרטיס אשראי (הלקוח מגדיר כרטיס דרך הקישור)</label>
-                {!f.data.standingOrder.enabled && <p className="text-xs text-muted-foreground">{id ? "בלי הוראת קבע בכרטיס. את אופן התשלום על השירות רושמים במסך העסקה." : "בלי הוראת קבע בכרטיס. כתבו למעלה, באופן התשלום, איך ישולם השירות החודשי."}</p>}
+                <label className="flex items-center gap-2 text-sm"><Switch checked={f.data.standingOrder.enabled} onCheckedChange={(x) => setF((s) => setIn(s, "data.standingOrder.enabled", x))} />{t("גבייה בהוראת קבע בכרטיס אשראי (הלקוח מגדיר כרטיס דרך הקישור)")}</label>
+                {!f.data.standingOrder.enabled && <p className="text-xs text-muted-foreground">{id ? t("בלי הוראת קבע בכרטיס. את אופן התשלום על השירות רושמים במסך העסקה.") : t("בלי הוראת קבע בכרטיס. כתבו למעלה, באופן התשלום, איך ישולם השירות החודשי.")}</p>}
               </div>
-            ) : <p className="text-sm text-muted-foreground">ללא שירות חודשי.</p>}
+            ) : <p className="text-sm text-muted-foreground">{t("ללא שירות חודשי.")}</p>}
           </Card>
 
-          {!manual.on && <Card title="פרטי ההזמנה בהסכם">
+          {!manual.on && <Card title={t("פרטי ההזמנה בהסכם")}>
             <div className="space-y-5">
-              <FieldRow label="לא כלול" hint="מה לא כלול בפרויקט, מעבר למה שלא מופיע באפיון"><Textarea {...bind("data.appendix.notIncluded")} rows={2} /></FieldRow>
+              <FieldRow label={t("לא כלול")} hint={t("מה לא כלול בפרויקט, מעבר למה שלא מופיע באפיון")}><Textarea {...bind("data.appendix.notIncluded")} rows={2} /></FieldRow>
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium">
                   <Switch checked={Boolean(ap.exclusivity)} onCheckedChange={(x) => {
                     if (!x) return setF((s) => setIn(s, "data.appendix.exclusivity", ""));
                     setConfirm({
-                      title: "לתת ללקוח בלעדיות?",
-                      description: "ברירת המחדל בהסכם היא ללא בלעדיות: אנחנו רשאים לעבוד גם עם מתחרים של הלקוח. בלעדיות מגבילה אותנו. להמשיך רק אם זה סוכם במפורש.",
+                      title: t("לתת ללקוח בלעדיות?"),
+                      description: t("ברירת המחדל בהסכם היא ללא בלעדיות: אנחנו רשאים לעבוד גם עם מתחרים של הלקוח. בלעדיות מגבילה אותנו. להמשיך רק אם זה סוכם במפורש."),
                       onConfirm: () => setF((s) => setIn(s, "data.appendix.exclusivity", "בלעדי")),
                     });
-                  }} />בלעדיות ללקוח
+                  }} />{t("בלעדיות ללקוח")}
                 </label>
                 {ap.exclusivity ? (
-                  <FieldRow label="מה בדיוק הבלעדיות" className="mt-2" hint="למשל: לא נפתח מערכת דומה למתחרה ישיר באזור X במשך שנה"><Textarea {...bind("data.appendix.exclusivity")} rows={2} /></FieldRow>
-                ) : <p className="mt-1 text-xs text-muted-foreground">ללא בלעדיות (ברירת המחדל)</p>}
+                  <FieldRow label={t("מה בדיוק הבלעדיות")} className="mt-2" hint={t("למשל: לא נפתח מערכת דומה למתחרה ישיר באזור X במשך שנה")}><Textarea {...bind("data.appendix.exclusivity")} rows={2} /></FieldRow>
+                ) : <p className="mt-1 text-xs text-muted-foreground">{t("ללא בלעדיות (ברירת המחדל)")}</p>}
               </div>
               <div className="space-y-2">
-                <p className="text-sm font-medium">מה ייחשב כהשלמה מוצלחת של הפיתוח</p>
-                <p className="text-xs text-muted-foreground">לכל שלב: מה נמסר, על מה בודקים ומה צריך לצאת. לפי זה הלקוח מאשר שהעבודה הושלמה. אפשר להשאיר ריק, ואז הבדיקה היא מול האפיון.</p>
+                <p className="text-sm font-medium">{t("מה ייחשב כהשלמה מוצלחת של הפיתוח")}</p>
+                <p className="text-xs text-muted-foreground">{t("לכל שלב: מה נמסר, על מה בודקים ומה צריך לצאת. לפי זה הלקוח מאשר שהעבודה הושלמה. אפשר להשאיר ריק, ואז הבדיקה היא מול האפיון.")}</p>
                 {ap.stages.map((s, i) => (
                   <div key={i} className="grid gap-2 rounded-xl border border-border p-3 sm:grid-cols-2">
-                    <Input {...bind(`data.appendix.stages.${i}.deliverable`)} placeholder="מה נמסר (למשל: הפקת גיליון בודד)" />
-                    <Input {...bind(`data.appendix.stages.${i}.target`)} placeholder="מתי בערך (למשל: שבוע 3)" />
-                    <Input {...bind(`data.appendix.stages.${i}.testFiles`)} placeholder="על אילו קבצים בודקים" />
-                    <div className="flex gap-2"><Input {...bind(`data.appendix.stages.${i}.criteria`)} placeholder="מה צריך לצאת כדי שזה ייחשב תקין" /><Button type="button" size="icon" variant="ghost" onClick={() => stages.remove(i)} aria-label="הסרת שלב"><Trash2 className="h-4 w-4" /></Button></div>
+                    <Input {...bind(`data.appendix.stages.${i}.deliverable`)} placeholder={t("מה נמסר (למשל: הפקת גיליון בודד)")} />
+                    <Input {...bind(`data.appendix.stages.${i}.target`)} placeholder={t("מתי בערך (למשל: שבוע 3)")} />
+                    <Input {...bind(`data.appendix.stages.${i}.testFiles`)} placeholder={t("על אילו קבצים בודקים")} />
+                    <div className="flex gap-2"><Input {...bind(`data.appendix.stages.${i}.criteria`)} placeholder={t("מה צריך לצאת כדי שזה ייחשב תקין")} /><Button type="button" size="icon" variant="ghost" onClick={() => stages.remove(i)} aria-label={t("הסרת שלב")}><Trash2 className="h-4 w-4" /></Button></div>
                   </div>
                 ))}
-                <Button type="button" size="sm" variant="outline" onClick={stages.add}><Plus className="ms-1 h-4 w-4" />שלב</Button>
+                <Button type="button" size="sm" variant="outline" onClick={stages.add}><Plus className="ms-1 h-4 w-4" />{t("שלב")}</Button>
               </div>
               <div className="space-y-2">
-                <p className="text-sm font-medium">תעריפי שעה (לפני מע"מ)</p>
-                <p className="text-xs text-muted-foreground">לתמחור שינויים ולחישוב אם הלקוח מבטל באמצע. ברירת המחדל מההגדרות.</p>
+                <p className="text-sm font-medium">{t('תעריפי שעה (לפני מע"מ)')}</p>
+                <p className="text-xs text-muted-foreground">{t("לתמחור שינויים ולחישוב אם הלקוח מבטל באמצע. ברירת המחדל מההגדרות.")}</p>
                 {ap.hourlyRates.map((r, i) => (
                   <div key={i} className="flex items-center gap-2">
-                    <Input {...bind(`data.appendix.hourlyRates.${i}.role`)} placeholder="תפקיד" className="w-40" />
-                    <Input {...bind(`data.appendix.hourlyRates.${i}.rate`)} placeholder="₪ לשעה" inputMode="decimal" dir="ltr" className="w-28" />
-                    <Button type="button" size="icon" variant="ghost" onClick={() => rates.remove(i)} aria-label="הסרה"><Trash2 className="h-4 w-4" /></Button>
+                    <Input {...bind(`data.appendix.hourlyRates.${i}.role`)} placeholder={t("תפקיד")} className="w-40" />
+                    <Input {...bind(`data.appendix.hourlyRates.${i}.rate`)} placeholder={t("₪ לשעה")} inputMode="decimal" dir="ltr" className="w-28" />
+                    <Button type="button" size="icon" variant="ghost" onClick={() => rates.remove(i)} aria-label={t("הסרה")}><Trash2 className="h-4 w-4" /></Button>
                   </div>
                 ))}
-                <Button type="button" size="sm" variant="outline" onClick={rates.add}><Plus className="ms-1 h-4 w-4" />תפקיד</Button>
+                <Button type="button" size="sm" variant="outline" onClick={rates.add}><Plus className="ms-1 h-4 w-4" />{t("תפקיד")}</Button>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <FieldRow label="מספר משתמשים / תחנות" hint="ריק: ללא הגבלה"><Input {...bind("data.appendix.usersCount")} /></FieldRow>
+                <FieldRow label={t("מספר משתמשים / תחנות")} hint={t("ריק: ללא הגבלה")}><Input {...bind("data.appendix.usersCount")} /></FieldRow>
               </div>
             </div>
           </Card>}
         </div>
 
         <aside className="min-w-0 space-y-4 lg:sticky lg:top-20 lg:self-start">
-          <Card title="תצוגה מקדימה">
-            {!preview || preview.error ? <p className="text-sm text-muted-foreground">{preview?.error || "הזינו שם פרויקט ומחיר כדי לראות את לוח התשלומים."}</p> : (
+          <Card title={t("תצוגה מקדימה")}>
+            {!preview || preview.error ? <p className="text-sm text-muted-foreground">{preview?.error || t("הזינו שם פרויקט ומחיר כדי לראות את לוח התשלומים.")}</p> : (
               <div className="space-y-3 text-sm">
-                {preview.price.listAmount && <p className="text-xs text-muted-foreground"><s className="tabular-nums">{nis(preview.price.listAmount)}</s> · הנחה של <span className="tabular-nums">{nis(preview.price.discount)}</span> ({preview.price.discountPercent}%)</p>}
-                <p className="font-semibold">{nis(preview.price.amount)} + מע"מ = {nis(preview.price.total)}</p>
+                {preview.price.listAmount && <p className="text-xs text-muted-foreground"><s className="tabular-nums">{nis(preview.price.listAmount)}</s> · {t("הנחה של")} <span className="tabular-nums">{nis(preview.price.discount)}</span> ({preview.price.discountPercent}%)</p>}
+                <p className="font-semibold">{nis(preview.price.amount)} + {t('מע"מ')} = {nis(preview.price.total)}</p>
                 <table className="w-full">
                   <tbody>
                     {preview.schedule.rows.map((r) => (
                       <tr key={r.n} className="border-b border-border/60">
-                        <td className="py-1.5">{r.kind === "deposit" ? `מקדמה ${preview.price.depositPercent}%` : `תשלום ${r.n - 1}`}</td>
-                        <td className="py-1.5 text-xs text-muted-foreground">{r.kind === "deposit" && !r.method ? `עד ${dmy(r.date)}` : dmy(r.date)}{r.method && <span className="block">{methodName(r.method)}</span>}</td>
+                        <td className="py-1.5">{r.kind === "deposit" ? t("מקדמה {p}%", { p: preview.price.depositPercent }) : t("תשלום {n}", { n: r.n - 1 })}</td>
+                        <td className="py-1.5 text-xs text-muted-foreground">{r.kind === "deposit" && !r.method ? t("עד {date}", { date: dmy(r.date) }) : dmy(r.date)}{r.method && <span className="block">{methodName(r.method)}</span>}</td>
                         <td className="py-1.5 text-end tabular-nums">{nis(r.total)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                {preview.schedule.rows.some((r) => r.dateNote && r.method === "transfer") && <p className="text-xs text-amber-700">העברה בתאריך שאינו יום עסקים בנקאי צריכה להגיע ביום העסקים שלפניו.</p>}
+                {preview.schedule.rows.some((r) => r.dateNote && r.method === "transfer") && <p className="text-xs text-amber-700">{t("העברה בתאריך שאינו יום עסקים בנקאי צריכה להגיע ביום העסקים שלפניו.")}</p>}
                 {preview.service.rows?.length > 0 && (
                   <div className="space-y-1 border-t border-border pt-3">
-                    {preview.service.rows.map((r, i) => <p key={i} className="flex justify-between"><span className="text-muted-foreground">{r.when}</span><span className="tabular-nums">{r.price ? `${nis(r.priceWithVat)} לחודש` : "ללא עלות"}</span></p>)}
+                    {preview.service.rows.map((r, i) => <p key={i} className="flex justify-between"><span className="text-muted-foreground">{r.when}</span><span className="tabular-nums">{r.price ? t("{amount} לחודש", { amount: nis(r.priceWithVat) }) : t("ללא עלות")}</span></p>)}
                   </div>
                 )}
               </div>
             )}
           </Card>
           <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
-            {!id && !manual.on && <label className="flex items-center gap-2 text-sm"><Switch checked={sendEmail} onCheckedChange={setSendEmail} />לשלוח ללקוח מייל עם הקישור</label>}
+            {!id && !manual.on && <label className="flex items-center gap-2 text-sm"><Switch checked={sendEmail} onCheckedChange={setSendEmail} />{t("לשלוח ללקוח מייל עם הקישור")}</label>}
+            {!id && !manual.on && sendEmail && <MailCopies c={copies} onChange={setCopies} />}
             {!id && manual.on && <OrderMailOptions m={manual} setM={setManual} hasFile={Boolean(manual.file)} />}
             {error && <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
-            <Button className="w-full" disabled={busy} onClick={save}>{busy ? "שומר..." : id ? "שמירת השינויים" : manual.on ? "שמירת העסקה החתומה" : "יצירת העסקה"}</Button>
+            <Button className="w-full" disabled={busy} onClick={save}>{busy ? t("שומר...") : id ? t("שמירת השינויים") : manual.on ? t("שמירת העסקה החתומה") : t("יצירת העסקה")}</Button>
           </div>
         </aside>
       </div>
@@ -704,104 +709,104 @@ export function DealDetail() {
 
   return (
     <div className="max-w-5xl space-y-5">
-      <Link to="/sales/deals" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowRight className="h-4 w-4" />עסקאות</Link>
-      <PageHeader title={`${x.client.companyName || x.client.signerName} · ${x.data.project.name}`} subtitle={`עסקה מס' ${x.number}`}>
+      <Link to="/sales/deals" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowRight className="h-4 w-4 ltr:-scale-x-100" />{t("עסקאות")}</Link>
+      <PageHeader title={`${x.client.companyName || x.client.signerName} · ${x.data.project.name}`} subtitle={t("עסקה מס' {n}", { n: x.number })}>
         <Pill tone={tone}>{label}</Pill>
-        {x.signMode === "manual" && <Pill>נחתם מחוץ לקישור</Pill>}
-        {!x.approvedAt && !x.status.canceled && <Button size="sm" variant="outline" asChild><Link to={`/sales/deals/${id}/edit`}>עריכה</Link></Button>}
+        {x.signMode === "manual" && <Pill>{t("נחתם מחוץ לקישור")}</Pill>}
+        {!x.approvedAt && !x.status.canceled && <Button size="sm" variant="outline" asChild><Link to={`/sales/deals/${id}/edit`}>{t("עריכה")}</Link></Button>}
       </PageHeader>
 
-      <Card title="הקישור ללקוח" actions={!x.status.canceled && <Button size="sm" variant="outline" onClick={() => act({ action: "send_email" }, "המייל נשלח לתור")}>שליחה במייל</Button>}>
-        <LinkBox url={x.url} phone={x.client.phone} message={`היי ${x.client.signerName || ""}, מצורף הקישור להזמנת העבודה ולהסכם של ${x.data.project.name}:`} />
+      <Card title={t("הקישור ללקוח")} actions={!x.status.canceled && <Button size="sm" variant="outline" onClick={() => act({ action: "send_email", cc: selfCc() }, t("המייל נשלח לתור"))}>{t("שליחה במייל")}</Button>}>
+        <LinkBox url={x.url} phone={x.client.phone} message={t("היי {name}, מצורף הקישור להזמנת העבודה ולהסכם של {project}:", { name: x.client.signerName || "", project: x.data.project.name })} />
       </Card>
 
       {!x.status.canceled && <DealFilm id={id} project={x.data.project.name} />}
       {!x.status.canceled && x.signMode !== "manual" && <DealPitch id={id} item={x} onSaved={reload} />}
 
       <div className="grid gap-5 md:grid-cols-2">
-        <Card title="מצב">
+        <Card title={t("מצב")}>
           <Info rows={[
-            ["נצפה", x.viewedAt && dateTime(x.viewedAt)],
-            ["הזמנה אושרה", x.approvedAt && dateTime(x.approvedAt)],
-            ["הסכם נחתם", x.signedAt && (x.signMode === "manual" ? `${dmy(x.signedOn)} (מחוץ לקישור)` : dateTime(x.signedAt))],
-            ["מקדמה", x.status.deposit === "paid" ? "שולמה" : "ממתינה"],
-            ["הוראת קבע", { not_required: "לא נדרשת", pending: "ממתינה לכרטיס", set: "כרטיס נשמר", failed: "נכשלה" }[x.status.card]],
-            ["פרויקט", { not_started: "לא התחיל", started: `התחיל ${dmy(x.projectStartedOn)}`, delivered: "נמסר" }[x.status.project]],
-            x.snapshotHash && ["גיבוב", <code className="text-[11px]" dir="ltr">{x.snapshotHash.slice(0, 24)}…</code>],
+            [t("נצפה"), x.viewedAt && dateTime(x.viewedAt)],
+            [t("הזמנה אושרה"), x.approvedAt && dateTime(x.approvedAt)],
+            [t("הסכם נחתם"), x.signedAt && (x.signMode === "manual" ? t("{date} (מחוץ לקישור)", { date: dmy(x.signedOn) }) : dateTime(x.signedAt))],
+            [t("מקדמה"), x.status.deposit === "paid" ? t("שולמה") : t("ממתינה")],
+            [t("הוראת קבע"), { not_required: t("לא נדרשת"), pending: t("ממתינה לכרטיס"), set: t("כרטיס נשמר"), failed: t("נכשלה") }[x.status.card]],
+            [t("פרויקט"), { not_started: t("לא התחיל"), started: t("התחיל {date}", { date: dmy(x.projectStartedOn) }), delivered: t("נמסר") }[x.status.project]],
+            x.snapshotHash && [t("גיבוב"), <code className="text-[11px]" dir="ltr">{x.snapshotHash.slice(0, 24)}…</code>],
           ]} />
           <div className="mt-4 flex flex-wrap gap-2">
-            {x.hasSignedPdf && <Button size="sm" asChild><a href={file("signed")}>הורדת ההסכם החתום</a></Button>}
+            {x.hasSignedPdf && <Button size="sm" asChild><a href={file("signed")}>{t("הורדת ההסכם החתום")}</a></Button>}
             {x.signMode === "manual" && (
-              <ContractUpload file={null} label={x.hasSignedPdf ? "החלפת קובץ החוזה" : "העלאת החוזה החתום"}
-                onFile={(f) => act({ action: "signed_file", fileId: f.fileId }, "החוזה נשמר")} />
+              <ContractUpload file={null} label={x.hasSignedPdf ? t("החלפת קובץ החוזה") : t("העלאת החוזה החתום")}
+                onFile={(f) => act({ action: "signed_file", fileId: f.fileId }, t("החוזה נשמר"))} />
             )}
-            {!x.signedAt && !x.status.canceled && !closing && <Button size="sm" variant="outline" onClick={() => setClosing({ ...blankManual(), on: true })}>הלקוח חתם מחוץ לקישור</Button>}
-            {x.data.project.specFileId && <Button size="sm" variant="outline" asChild><a href={file("spec")} target="_blank" rel="noreferrer">האפיון</a></Button>}
-            {x.signedAt && x.status.deposit !== "paid" && <Button size="sm" variant="outline" onClick={() => setConfirm({ title: "לסמן שהמקדמה שולמה?", onConfirm: () => act({ action: "mark_deposit_paid" }, "סומן") })}>המקדמה שולמה</Button>}
-            {x.signedAt && x.status.project === "started" && <Button size="sm" variant="outline" onClick={() => setConfirm({ title: "לסמן שהמערכת נמסרה?", onConfirm: () => act({ action: "mark_delivered" }, "סומן") })}>המערכת נמסרה</Button>}
-            {!x.signedAt && !x.status.canceled && <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setConfirm({ title: "לבטל את העסקה?", description: "הקישור יפסיק לעבוד.", danger: true, onConfirm: () => act({ action: "cancel" }, "בוטלה") })}>ביטול</Button>}
+            {!x.signedAt && !x.status.canceled && !closing && <Button size="sm" variant="outline" onClick={() => setClosing({ ...blankManual(), on: true })}>{t("הלקוח חתם מחוץ לקישור")}</Button>}
+            {x.data.project.specFileId && <Button size="sm" variant="outline" asChild><a href={file("spec")} target="_blank" rel="noreferrer">{t("האפיון")}</a></Button>}
+            {x.signedAt && x.status.deposit !== "paid" && <Button size="sm" variant="outline" onClick={() => setConfirm({ title: t("לסמן שהמקדמה שולמה?"), onConfirm: () => act({ action: "mark_deposit_paid" }, t("סומן")) })}>{t("המקדמה שולמה")}</Button>}
+            {x.signedAt && x.status.project === "started" && <Button size="sm" variant="outline" onClick={() => setConfirm({ title: t("לסמן שהמערכת נמסרה?"), onConfirm: () => act({ action: "mark_delivered" }, t("סומן")) })}>{t("המערכת נמסרה")}</Button>}
+            {!x.signedAt && !x.status.canceled && <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setConfirm({ title: t("לבטל את העסקה?"), description: t("הקישור יפסיק לעבוד."), danger: true, onConfirm: () => act({ action: "cancel" }, t("בוטלה")) })}>{t("ביטול")}</Button>}
           </div>
           {closing && (
             <form className="mt-4 space-y-3 rounded-xl border border-border p-3" onSubmit={async (e) => {
               e.preventDefault();
-              const r = await run(() => api(`sales/deals?id=${id}`, { method: "PATCH", body: { action: "close_manual", ...manualPayload(closing) } }), closing.sendOrderMail ? "נשמר, אישור ההזמנה נשלח" : "נשמר");
+              const r = await run(() => api(`sales/deals?id=${id}`, { method: "PATCH", body: { action: "close_manual", ...manualPayload(closing) } }), closing.sendOrderMail ? t("נשמר, אישור ההזמנה נשלח") : t("נשמר"));
               if (r) { setClosing(null); reload(); }
             }}>
-              <p className="text-sm font-medium">סגירה ידנית: הלקוח חתם מחוץ לקישור</p>
-              <p className="text-xs text-muted-foreground">{x.approvedAt ? "ההזמנה כבר אושרה בקישור, ולוח התשלומים שאושר נשאר." : "ההזמנה תסומן כמאושרת ולוח התשלומים יחושב מתאריך החתימה."} הקישור ללקוח ימשיך לעבוד{x.data.standingOrder?.enabled ? " להגדרת כרטיס להוראת הקבע" : ""}.</p>
+              <p className="text-sm font-medium">{t("סגירה ידנית: הלקוח חתם מחוץ לקישור")}</p>
+              <p className="text-xs text-muted-foreground">{x.approvedAt ? t("ההזמנה כבר אושרה בקישור, ולוח התשלומים שאושר נשאר.") : t("ההזמנה תסומן כמאושרת ולוח התשלומים יחושב מתאריך החתימה.")} {t("הקישור ללקוח ימשיך לעבוד{card}.", { card: x.data.standingOrder?.enabled ? t(" להגדרת כרטיס להוראת הקבע") : "" })}</p>
               <ManualClose m={closing} setM={setClosing} />
               <OrderMailOptions m={closing} setM={setClosing} hasFile={Boolean(closing.file)} />
-              <div className="flex gap-2"><Button type="submit" size="sm">סימון כנחתם</Button><Button type="button" size="sm" variant="ghost" onClick={() => setClosing(null)}>ביטול</Button></div>
+              <div className="flex gap-2"><Button type="submit" size="sm">{t("סימון כנחתם")}</Button><Button type="button" size="sm" variant="ghost" onClick={() => setClosing(null)}>{t("ביטול")}</Button></div>
             </form>
           )}
           {x.signedAt && x.status.project === "not_started" && (
             <div className="mt-4 rounded-xl bg-secondary/60 p-3">
-              <p className="text-sm font-medium">תחילת עבודה</p>
-              <p className="mb-2 text-xs text-muted-foreground">{sub && !sub.startDate ? "קובע גם את מועד החיוב הראשון בהוראת הקבע (תחילת העבודה + החודשים הכלולים), ומודיע ללקוח." : "מסמן שהפרויקט התחיל."}</p>
+              <p className="text-sm font-medium">{t("תחילת עבודה")}</p>
+              <p className="mb-2 text-xs text-muted-foreground">{sub && !sub.startDate ? t("קובע גם את מועד החיוב הראשון בהוראת הקבע (תחילת העבודה + החודשים הכלולים), ומודיע ללקוח.") : t("מסמן שהפרויקט התחיל.")}</p>
               <div className="flex gap-2">
                 <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="max-w-44" />
-                <Button size="sm" onClick={() => act({ action: "mark_project_started", date: startDate || undefined }, "נשמר")}>הפרויקט התחיל</Button>
+                <Button size="sm" onClick={() => act({ action: "mark_project_started", date: startDate || undefined }, t("נשמר"))}>{t("הפרויקט התחיל")}</Button>
               </div>
             </div>
           )}
         </Card>
 
-        <Card title="הלקוח">
+        <Card title={t("הלקוח")}>
           <Info rows={[
-            ["חברה", x.client.companyName], ["ח.פ", x.client.taxId], ["כתובת", x.client.address],
-            ["חותם", [x.client.signerName, x.client.signerRole, x.signerIdNumber && `ת.ז ${x.signerIdNumber}`].filter(Boolean).join(", ")],
-            ["אימייל", x.client.email && <span dir="ltr">{x.client.email}</span>], ["טלפון", x.client.phone && <span dir="ltr">{x.client.phone}</span>],
-            ["הנהלת חשבונות", x.client.accountingEmail && <span dir="ltr">{x.client.accountingEmail}</span>],
+            [t("חברה"), x.client.companyName], [t("ח.פ"), x.client.taxId], [t("כתובת"), x.client.address],
+            [t("חותם"), [x.client.signerName, x.client.signerRole, x.signerIdNumber && t("ת.ז {id}", { id: x.signerIdNumber })].filter(Boolean).join(", ")],
+            [t("אימייל"), x.client.email && <span dir="ltr">{x.client.email}</span>], [t("טלפון"), x.client.phone && <span dir="ltr">{x.client.phone}</span>],
+            [t("הנהלת חשבונות"), x.client.accountingEmail && <span dir="ltr">{x.client.accountingEmail}</span>],
           ]} />
         </Card>
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">
-        <Card title="איך הלקוח משלם" actions={note === null && <Button size="sm" variant="ghost" onClick={() => setNote(x.paymentNote || "")}>עריכה</Button>}>
-          {note === null ? <p className="whitespace-pre-line text-sm">{x.paymentNote || <span className="text-muted-foreground">לא נרשם. כאן רושמים תשלום שסוכם מחוץ לקישור, למשל מקדמה שהועברה או שירות חודשי בהעברה.</span>}</p> : (
-            <form className="space-y-2" onSubmit={async (e) => { e.preventDefault(); const r = await run(() => api(`sales/deals?id=${id}`, { method: "PATCH", body: { action: "payment_note", note } }), "נשמר"); if (r) { setNote(null); reload(); } }}>
+        <Card title={t("איך הלקוח משלם")} actions={note === null && <Button size="sm" variant="ghost" onClick={() => setNote(x.paymentNote || "")}>{t("עריכה")}</Button>}>
+          {note === null ? <p className="whitespace-pre-line text-sm">{x.paymentNote || <span className="text-muted-foreground">{t("לא נרשם. כאן רושמים תשלום שסוכם מחוץ לקישור, למשל מקדמה שהועברה או שירות חודשי בהעברה.")}</span>}</p> : (
+            <form className="space-y-2" onSubmit={async (e) => { e.preventDefault(); const r = await run(() => api(`sales/deals?id=${id}`, { method: "PATCH", body: { action: "payment_note", note } }), t("נשמר")); if (r) { setNote(null); reload(); } }}>
               <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} autoFocus />
-              <div className="flex gap-2"><Button type="submit" size="sm">שמירה</Button><Button type="button" size="sm" variant="ghost" onClick={() => setNote(null)}>ביטול</Button></div>
+              <div className="flex gap-2"><Button type="submit" size="sm">{t("שמירה")}</Button><Button type="button" size="sm" variant="ghost" onClick={() => setNote(null)}>{t("ביטול")}</Button></div>
             </form>
           )}
         </Card>
         {x.signMode === "manual" && (
-          <Card title="אישור הזמנה ללקוח">
-            <p className="mb-3 text-sm text-muted-foreground">ההזמנה, לוח התשלומים ואופן התשלום{sub?.status === "pending_card" ? ", עם קישור להגדרת כרטיס להוראת הקבע" : ""}. נשלח אל <span dir="ltr">{x.client.email || "—"}</span>{x.client.accountingEmail ? " ובהעתק להנהלת החשבונות" : ""}.</p>
+          <Card title={t("אישור הזמנה ללקוח")}>
+            <p className="mb-3 text-sm text-muted-foreground">{t("ההזמנה, לוח התשלומים ואופן התשלום{card}. נשלח אל", { card: sub?.status === "pending_card" ? t(", עם קישור להגדרת כרטיס להוראת הקבע") : "" })} <span dir="ltr">{x.client.email || "—"}</span>{x.client.accountingEmail ? t(" ובהעתק להנהלת החשבונות") : ""}.</p>
             <label className={`mb-3 flex items-center gap-2 text-sm ${x.hasSignedPdf ? "" : "text-muted-foreground"}`}>
-              <Switch checked={x.hasSignedPdf && attach} disabled={!x.hasSignedPdf} onCheckedChange={setAttach} />לצרף את החוזה החתום{!x.hasSignedPdf && " (לא הועלה)"}
+              <Switch checked={x.hasSignedPdf && attach} disabled={!x.hasSignedPdf} onCheckedChange={setAttach} />{t("לצרף את החוזה החתום")}{!x.hasSignedPdf && t(" (לא הועלה)")}
             </label>
-            <Button size="sm" disabled={!x.client.email} onClick={() => act({ action: "send_order", attachContract: x.hasSignedPdf && attach }, "אישור ההזמנה נשלח לתור")}>שליחת אישור הזמנה במייל</Button>
+            <Button size="sm" disabled={!x.client.email} onClick={() => act({ action: "send_order", attachContract: x.hasSignedPdf && attach }, t("אישור ההזמנה נשלח לתור"))}>{t("שליחת אישור הזמנה במייל")}</Button>
           </Card>
         )}
       </div>
 
-      <Card title={`לוח תשלומים${x.approvedAt ? " (כפי שאושר)" : " (מחושב מהיום)"}`}>
+      <Card title={t("לוח תשלומים") + (x.approvedAt ? t(" (כפי שאושר)") : t(" (מחושב מהיום)"))}>
         <table className="w-full text-sm">
           <tbody>
             {o.schedule.rows.map((r) => (
               <tr key={r.n} className="border-b border-border/60">
-                <td className="py-2">{r.kind === "deposit" ? `מקדמה ${o.price.depositPercent}%` : `תשלום ${r.n - 1}`}</td>
+                <td className="py-2">{r.kind === "deposit" ? t("מקדמה {p}%", { p: o.price.depositPercent }) : t("תשלום {n}", { n: r.n - 1 })}</td>
                 <td className="py-2">{dmy(r.date)}{r.dateNote && <span className="block text-xs text-muted-foreground sm:ms-2 sm:inline">{r.dateNote}</span>}</td>
                 <td className="py-2 text-muted-foreground">{methodName(r.method)}</td>
                 <td className="hidden whitespace-nowrap py-2 tabular-nums sm:table-cell">{nis(r.before)}</td>
@@ -810,28 +815,28 @@ export function DealDetail() {
             ))}
           </tbody>
         </table>
-        {o.payInfo?.checks?.pickupDate && <p className="mt-3 text-sm">איסוף השיקים על ידי שליח: <span className="tabular-nums">{dmy(o.payInfo.checks.pickupDate)}</span></p>}
+        {o.payInfo?.checks?.pickupDate && <p className="mt-3 text-sm">{t("איסוף השיקים על ידי שליח:")} <span className="tabular-nums">{dmy(o.payInfo.checks.pickupDate)}</span></p>}
       </Card>
 
       {sub && (
-        <Card title="הוראת קבע" actions={<Button size="sm" variant="outline" asChild><Link to={`/sales/billing/${sub.id}`}>ניהול</Link></Button>}>
+        <Card title={t("הוראת קבע")} actions={<Button size="sm" variant="outline" asChild><Link to={`/sales/billing/${sub.id}`}>{t("ניהול")}</Link></Button>}>
           <Info rows={[
-            ["סטטוס", subStatus(sub)[1]],
-            ["כרטיס", sub.card ? `${sub.card.brand || ""} ${sub.card.suffix ? `****${sub.card.suffix}` : ""}` : "לא הוזן"],
-            ["חיוב הבא", sub.nextChargeDate ? `${dmy(sub.nextChargeDate)} · ${nis(sub.nextAmount)}` : "ייקבע בתחילת העבודה"],
+            [t("סטטוס"), subStatus(sub)[1]],
+            [t("כרטיס"), sub.card ? `${sub.card.brand || ""} ${sub.card.suffix ? `****${sub.card.suffix}` : ""}` : t("לא הוזן")],
+            [t("חיוב הבא"), sub.nextChargeDate ? `${dmy(sub.nextChargeDate)} · ${nis(sub.nextAmount)}` : t("ייקבע בתחילת העבודה")],
           ]} />
         </Card>
       )}
 
-      <Card title="היסטוריה"><History events={data.events} mails={data.mails} /></Card>
+      <Card title={t("היסטוריה")}><History events={data.events} mails={data.mails} /></Card>
       {confirm && <Confirm {...confirm} onClose={() => setConfirm(null)} />}
     </div>
   );
 }
 
 export const subStatus = (s) => ({
-  pending_card: ["amber", "ממתין לכרטיס"], active: ["green", "פעיל"], paused: ["gray", "מושהה"],
-  failed: ["red", "חיוב נכשל"], canceled: ["gray", "בוטל"], ended: ["gray", "הסתיים"],
+  pending_card: ["amber", t("ממתין לכרטיס")], active: ["green", t("פעיל")], paused: ["gray", t("מושהה")],
+  failed: ["red", t("חיוב נכשל")], canceled: ["gray", t("בוטל")], ended: ["gray", t("הסתיים")],
 }[s.status] || ["gray", s.status]);
 
 // the key lines at the top of the client's page and in the order email: edited at any time, even after the
@@ -843,13 +848,13 @@ function DealPitch({ id, item, onSaved }) {
   const dirty = JSON.stringify(pitchBody(p)) !== saved;
   const save = async () => {
     setBusy(true);
-    const r = await run(() => api(`sales/deals?id=${id}`, { method: "PATCH", body: { action: "pitch", pitch: pitchBody(p) } }), "נשמר");
+    const r = await run(() => api(`sales/deals?id=${id}`, { method: "PATCH", body: { action: "pitch", pitch: pitchBody(p) } }), t("נשמר"));
     setBusy(false);
     if (r) onSaved();
   };
   return (
-    <Card title="משפטי מפתח בראש העמוד של הלקוח" actions={dirty && <Button size="sm" onClick={save} disabled={busy}>{busy ? "שומר..." : "שמירה"}</Button>}>
-      <p className="mb-3 text-sm text-muted-foreground">מופיעים בראש הזמנת העבודה ובמייל ההזמנה, במקום תיאור הפרויקט. אפשר לשנות בכל שלב.</p>
+    <Card title={t("משפטי מפתח בראש העמוד של הלקוח")} actions={dirty && <Button size="sm" onClick={save} disabled={busy}>{busy ? t("שומר...") : t("שמירה")}</Button>}>
+      <p className="mb-3 text-sm text-muted-foreground">{t("מופיעים בראש הזמנת העבודה ובמייל ההזמנה, במקום תיאור הפרויקט. אפשר לשנות בכל שלב.")}</p>
       <PitchFields p={p} onChange={setP} stage="deal" />
     </Card>
   );

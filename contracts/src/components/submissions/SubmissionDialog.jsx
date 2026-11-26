@@ -7,6 +7,7 @@ import { base44 } from "@/api/base44Client";
 import SignedDocument from "@/components/submissions/SignedDocument";
 import { fmtDate } from "@/lib/formUtils";
 import { exportElementToPdf } from "@/lib/exportPdf";
+import { t } from "@/i18n";
 
 export default function SubmissionDialog({ form, submission, onClose }) {
   const [sigUrl, setSigUrl] = useState(null);
@@ -42,7 +43,7 @@ export default function SubmissionDialog({ form, submission, onClose }) {
       const name = `${displayForm.title || form.title} - ${fmtDate(submission.created_date)}`.replace(/[\/:*?"<>|]+/g, "-").trim();
       await exportElementToPdf(exportRef.current, `${name}.pdf`);
     } catch {
-      setExportError("שגיאה ביצירת ה-PDF, נסו שוב");
+      setExportError(t("שגיאה ביצירת ה-PDF, נסו שוב"));
     } finally {
       setExporting(false);
     }
@@ -54,7 +55,7 @@ export default function SubmissionDialog({ form, submission, onClose }) {
     <Dialog open={!!submission} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>מסמך חתום · {displayForm.title || form.title}</DialogTitle>
+          <DialogTitle>{t("מסמך חתום")} · {displayForm.title || form.title}</DialogTitle>
         </DialogHeader>
         {loading ? (
           <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
@@ -68,11 +69,11 @@ export default function SubmissionDialog({ form, submission, onClose }) {
             {/* המסמך החתום שנשמר בשרת ברגע החתימה (api/contracts/pdf) — התיעוד הרשמי */}
             <Button asChild className="w-full gap-2">
               <a href={`/api/contracts/pdf?submission_id=${submission.id}`} download>
-                <FileCheck2 className="h-4 w-4" />הורדת המסמך החתום (PDF שמור)
+                <FileCheck2 className="h-4 w-4" />{t("הורדת המסמך החתום (PDF שמור)")}
               </a>
             </Button>
             <Button onClick={download} disabled={exporting} variant="outline" className="w-full gap-2">
-              {exporting ? <><Loader2 className="h-4 w-4 animate-spin" />מכין PDF...</> : <><Download className="h-4 w-4" />הורדת התצוגה כ-PDF</>}
+              {exporting ? <><Loader2 className="h-4 w-4 animate-spin" />{t("מכין PDF...")}</> : <><Download className="h-4 w-4" />{t("הורדת התצוגה כ-PDF")}</>}
             </Button>
             {exportError && <p className="text-center text-sm text-destructive">{exportError}</p>}
             {/* עותק של המסמך לייצוא — מחוץ לחלון הדיאלוג (שנגלל ונחתך) ובגודל מלא, מאחורי תוכן העמוד */}

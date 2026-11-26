@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { FileText, Eye, Pencil, Users, Share2, Copy, Trash2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { fmtDate } from "@/lib/formUtils";
+import { t } from "@/i18n";
 
 function Action({ to, onClick, icon: Icon, title, danger }) {
   const cls = `grid h-9 w-9 place-items-center rounded-lg transition-colors ${
@@ -30,21 +31,21 @@ export default function FormCard({ form, count, onPublish, onDuplicate, onDelete
         </Link>
         <div className="flex shrink-0 items-center gap-2">
           <Switch checked={!!form.is_published} onCheckedChange={(v) => onPublish(form, v)} />
-          <span className="text-xs text-muted-foreground">{form.is_published ? "פורסם" : "טיוטה"}</span>
+          <span className="text-xs text-muted-foreground">{form.is_published ? t("פורסם") : t("טיוטה")}</span>
         </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        <span>נוצר: {fmtDate(form.created_date)}</span>
-        {form.published_date && <span>פורסם: {fmtDate(form.published_date)}</span>}
-        <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{count} חתימות</span>
+        <span>{t("נוצר:")} {fmtDate(form.created_date)}</span>
+        {form.published_date && <span>{t("פורסם:")} {fmtDate(form.published_date)}</span>}
+        <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{t("{n} חתימות", { n: count })}</span>
       </div>
       <div className="mt-3 flex items-center gap-1 border-t border-border/50 pt-3">
-        <Action to={`/sign?id=${form.id}&preview=1`} icon={Eye} title="תצוגה מקדימה" />
-        <Action to={`/editor?id=${form.id}`} icon={Pencil} title="עריכה" />
-        <Action to={`/submissions?id=${form.id}`} icon={Users} title="תוצאות מילוי" />
-        <Action to={`/share?id=${form.id}`} icon={Share2} title="שיתוף" />
-        <Action onClick={() => onDuplicate(form)} icon={Copy} title="שכפול" />
-        <Action onClick={() => onDelete(form)} icon={Trash2} title="מחיקה" danger />
+        <Action to={`/sign?id=${form.id}&preview=1`} icon={Eye} title={t("תצוגה מקדימה")} />
+        <Action to={`/editor?id=${form.id}`} icon={Pencil} title={t("עריכה")} />
+        <Action to={`/submissions?id=${form.id}`} icon={Users} title={t("תוצאות מילוי")} />
+        <Action to={`/share?id=${form.id}`} icon={Share2} title={t("שיתוף")} />
+        <Action onClick={() => onDuplicate(form)} icon={Copy} title={t("שכפול")} />
+        <Action onClick={() => onDelete(form)} icon={Trash2} title={t("מחיקה")} danger />
       </div>
     </motion.div>
   );

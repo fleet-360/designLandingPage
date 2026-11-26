@@ -1,5 +1,6 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { Eraser } from "lucide-react";
+import { t } from "@/i18n";
 
 const SignaturePad = forwardRef(function SignaturePad(_, ref) {
   const canvas = useRef(null);
@@ -38,8 +39,8 @@ const SignaturePad = forwardRef(function SignaturePad(_, ref) {
         onPointerDown={start} onPointerMove={draw} onPointerUp={end} onPointerLeave={end}
         className="h-44 w-full cursor-crosshair touch-none rounded-xl border border-dashed border-border bg-white"
       />
-      {empty && <span className="pointer-events-none absolute inset-0 grid place-items-center text-sm text-muted-foreground">חתמו כאן באצבע או בעכבר</span>}
-      <button type="button" onClick={clear} title="ניקוי" className="absolute left-2 top-2 rounded-lg bg-secondary p-1.5 text-muted-foreground hover:text-foreground">
+      {empty && <span className="pointer-events-none absolute inset-0 grid place-items-center text-sm text-muted-foreground">{t("חתמו כאן באצבע או בעכבר")}</span>}
+      <button type="button" onClick={clear} title={t("ניקוי")} className="absolute end-2 top-2 rounded-lg bg-secondary p-1.5 text-muted-foreground hover:text-foreground">
         <Eraser className="h-4 w-4" />
       </button>
     </div>

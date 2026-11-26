@@ -1,19 +1,20 @@
 import { RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { t } from "@/i18n";
 
 const ACTIONS = {
-  create: { label: "נוצר", tone: "bg-emerald-50 text-emerald-700 ring-emerald-600/20" },
-  update: { label: "עודכן", tone: "bg-sky-50 text-sky-700 ring-sky-600/20" },
-  delete: { label: "נמחק", tone: "bg-red-50 text-red-700 ring-red-600/20" },
-  restore: { label: "שוחזר", tone: "bg-violet-50 text-violet-700 ring-violet-600/20" },
+  create: { label: t("נוצר"), tone: "bg-emerald-50 text-emerald-700 ring-emerald-600/20" },
+  update: { label: t("עודכן"), tone: "bg-sky-50 text-sky-700 ring-sky-600/20" },
+  delete: { label: t("נמחק"), tone: "bg-red-50 text-red-700 ring-red-600/20" },
+  restore: { label: t("שוחזר"), tone: "bg-violet-50 text-violet-700 ring-violet-600/20" },
 };
 
-const ENTITIES = { customer: "לקוח", payment: "תשלום", collection: "איסוף צ׳קים" };
+const ENTITIES = { customer: t("לקוח"), payment: t("תשלום"), collection: t("איסוף צ׳קים") };
 
 const RESTORE_LABELS = {
-  create: "ביטול היצירה",
-  delete: "שחזור",
-  update: "החזרת המצב הקודם",
+  create: t("ביטול היצירה"),
+  delete: t("שחזור"),
+  update: t("החזרת המצב הקודם"),
 };
 
 function stamp(value) {
@@ -44,7 +45,7 @@ export default function HistoryRow({ log, onRestore, restoring }) {
         </div>
         {subtitle && <div className="mt-0.5 text-xs text-muted-foreground">{subtitle}</div>}
         <div className="mt-0.5 text-[11px] text-muted-foreground">
-          בוצע על ידי {log.user_name || log.user_email || "לא ידוע"}
+          {t("בוצע על ידי {name}", { name: log.user_name || log.user_email || t("לא ידוע") })}
         </div>
       </div>
 

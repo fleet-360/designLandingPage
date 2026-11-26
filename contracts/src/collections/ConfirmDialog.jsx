@@ -8,12 +8,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { t } from "@/i18n";
 
-export default function ConfirmDialog({ open, onOpenChange, title, description, confirmLabel = "מחיקה", onConfirm }) {
+export default function ConfirmDialog({ open, onOpenChange, title, description, confirmLabel = t("מחיקה"), onConfirm }) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="collections-app max-w-sm">
-        <AlertDialogHeader className="text-right sm:text-right">
+        <AlertDialogHeader className="text-start sm:text-start">
           <AlertDialogTitle className="font-display text-lg font-bold">{title}</AlertDialogTitle>
           {description ? <AlertDialogDescription>{description}</AlertDialogDescription> : null}
         </AlertDialogHeader>
@@ -24,7 +25,7 @@ export default function ConfirmDialog({ open, onOpenChange, title, description, 
           >
             {confirmLabel}
           </AlertDialogAction>
-          <AlertDialogCancel className="mt-0">ביטול</AlertDialogCancel>
+          <AlertDialogCancel className="mt-0">{t("ביטול")}</AlertDialogCancel>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

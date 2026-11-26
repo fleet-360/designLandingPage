@@ -1,5 +1,6 @@
 import React from "react";
 import { blockStyleToCss, isBlockVisible } from "@/lib/formUtils";
+import { t } from "@/i18n";
 
 // מציג את המסמך החתום בגרסת PDF — מילוי ערכים, סגנון PDF, ותמונת חתימה.
 // תמיד מקבל את תמונת המצב של הטופס מעת השליחה — כך שהמסמך מוצג בדיוק כפי שהוצג לחותם.
@@ -45,7 +46,7 @@ export default function SignedDocument({ form, values = {}, signatureUrl, signat
         <div key={b.id} style={{ ...style, marginBottom: 10 }}>
           <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4, color: "#57534e" }}>{b.label}</div>
           {url ? (
-            <img src={url} alt="חתימה" style={{ maxHeight: 120, objectFit: "contain" }} crossOrigin="anonymous" />
+            <img src={url} alt={t("חתימה")} style={{ maxHeight: 120, objectFit: "contain" }} crossOrigin="anonymous" />
           ) : (
             <div style={{ borderBottom: "1px solid #a8a29e", height: 80 }} />
           )}

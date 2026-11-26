@@ -12,14 +12,15 @@ import {
   docTypeLabel,
   formatMoney,
 } from "@/collections/format";
+import { t } from "@/i18n";
 
 export default function PaymentDialog({ open, onOpenChange, customer, payment, onSave, saving }) {
   return (
     <ResponsiveSheet
       open={open}
       onOpenChange={onOpenChange}
-      title={payment ? "עריכת תשלום" : "תשלום חדש"}
-      description={customer ? `עבור ${customer.name}` : undefined}
+      title={payment ? t("עריכת תשלום") : t("תשלום חדש")}
+      description={customer ? t("עבור {name}", { name: customer.name }) : undefined}
     >
       <PaymentForm
         key={payment?.id || `new-${customer?.id || ""}`}
@@ -84,7 +85,7 @@ function PaymentForm({ customer, payment, onSave, saving, onCancel }) {
       ? {
           id: payment.kaspit_document_id,
           number: payment.doc_number,
-          type_label: docTypeLabel(payment.doc_type) || "מסמך",
+          type_label: docTypeLabel(payment.doc_type) || t("מסמך"),
           total: null,
           date: payment.doc_date,
           open: payment.kaspit_open ?? null,
@@ -150,20 +151,20 @@ function PaymentForm({ customer, payment, onSave, saving, onCancel }) {
 
   return (
     <form onSubmit={submit} className="space-y-3">
-      <Section title="פרטי התשלום">
-        <FormField label="תיאור">
-          <input value={form.description} onChange={set("description")} className={inputClass} placeholder="עבור מה התשלום" />
+      <Section title={t("פרטי התשלום")}>
+        <FormField label={t("תיאור")}>
+          <input value={form.description} onChange={set("description")} className={inputClass} placeholder={t("עבור מה התשלום")} />
         </FormField>
-        <FormField label="אבן דרך / תנאי תשלום">
+        <FormField label={t("אבן דרך / תנאי תשלום")}>
           <input
             value={form.milestone}
             onChange={set("milestone")}
             className={inputClass}
-            placeholder="לדוגמה: עם תחילת שלב 3"
+            placeholder={t("לדוגמה: עם תחילת שלב 3")}
           />
         </FormField>
         <div className="grid grid-cols-2 gap-3">
-          <FormField label="סכום (₪)">
+          <FormField label={t("סכום (₪)")}>
             <input
               value={form.amount}
               onChange={set("amount")}
@@ -173,13 +174,13 @@ function PaymentForm({ customer, payment, onSave, saving, onCancel }) {
               dir="ltr"
             />
           </FormField>
-          <FormField label="תאריך לתשלום">
+          <FormField label={t("תאריך לתשלום")}>
             <input type="date" value={form.due_date} onChange={set("due_date")} className={inputClass} dir="ltr" />
           </FormField>
         </div>
-        <Check label="הסכום כולל מע״מ" checked={form.vat_included} onChange={toggle("vat_included")} />
+        <Check label={t("הסכום כולל מע״מ")} checked={form.vat_included} onChange={toggle("vat_included")} />
         <div className="grid grid-cols-2 gap-3">
-          <FormField label="אופן תשלום">
+          <FormField label={t("אופן תשלום")}>
             <select value={form.method} onChange={set("method")} className={inputClass}>
               {PAYMENT_METHODS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -188,7 +189,7 @@ function PaymentForm({ customer, payment, onSave, saving, onCancel }) {
               ))}
             </select>
           </FormField>
-          <FormField label="סטטוס">
+          <FormField label={t("סטטוס")}>
             <select value={form.status} onChange={set("status")} className={inputClass}>
               {PAYMENT_STATUSES.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -200,17 +201,17 @@ function PaymentForm({ customer, payment, onSave, saving, onCancel }) {
         </div>
       </Section>
 
-      <Section title="מסמך">
+      <Section title={t("מסמך")}>
         {kaspitOn && (
           <KaspitDocPicker customer={customer} payment={payment} linked={linked} onPick={pick} onUnlink={unlink} />
         )}
         {amountDiffers && (
           <p className="rounded-md bg-amber-50 px-2.5 py-1.5 text-xs text-amber-800">
-            הסכום במסמך בכספית {formatMoney(linked.total)}, וכאן {formatMoney(gross)} כולל מע״מ.
+            {t("הסכום במסמך בכספית {doc}, וכאן {here} כולל מע״מ.", { doc: formatMoney(linked.total), here: formatMoney(gross) })}
           </p>
         )}
         <div className="grid grid-cols-2 gap-3">
-          <FormField label="סוג מסמך">
+          <FormField label={t("סוג מסמך")}>
             <select value={form.doc_type} onChange={set("doc_type")} className={inputClass} disabled={!!linked}>
               {DOC_TYPES.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -219,7 +220,7 @@ function PaymentForm({ customer, payment, onSave, saving, onCancel }) {
               ))}
             </select>
           </FormField>
-          <FormField label="מספר מסמך">
+          <FormField label={t("מספר מסמך")}>
             <input
               value={form.doc_number}
               onChange={set("doc_number")}
@@ -231,7 +232,7 @@ function PaymentForm({ customer, payment, onSave, saving, onCancel }) {
           </FormField>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <FormField label="תאריך מסמך">
+          <FormField label={t("תאריך מסמך")}>
             <input
               type="date"
               value={form.doc_date}
@@ -241,16 +242,16 @@ function PaymentForm({ customer, payment, onSave, saving, onCancel }) {
               dir="ltr"
             />
           </FormField>
-          <FormField label="שם לחשבונית (אם שונה)">
+          <FormField label={t("שם לחשבונית (אם שונה)")}>
             <input value={form.billing_name} onChange={set("billing_name")} className={inputClass} />
           </FormField>
         </div>
         {form.status === "paid" && (
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="מספר קבלה">
+            <FormField label={t("מספר קבלה")}>
               <input value={form.receipt_number} onChange={set("receipt_number")} className={inputClass} dir="ltr" />
             </FormField>
-            <FormField label="תאריך קבלה">
+            <FormField label={t("תאריך קבלה")}>
               <input
                 type="date"
                 value={form.receipt_date}
@@ -264,12 +265,12 @@ function PaymentForm({ customer, payment, onSave, saving, onCancel }) {
       </Section>
 
       {isCheck && (
-        <Section title="צ׳קים">
+        <Section title={t("צ׳קים")}>
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="מספר צ׳ק">
+            <FormField label={t("מספר צ׳ק")}>
               <input value={form.check_number} onChange={set("check_number")} className={inputClass} dir="ltr" />
             </FormField>
-            <FormField label="מועד איסוף הצ׳ק">
+            <FormField label={t("מועד איסוף הצ׳ק")}>
               <input
                 type="date"
                 value={form.collection_date}
@@ -279,14 +280,14 @@ function PaymentForm({ customer, payment, onSave, saving, onCancel }) {
               />
             </FormField>
           </div>
-          <Check label="הצ׳קים הגיעו אלינו" checked={form.check_received} onChange={toggle("check_received")} />
-          <p className="text-xs text-muted-foreground">מועד האיסוף יופיע אוטומטית בטבלת איסופי הצ׳קים.</p>
+          <Check label={t("הצ׳קים הגיעו אלינו")} checked={form.check_received} onChange={toggle("check_received")} />
+          <p className="text-xs text-muted-foreground">{t("מועד האיסוף יופיע אוטומטית בטבלת איסופי הצ׳קים.")}</p>
         </Section>
       )}
 
-      <Section title="סימונים והערות">
-        <Check label="הסכום או הפרטים לאימות" checked={form.needs_review} onChange={toggle("needs_review")} />
-        <FormField label="הערות">
+      <Section title={t("סימונים והערות")}>
+        <Check label={t("הסכום או הפרטים לאימות")} checked={form.needs_review} onChange={toggle("needs_review")} />
+        <FormField label={t("הערות")}>
           <Textarea
             value={form.notes}
             onChange={set("notes")}
@@ -302,14 +303,14 @@ function PaymentForm({ customer, payment, onSave, saving, onCancel }) {
           disabled={!valid || saving}
           className="h-10 flex-1 rounded-lg bg-slate-900 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:opacity-50"
         >
-          {saving ? "שומר..." : "שמירה"}
+          {saving ? t("שומר...") : t("שמירה")}
         </button>
         <button
           type="button"
           onClick={onCancel}
           className="h-10 rounded-lg border border-border px-4 text-sm font-semibold text-foreground transition-colors hover:bg-slate-50"
         >
-          ביטול
+          {t("ביטול")}
         </button>
       </div>
     </form>

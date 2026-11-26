@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { MousePointerClick, Pause, Play, RotateCcw } from "lucide-react";
+import { t } from "@/i18n";
 
 // The demo film: the client's real demo plays inside a sandboxed frame, driven by the script Claude wrote
 // (api/_lib/demo-film.js). The driver inside the frame moves the cursor and acts; this player sends it one
@@ -232,7 +233,7 @@ export default function DemoFilm({ demo, logo, script, title, autoplay = true, o
               {/* the demo is sandboxed by its own response header (Content-Security-Policy: sandbox allow-scripts,
                   api/_routes/sales/deal-file.js): it runs without an origin. A sandbox attribute here would add
                   nothing, and some embedded browsers refuse sandboxed frames outright. */}
-              <iframe key={run} ref={frame} src={demo} title={title || "דמו"} loading="eager"
+              <iframe key={run} ref={frame} src={demo} title={title || t("דמו")} loading="eager"
                 className="block border-0 bg-white" style={{ width: W, height: H }} tabIndex={phase === "free" ? 0 : -1} />
             </div>
           </div>
@@ -263,10 +264,10 @@ export default function DemoFilm({ demo, logo, script, title, autoplay = true, o
               {title && <p className="text-lg font-extrabold text-white sm:text-2xl">{title}</p>}
               <div className="mt-4 flex flex-wrap justify-center gap-2">
                 <button type="button" onClick={play} className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-bold" style={{ color: INK }}>
-                  <RotateCcw className="h-4 w-4" />צפייה חוזרת
+                  <RotateCcw className="h-4 w-4" />{t("צפייה חוזרת")}
                 </button>
                 <button type="button" onClick={() => { send({ do: "speed", value: 1 }); setPhase("free"); }} className="inline-flex items-center gap-1.5 rounded-full border border-white/60 px-4 py-2 text-sm font-bold text-white">
-                  <MousePointerClick className="h-4 w-4" />לנסות בעצמכם
+                  <MousePointerClick className="h-4 w-4" />{t("לנסות בעצמכם")}
                 </button>
               </div>
             </div>
@@ -276,8 +277,8 @@ export default function DemoFilm({ demo, logo, script, title, autoplay = true, o
         {phase === "failed" && (
           <div className="absolute inset-0 grid place-items-center bg-[#0f0e2a] p-4 text-center text-white/80">
             <div>
-              <p>הדמו לא נטען</p>
-              <button type="button" onClick={play} className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-bold" style={{ color: INK }}><RotateCcw className="h-4 w-4" />לנסות שוב</button>
+              <p>{t("הדמו לא נטען")}</p>
+              <button type="button" onClick={play} className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-bold" style={{ color: INK }}><RotateCcw className="h-4 w-4" />{t("לנסות שוב")}</button>
             </div>
           </div>
         )}
@@ -285,7 +286,7 @@ export default function DemoFilm({ demo, logo, script, title, autoplay = true, o
 
       {/* the scenes as a progress bar, with pause and replay */}
       <div className="mt-3 flex items-center gap-3">
-        <button type="button" disabled={phase !== "playing"} onClick={togglePause} aria-label={paused ? "המשך" : "השהיה"}
+        <button type="button" disabled={phase !== "playing"} onClick={togglePause} aria-label={paused ? t("המשך") : t("השהיה")}
           className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-[#1c1a4f] shadow ring-1 ring-black/5 disabled:opacity-40">
           {paused || phase !== "playing" ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
         </button>
@@ -298,7 +299,7 @@ export default function DemoFilm({ demo, logo, script, title, autoplay = true, o
           ))}
         </div>
         {(phase === "end" || phase === "free" || phase === "playing") && (
-          <button type="button" onClick={play} aria-label="מההתחלה" className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[#1c1a4f] hover:bg-white/70">
+          <button type="button" onClick={play} aria-label={t("מההתחלה")} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[#1c1a4f] hover:bg-white/70">
             <RotateCcw className="h-4 w-4" />
           </button>
         )}
@@ -338,7 +339,7 @@ export function VideoFilm({ video, logo, title, className = "" }) {
   }, [video]);
   return (
     <div className={`relative w-full overflow-hidden rounded-2xl bg-[#0f0e2a] shadow-[0_24px_60px_-20px_rgba(28,26,79,.55)] ring-1 ring-black/10 ${className}`}>
-      <video ref={ref} src={video} controls muted playsInline preload="metadata" className="block aspect-video w-full bg-black" aria-label={title || "סרטון הדמו"} />
+      <video ref={ref} src={video} controls muted playsInline preload="metadata" className="block aspect-video w-full bg-black" aria-label={title || t("סרטון הדמו")} />
       {logo && (
         <div className={`pointer-events-none absolute inset-0 transition-opacity duration-700 ${opening ? "opacity-100" : "opacity-0"}`} aria-hidden="true">
           <Intro logo={info?.src || logo} info={info} title={title} onPlay={null} />
@@ -360,10 +361,10 @@ function Intro({ logo, info, title, onPlay }) {
         {title && <p className="mt-4 text-lg font-extrabold text-white sm:mt-6 sm:text-3xl">{title}</p>}
         {onPlay ? (
           <button type="button" onClick={onPlay} className="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold sm:text-base" style={{ color: INK }}>
-            <Play className="h-4 w-4 fill-current" />צפייה בדמו
+            <Play className="h-4 w-4 fill-current" />{t("צפייה בדמו")}
           </button>
         ) : (
-          <p className="mt-3 text-sm text-white/70 sm:text-base">ככה זה יעבוד אצלכם</p>
+          <p className="mt-3 text-sm text-white/70 sm:text-base">{t("ככה זה יעבוד אצלכם")}</p>
         )}
       </div>
     </div>
@@ -372,15 +373,15 @@ function Intro({ logo, info, title, onPlay }) {
 
 // the client logos the site shows (assets/img/clients), with their Hebrew names
 const CLIENTS = [
-  ["idf", 'צה"ל'], ["mod", "משרד הביטחון"], ["rafael", "רפאל"], ["mafat", 'מפא"ת'], ["tau", "אוניברסיטת תל אביב"],
-  ["bar-ilan", "אוניברסיטת בר-אילן"], ["acb", "התאחדות הקבלנים בוני הארץ"], ["pekerman", "פקרמן הנדסה ואדריכלות"],
-  ["redmark", "רדמרק אדריכלות וניהול פרויקטים"], ["aspire-home", "אספייר הום"], ["mydesk", "myDESK"],
+  ["idf", t('צה"ל')], ["mod", t("משרד הביטחון")], ["rafael", t("רפאל")], ["mafat", t('מפא"ת')], ["tau", t("אוניברסיטת תל אביב")],
+  ["bar-ilan", t("אוניברסיטת בר-אילן")], ["acb", t("התאחדות הקבלנים בוני הארץ")], ["pekerman", t("פקרמן הנדסה ואדריכלות")],
+  ["redmark", t("רדמרק אדריכלות וניהול פרויקטים")], ["aspire-home", t("אספייר הום")], ["mydesk", "myDESK"],
 ];
 
 export function ClientsStrip() {
   return (
     <section aria-labelledby="clients-h" className="py-8">
-      <h2 id="clients-h" className="mb-4 text-center text-sm font-bold tracking-wide text-[#5b5870]">בין לקוחותינו</h2>
+      <h2 id="clients-h" className="mb-4 text-center text-sm font-bold tracking-wide text-[#5b5870]">{t("בין לקוחותינו")}</h2>
       <div className="pa-marquee relative overflow-hidden" dir="ltr">
         <ul className="pa-marquee-track flex w-max items-center gap-10 sm:gap-14">
           {[...CLIENTS, ...CLIENTS].map(([key, name], i) => (

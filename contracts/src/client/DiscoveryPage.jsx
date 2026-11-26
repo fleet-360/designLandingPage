@@ -5,6 +5,7 @@ import { createPayment, openWidget, warmUp } from "@/sales/grow";
 import { Loading, LoadFailed, Notice, Shell } from "./ui.jsx";
 import { DEMO_MOCK, HOLOGRAM_SVG } from "./discoveryArt.js";
 import "./discovery.css";
+import { isEn, t } from "@/i18n";
 
 // The spec request page ("ספרינט תכנון ומיפוי"), in the boarding-pass design: the sprint is a pass from
 // "רעיון" to "דמו עובד", the price before discount is shown as a benefit, the client logos come right after it,
@@ -12,9 +13,9 @@ import "./discovery.css";
 
 // the client logos the site shows (assets/img/clients), trimmed, served from /pay-assets/clients
 const CLIENTS = [
-  ["idf", 'צה"ל', 66], ["mod", "משרד הביטחון", 66], ["rafael", "רפאל", 32], ["mafat", 'מפא"ת', 64],
-  ["tau", "אוניברסיטת תל אביב", 54], ["bar-ilan", "אוניברסיטת בר-אילן", 48], ["acb", "התאחדות הקבלנים בוני הארץ", 54],
-  ["pekerman", "פקרמן הנדסה ואדריכלות", 29], ["redmark", "רדמרק אדריכלות וניהול פרויקטים", 39], ["aspire-home", "אספייר הום", 43],
+  ["idf", t('צה"ל'), 66], ["mod", t("משרד הביטחון"), 66], ["rafael", t("רפאל"), 32], ["mafat", t('מפא"ת'), 64],
+  ["tau", t("אוניברסיטת תל אביב"), 54], ["bar-ilan", t("אוניברסיטת בר-אילן"), 48], ["acb", t("התאחדות הקבלנים בוני הארץ"), 54],
+  ["pekerman", t("פקרמן הנדסה ואדריכלות"), 29], ["redmark", t("רדמרק אדריכלות וניהול פרויקטים"), 39], ["aspire-home", t("אספייר הום"), 43],
   ["mydesk", "myDESK", 55],
 ];
 
@@ -66,7 +67,7 @@ export default function DiscoveryPage({ token }) {
   useEffect(() => { window.scrollTo(0, 0); }, [stage === "view"]);
 
   if (d === undefined) return <Shell><Loading /></Shell>;
-  if (d === null) return <Shell><Notice title="הקישור אינו פעיל" text="ייתכן שההצעה בוטלה או שהקישור הועתק חלקית. נשמח לשלוח קישור חדש." /></Shell>;
+  if (d === null) return <Shell><Notice title={t("הקישור אינו פעיל")} text={t("ייתכן שההצעה בוטלה או שהקישור הועתק חלקית. נשמח לשלוח קישור חדש.")} /></Shell>;
   if (d === "failed") return <Shell><LoadFailed /></Shell>;
 
   if (stage === "done") return <Booked d={d} />;
@@ -89,7 +90,7 @@ export default function DiscoveryPage({ token }) {
     <>
       <Offer d={d} canBook={canBook} canPay={canPay} onGo={() => setStage(canBook ? "schedule" : "pay")} />
       {stage === "pay" && (
-        <Sheet title="תשלום מאובטח" onClose={() => setStage("view")}>
+        <Sheet title={t("תשלום מאובטח")} onClose={() => setStage("view")}>
           <PayForm d={d} onPaid={() => setStage("waiting")} />
         </Sheet>
       )}
@@ -102,7 +103,7 @@ function Page({ children, bar = false }) {
   useRubik();
   return (
     <Shell header={false}>
-      <div className={`dv${bar ? " has-bar" : ""}`} dir="rtl">{children}</div>
+      <div className={`dv${bar ? " has-bar" : ""}`} dir={isEn ? "ltr" : "rtl"}>{children}</div>
     </Shell>
   );
 }
@@ -112,17 +113,19 @@ function TopBar({ company }) {
     <div className="top">
       <div className="wrap">
         <img src="/pay-assets/all-dark-logo.png" alt="Pro Algorithm" />
-        {company?.phone && <a href={`tel:${company.phone}`}><Phone className="h-4 w-4" aria-hidden="true" /><span className="t2">לשאלות:</span> <span className="num">{company.phone}</span></a>}
+        {company?.phone && <a href={`tel:${company.phone}`}><Phone className="h-4 w-4" aria-hidden="true" /><span className="t2">{t("לשאלות:")}</span> <span className="num">{company.phone}</span></a>}
       </div>
     </div>
   );
 }
 
 const Num = ({ children }) => <span className="num">{children}</span>;
+// a translated line with a number in it: "{n}" in the text is where the number goes
+const tNum = (he, n) => { const [a, b = ""] = t(he).split("{n}"); return <>{a}<Num>{n}</Num>{b}</>; };
 
 // a plane flying left: the pass reads right to left, from "רעיון" to "דמו עובד"
 const PlaneLeft = () => (
-  <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+  <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor" className="ltr:-scale-x-100">
     <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" transform="rotate(-90 12 12)" />
   </svg>
 );
@@ -161,24 +164,24 @@ function Barcode() {
 function Offer({ d, canBook, canPay, onGo }) {
   const p = priceOf(d);
   const who = [d.clientName, d.companyName].filter(Boolean).join(", ");
-  const go = canBook ? "שריינו את הדמו שלכם" : <>לתשלום <Num>{nis(d.total)}</Num></>;
-  const goNote = canBook ? (canPay ? "קודם בוחרים מועד, התשלום בסוף" : "בוחרים מועד והזימון יוצא מיד") : "תשלום מאובטח בכרטיס אשראי";
+  const go = canBook ? t("שריינו את הדמו שלכם") : tNum("לתשלום {n}", nis(d.total));
+  const goNote = canBook ? (canPay ? t("קודם בוחרים מועד, התשלום בסוף") : t("בוחרים מועד והזימון יוצא מיד")) : t("תשלום מאובטח בכרטיס אשראי");
   // the client's route: the sprint's stops, from today to the meeting where the demo is handed over
   // the client's route: the sprint's stops, from today to the meeting where the demo is handed over
   const stops = [
-    { b: "אתם כאן", s: "היום", here: true },
-    canBook ? { b: "בחירת מועד", s: "מהיומן שלנו" } : d.meeting && { b: "המועד נקבע", s: shortDay(d.meeting.start) },
-    { b: "שיחת הכנה", s: "יום לפני, עם ראש הצוות" },
-    { b: "פגישה עם מומחה", s: `${d.meetingMinutes} דקות` },
-    { b: "פיתוח מערכת הדמו", s: "על בסיס הפגישה" },
-    { b: "מסמך אפיון מלא", s: "למערכת המלאה" },
-    { b: "פגישת הגשת הדמו", s: "הסבר על הדמו והמשך הפיתוח" },
+    { b: t("אתם כאן"), s: t("היום"), here: true },
+    canBook ? { b: t("בחירת מועד"), s: t("מהיומן שלנו") } : d.meeting && { b: t("המועד נקבע"), s: shortDay(d.meeting.start) },
+    { b: t("שיחת הכנה"), s: t("יום לפני, עם ראש הצוות") },
+    { b: t("פגישה עם מומחה"), s: t("{n} דקות", { n: d.meetingMinutes }) },
+    { b: t("פיתוח מערכת הדמו"), s: t("על בסיס הפגישה") },
+    { b: t("מסמך אפיון מלא"), s: t("למערכת המלאה") },
+    { b: t("פגישת הגשת הדמו"), s: t("הסבר על הדמו והמשך הפיתוח") },
   ].filter(Boolean);
   const steps = [
-    canBook ? { icon: CalendarDays, b: "בוחרים מועד", s: "מתוך המועדים הפנויים ביומן שלנו, לפי שעון ישראל." }
-      : d.meeting && { icon: CalendarDays, b: "המועד נקבע", s: meetingTime(d.meeting.start) },
-    canPay && { icon: CreditCard, b: "משלמים", s: canBook ? "בסוף, בכרטיס אשראי בחלון מאובטח. המועד שמור לכם בזמן התשלום." : "בכרטיס אשראי בחלון מאובטח. חשבונית מס קבלה נשלחת במייל." },
-    { icon: Video, b: "נפגשים", s: canBook && canPay ? "הזימון וקישור ל-Meet יוצאים רק אחרי שהתשלום מאושר." : `פגישה של ${d.meetingMinutes} דקות עם מומחה תוכנה. אפשר לצרף אנשי מקצוע מהצוות.` },
+    canBook ? { icon: CalendarDays, b: t("בוחרים מועד"), s: t("מתוך המועדים הפנויים ביומן שלנו, לפי שעון ישראל.") }
+      : d.meeting && { icon: CalendarDays, b: t("המועד נקבע"), s: meetingTime(d.meeting.start) },
+    canPay && { icon: CreditCard, b: t("משלמים"), s: canBook ? t("בסוף, בכרטיס אשראי בחלון מאובטח. המועד שמור לכם בזמן התשלום.") : t("בכרטיס אשראי בחלון מאובטח. חשבונית מס קבלה נשלחת במייל.") },
+    { icon: Video, b: t("נפגשים"), s: canBook && canPay ? t("הזימון וקישור ל-Meet יוצאים רק אחרי שהתשלום מאושר.") : t("פגישה של {n} דקות עם מומחה תוכנה. אפשר לצרף אנשי מקצוע מהצוות.", { n: d.meetingMinutes }) },
   ].filter(Boolean);
   const bar = canBook || canPay;
 
@@ -188,8 +191,8 @@ function Offer({ d, canBook, canPay, onGo }) {
       <header className="hero">
         <div className="wrap h">
           <div>
-            <p className="for"><Ticket className="h-4 w-4" aria-hidden="true" />{d.title} · הוכן עבור {who}</p>
-            <h1 className="hd">רואים את המערכת לפני שמפתחים אותה</h1>
+            <p className="for"><Ticket className="h-4 w-4" aria-hidden="true" />{d.title} · {t("הוכן עבור {who}", { who })}</p>
+            <h1 className="hd">{t("רואים את המערכת לפני שמפתחים אותה")}</h1>
             {d.pitch ? (
               // the key lines sales chose for this client (written with Claude from the client's problem)
               <>
@@ -200,26 +203,26 @@ function Offer({ d, canBook, canPay, onGo }) {
                   </ul>
                 )}
               </>
-            ) : <p className="sub">יושבים עם מומחה תוכנה, משרטטים יחד את המסכים והתהליכים, ומקבלים דמו עובד של המערכת שלכם.</p>}
-            {d.note && <div className="note">{d.note}{d.contacts?.sales?.name && <small>{d.contacts.sales.name}, איש המכירות שלכם</small>}</div>}
+            ) : <p className="sub">{t("יושבים עם מומחה תוכנה, משרטטים יחד את המסכים והתהליכים, ומקבלים דמו עובד של המערכת שלכם.")}</p>}
+            {d.note && <div className="note">{d.note}{d.contacts?.sales?.name && <small>{t("{name}, איש המכירות שלכם", { name: d.contacts.sales.name })}</small>}</div>}
             {bar && <div className="cta"><button type="button" className="btn" onClick={onGo}><PlaneTakeoff className="h-5 w-5" aria-hidden="true" />{go}</button><span>{goNote}</span></div>}
           </div>
           <div>
             <div className="ticket">
               <div className="tmain">
-                <div className="trow"><img src="/pay-assets/all-dark-logo.png" alt="" /><span>כרטיס עלייה לפרויקט</span></div>
+                <div className="trow"><img src="/pay-assets/all-dark-logo.png" alt="" /><span>{t("כרטיס עלייה לפרויקט")}</span></div>
                 <div className="route">
-                  <div className="pt"><small>מוצא</small><b>רעיון</b></div>
+                  <div className="pt"><small>{t("מוצא")}</small><b>{t("רעיון")}</b></div>
                   <div className="mid"><span /><PlaneLeft /><span /></div>
-                  <div className="pt"><small>יעד</small><b>דמו עובד</b></div>
+                  <div className="pt"><small>{t("יעד")}</small><b>{t("דמו עובד")}</b></div>
                 </div>
                 <div className="fields">
-                  <div className="f"><small>על שם</small><b>{d.clientName}</b></div>
-                  {d.companyName && <div className="f"><small>חברה</small><b>{d.companyName}</b></div>}
-                  <div className="f"><small>עם</small><b>מומחה תוכנה</b></div>
-                  <div className="f"><small>שער</small><b>Google Meet</b></div>
-                  <div className="f"><small>משך</small><b>{d.meetingMinutes} דקות</b></div>
-                  <div className="f"><small>מועד</small>{d.meeting ? <b>{shortDay(d.meeting.start)} · {timeLabel(d.meeting.start)}</b> : <span className="slotpill"><CalendarPlus className="h-4 w-4" aria-hidden="true" />בחרו מועד</span>}</div>
+                  <div className="f"><small>{t("על שם")}</small><b>{d.clientName}</b></div>
+                  {d.companyName && <div className="f"><small>{t("חברה")}</small><b>{d.companyName}</b></div>}
+                  <div className="f"><small>{t("עם")}</small><b>{t("מומחה תוכנה")}</b></div>
+                  <div className="f"><small>{t("שער")}</small><b>Google Meet</b></div>
+                  <div className="f"><small>{t("משך")}</small><b>{t("{n} דקות", { n: d.meetingMinutes })}</b></div>
+                  <div className="f"><small>{t("מועד")}</small>{d.meeting ? <b>{shortDay(d.meeting.start)} · {timeLabel(d.meeting.start)}</b> : <span className="slotpill"><CalendarPlus className="h-4 w-4" aria-hidden="true" />{t("בחרו מועד")}</span>}</div>
                 </div>
               </div>
               <div className="stub">
@@ -227,14 +230,14 @@ function Offer({ d, canBook, canPay, onGo }) {
                 <div className="sbody">
                   {p.deal ? (
                     <>
-                      <span className="dealb"><Gift className="h-5 w-5" aria-hidden="true" />הטבה</span>
-                      <div className="full">מחיר מלא <s className="num">{nis(p.list)}</s></div>
-                      <div className="yours">ההטבה שלכם</div>
+                      <span className="dealb"><Gift className="h-5 w-5" aria-hidden="true" />{t("הטבה")}</span>
+                      <div className="full">{t("מחיר מלא")} <s className="num">{nis(p.list)}</s></div>
+                      <div className="yours">{t("ההטבה שלכם")}</div>
                     </>
-                  ) : <div className="yours">המחיר</div>}
+                  ) : <div className="yours">{t("המחיר")}</div>}
                   <div className="p999 num" style={{ "--em": priceEm(nis(p.price)) }}>{nis(p.price)}</div>
-                  <div className="vat">+ מע"מ</div>
-                  {p.deal && <div className="svb">חוסכים <Num>{nis(p.save)}</Num></div>}
+                  <div className="vat">{t('+ מע"מ')}</div>
+                  {p.deal && <div className="svb">{tNum("חוסכים {n}", nis(p.save))}</div>}
                 </div>
                 <Barcode />
               </div>
@@ -243,15 +246,15 @@ function Offer({ d, canBook, canPay, onGo }) {
         </div>
       </header>
 
-      <section className="benefit" aria-label={p.deal ? "ההטבה" : "המחיר"}>
+      <section className="benefit" aria-label={p.deal ? t("ההטבה") : t("המחיר")}>
         <div className="wrap">
-          <div className="big hd">{p.deal ? "הטבה" : "המחיר"}</div>
+          <div className="big hd">{p.deal ? t("הטבה") : t("המחיר")}</div>
           <div className="mid">
-            {p.deal && <>מחיר מלא <s className="num">{nis(p.list)}</s><br />ההטבה שלכם</>}
-            <b className="num">{nis(p.price)} <span style={{ fontSize: 22 }}>+ מע"מ</span></b>
+            {p.deal && <>{t("מחיר מלא")} <s className="num">{nis(p.list)}</s><br />{t("ההטבה שלכם")}</>}
+            <b className="num">{nis(p.price)} <span style={{ fontSize: 22 }}>{t('+ מע"מ')}</span></b>
           </div>
-          {p.deal ? <div className="circle">חוסכים<b className="num">{nis(p.save)}</b></div> : <div />}
-          <div className="all"><span>פגישה עם מומחה תוכנה, דמו עובד ומסמך אפיון מלא.</span><span>כל זה ב-<Num>{nis(p.price)}</Num> בלבד</span></div>
+          {p.deal ? <div className="circle">{t("חוסכים")}<b className="num">{nis(p.save)}</b></div> : <div />}
+          <div className="all"><span>{t("פגישה עם מומחה תוכנה, דמו עובד ומסמך אפיון מלא.")}</span><span>{tNum("כל זה ב-{n} בלבד", nis(p.price))}</span></div>
         </div>
       </section>
 
@@ -259,8 +262,8 @@ function Offer({ d, canBook, canPay, onGo }) {
 
       <section className="sec">
         <div className="wrap">
-          <h2 className="h2 hd">מסלול הטיסה שלכם</h2>
-          <p className="lead">מהיום ועד פגישת הגשת הדמו, ומשם להמשך הפיתוח.</p>
+          <h2 className="h2 hd">{t("מסלול הטיסה שלכם")}</h2>
+          <p className="lead">{t("מהיום ועד פגישת הגשת הדמו, ומשם להמשך הפיתוח.")}</p>
           <RouteMap stops={stops} />
           <ol className="rlist">
             {stops.map((x) => <li key={x.b} className={`rl${x.here ? " here" : ""}`}><b>{x.b}</b><small>{x.s}</small></li>)}
@@ -275,40 +278,40 @@ function Offer({ d, canBook, canPay, onGo }) {
 
       <section className="sec">
         <div className="wrap">
-          <h2 className="h2 hd">מה תקבלו</h2>
-          <p className="lead">הבנה חזותית של איך המערכת תיראה, עוד לפני שמתחילים לפתח.</p>
+          <h2 className="h2 hd">{t("מה תקבלו")}</h2>
+          <p className="lead">{t("הבנה חזותית של איך המערכת תיראה, עוד לפני שמתחילים לפתח.")}</p>
           <div className="get">
             <div className="cp main">
-              <span className="tg"><MousePointerClick className="h-4 w-4" aria-hidden="true" />הכי חשוב</span>
-              <h3>דמו עובד של המערכת</h3>
-              <p>לוחצים, רואים ומבינים איך המערכת שלכם תעבוד, עוד לפני שמתחילים לפתח.</p>
+              <span className="tg"><MousePointerClick className="h-4 w-4" aria-hidden="true" />{t("הכי חשוב")}</span>
+              <h3>{t("דמו עובד של המערכת")}</h3>
+              <p>{t("לוחצים, רואים ומבינים איך המערכת שלכם תעבוד, עוד לפני שמתחילים לפתח.")}</p>
               <div aria-hidden="true" dangerouslySetInnerHTML={{ __html: DEMO_MOCK }} />
             </div>
-            <div className="cp"><UserRoundCheck className="ic h-8 w-8" aria-hidden="true" /><h3>פגישת איפיון עם מומחה תוכנה</h3><p>עוברים יחד על התהליך שלכם ומחליטים מה המערכת צריכה לעשות. אפשר לצרף אנשי מקצוע מהצוות.</p></div>
-            <div className="cp"><FileText className="ic h-8 w-8" aria-hidden="true" /><h3>מסמך אפיון מלא למערכת מלאה</h3><p>כל מה שהמערכת המלאה צריכה לעשות: מסכים, תהליכים, משתמשים ונתונים. מסמך שאפשר לפתח לפיו.</p></div>
-            <div className="cp"><Presentation className="ic h-8 w-8" aria-hidden="true" /><h3>פגישת הגשת הדמו</h3><p>מציגים לכם את הדמו, מסבירים איך הוא עובד ומה הפתרון שאנחנו ממליצים עליו להמשך הפיתוח.</p></div>
+            <div className="cp"><UserRoundCheck className="ic h-8 w-8" aria-hidden="true" /><h3>{t("פגישת איפיון עם מומחה תוכנה")}</h3><p>{t("עוברים יחד על התהליך שלכם ומחליטים מה המערכת צריכה לעשות. אפשר לצרף אנשי מקצוע מהצוות.")}</p></div>
+            <div className="cp"><FileText className="ic h-8 w-8" aria-hidden="true" /><h3>{t("מסמך אפיון מלא למערכת מלאה")}</h3><p>{t("כל מה שהמערכת המלאה צריכה לעשות: מסכים, תהליכים, משתמשים ונתונים. מסמך שאפשר לפתח לפיו.")}</p></div>
+            <div className="cp"><Presentation className="ic h-8 w-8" aria-hidden="true" /><h3>{t("פגישת הגשת הדמו")}</h3><p>{t("מציגים לכם את הדמו, מסבירים איך הוא עובד ומה הפתרון שאנחנו ממליצים עליו להמשך הפיתוח.")}</p></div>
           </div>
-          <div className="allin"><span>פגישה עם מומחה, דמו עובד, מסמך אפיון מלא ופגישת הגשה.</span><b>כל זה ב-<Num>{nis(p.price)}</Num> בלבד <small>+ מע"מ</small></b></div>
+          <div className="allin"><span>{t("פגישה עם מומחה, דמו עובד, מסמך אפיון מלא ופגישת הגשה.")}</span><b>{tNum("כל זה ב-{n} בלבד", nis(p.price))} <small>{t('+ מע"מ')}</small></b></div>
         </div>
       </section>
 
       <section className="holo">
         <div className="wrap">
-          <h2 className="hd">מהתהליך של היום, לדמו שלוחצים עליו</h2>
-          <p className="l">הבנה חזותית של איך המערכת תיראה, עוד לפני שמתחילים לפתח.</p>
-          <div className="iso" role="img" aria-label="התהליך של היום הופך לשרטוטים ולדמו עובד" dangerouslySetInnerHTML={{ __html: HOLOGRAM_SVG }} />
+          <h2 className="hd">{t("מהתהליך של היום, לדמו שלוחצים עליו")}</h2>
+          <p className="l">{t("הבנה חזותית של איך המערכת תיראה, עוד לפני שמתחילים לפתח.")}</p>
+          <div className="iso" role="img" aria-label={t("התהליך של היום הופך לשרטוטים ולדמו עובד")} dangerouslySetInnerHTML={{ __html: HOLOGRAM_SVG }} />
           <div className="hcap">
-            <div><b>התהליך היום</b><span>קבצים, טפסים ודוחות שאתם עובדים איתם</span></div>
-            <div><b>שרטוטים</b><span>המסכים והדרך שבה העבודה עוברת ביניהם</span></div>
-            <div><b>דמו עובד</b><span>לוחצים, רואים ומבינים</span></div>
+            <div><b>{t("התהליך היום")}</b><span>{t("קבצים, טפסים ודוחות שאתם עובדים איתם")}</span></div>
+            <div><b>{t("שרטוטים")}</b><span>{t("המסכים והדרך שבה העבודה עוברת ביניהם")}</span></div>
+            <div><b>{t("דמו עובד")}</b><span>{t("לוחצים, רואים ומבינים")}</span></div>
           </div>
         </div>
       </section>
 
       <section className="final">
         <div className="wrap">
-          <h2 className="hd">כל זה ב-<Num>{nis(p.price)}</Num> בלבד</h2>
-          <p>+ מע"מ{p.deal && <> · מחיר מלא <s className="num">{nis(p.list)}</s> · חוסכים <Num>{nis(p.save)}</Num></>}</p>
+          <h2 className="hd">{tNum("כל זה ב-{n} בלבד", nis(p.price))}</h2>
+          <p>{t('+ מע"מ')}{p.deal && <> · {t("מחיר מלא")} <s className="num">{nis(p.list)}</s> · {tNum("חוסכים {n}", nis(p.save))}</>}</p>
         </div>
       </section>
       <p className="foot">{d.company.name}{d.company.phone && <> · <Num>{d.company.phone}</Num></>} · pro-algo.com</p>
@@ -316,9 +319,9 @@ function Offer({ d, canBook, canPay, onGo }) {
       {bar && (
         <div className="sbar">
           <div className="wrap">
-            {p.deal && <span className="db"><Gift className="h-5 w-5" aria-hidden="true" />הטבה</span>}
-            <div className="pr">{p.deal && <s className="num">{nis(p.list)}</s>}<b className="num">{nis(p.price)}</b><em>+ מע"מ</em></div>
-            {p.deal && <span className="sv">חוסכים <Num>{nis(p.save)}</Num></span>}
+            {p.deal && <span className="db"><Gift className="h-5 w-5" aria-hidden="true" />{t("הטבה")}</span>}
+            <div className="pr">{p.deal && <s className="num">{nis(p.list)}</s>}<b className="num">{nis(p.price)}</b><em>{t('+ מע"מ')}</em></div>
+            {p.deal && <span className="sv">{tNum("חוסכים {n}", nis(p.save))}</span>}
             <span className="perf" />
             <div className="go">
               <button type="button" className="btn" onClick={onGo}><PlaneTakeoff className="h-6 w-6" aria-hidden="true" />{go}</button>
@@ -351,7 +354,7 @@ function RouteMap({ stops }) {
   const angle = (Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI;
   return (
     <div className="rmap" aria-hidden="true">
-      <svg viewBox={`0 0 ${RW} ${RH}`} preserveAspectRatio="none">
+      <svg viewBox={`0 0 ${RW} ${RH}`} preserveAspectRatio="none" className="ltr:-scale-x-100">
         <path d={path} fill="none" stroke="#6A4330" strokeWidth="4" strokeDasharray="2 12" strokeLinecap="round" />
         <g transform={`translate(${plane[0]},${plane[1]}) rotate(${angle})`}>
           <path d="M-14 0 L14 0 M2 -10 L8 0 L2 10 M-12 -5 L-9 0 L-12 5" stroke="#E0432F" strokeWidth="3.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
@@ -367,7 +370,7 @@ function RouteMap({ stops }) {
         const below = i % 2 === 0;
         return (
           <div key={st.b} className={`rlab${st.here ? " here" : ""}`}
-            style={{ right: `${((RW - x) / RW) * 100}%`, transform: "translateX(50%)", top: `${((below ? y + 30 : y - 74) / RH) * 100}%` }}>
+            style={{ insetInlineStart: `${((RW - x) / RW) * 100}%`, transform: isEn ? "translateX(-50%)" : "translateX(50%)", top: `${((below ? y + 30 : y - 74) / RH) * 100}%` }}>
             <b>{st.b}</b><small>{st.s}</small>
           </div>
         );
@@ -380,8 +383,8 @@ function Clients() {
   return (
     <section className="clients" aria-labelledby="clients-h">
       <div className="wrap">
-        <h2 id="clients-h" className="hd">בין לקוחותינו</h2>
-        <p>ארגונים שבוחרים לעבוד איתנו</p>
+        <h2 id="clients-h" className="hd">{t("בין לקוחותינו")}</h2>
+        <p>{t("ארגונים שבוחרים לעבוד איתנו")}</p>
         <ul className="cgrid">
           {CLIENTS.map(([key, name, h]) => (
             <li key={key}><img src={`/pay-assets/clients/${key}.png`} alt={name} style={{ height: h }} loading="lazy" decoding="async" /></li>
@@ -395,10 +398,10 @@ function Clients() {
 function Sheet({ title, onClose, children }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="dv max-h-[92vh] w-full overflow-y-auto rounded-t-3xl sm:max-w-lg sm:rounded-3xl" style={{ minHeight: 0, background: "var(--tk)" }} dir="rtl">
+      <div className="dv max-h-[92vh] w-full overflow-y-auto rounded-t-3xl sm:max-w-lg sm:rounded-3xl" style={{ minHeight: 0, background: "var(--tk)" }} dir={isEn ? "ltr" : "rtl"}>
         <div className="flex items-center justify-between px-6 pb-2 pt-5">
           <h2 className="text-xl font-black">{title}</h2>
-          {onClose && <button type="button" onClick={onClose} className="grid h-11 w-11 place-items-center rounded-full hover:bg-black/5" aria-label="סגירה"><X className="h-5 w-5" /></button>}
+          {onClose && <button type="button" onClick={onClose} className="grid h-11 w-11 place-items-center rounded-full hover:bg-black/5" aria-label={t("סגירה")}><X className="h-5 w-5" /></button>}
         </div>
         {children}
       </div>
@@ -413,11 +416,11 @@ function Receipt({ d }) {
     <div className="rc">
       {p.deal ? (
         <>
-          <div className="rl2"><span>{d.title}, מחיר מלא כולל מע"מ</span><s className="num">{nis(p.fullTotal)}</s></div>
-          <div className="rl2 disc"><span>הטבה</span><b className="num">−{nis(p.discount)}</b></div>
+          <div className="rl2"><span>{t('{title}, מחיר מלא כולל מע"מ', { title: d.title })}</span><s className="num">{nis(p.fullTotal)}</s></div>
+          <div className="rl2 disc"><span>{t("הטבה")}</span><b className="num">−{nis(p.discount)}</b></div>
         </>
-      ) : <div className="rl2"><span>{d.title}</span><span className="num">{nis(d.price)} + מע"מ</span></div>}
-      <div className="rl2 tot"><span>לתשלום, כולל מע"מ</span><b className="num">{nis(d.total)}</b></div>
+      ) : <div className="rl2"><span>{d.title}</span><span className="num">{nis(d.price)} {t('+ מע"מ')}</span></div>}
+      <div className="rl2 tot"><span>{t('לתשלום, כולל מע"מ')}</span><b className="num">{nis(d.total)}</b></div>
     </div>
   );
 }
@@ -447,7 +450,7 @@ function PayForm({ d, onPaid }) {
       taxId: taxId ? "" : FIELD_ERRORS.taxId,
     };
     setBad(errs);
-    if (Object.values(errs).some(Boolean)) return setError("יש לתקן את השדות המסומנים");
+    if (Object.values(errs).some(Boolean)) return setError(t("יש לתקן את השדות המסומנים"));
     setBusy(true);
     try {
       const here = `${window.location.origin}${window.location.pathname}`;
@@ -455,10 +458,10 @@ function PayForm({ d, onPaid }) {
       if (proc.authCode) {
         const opened = await openWidget(proc.authCode, {
           onSuccess: () => onPaid(),
-          onFailure: () => { setBusy(false); setError("התשלום לא אושר. בדקו את פרטי הכרטיס ונסו שוב."); },
+          onFailure: () => { setBusy(false); setError(t("התשלום לא אושר. בדקו את פרטי הכרטיס ונסו שוב.")); },
           onClose: () => setBusy(false),
         });
-        if (!opened) { setBusy(false); setError("לא הצלחנו לפתוח את חלון התשלום. רעננו את הדף ונסו שוב."); }
+        if (!opened) { setBusy(false); setError(t("לא הצלחנו לפתוח את חלון התשלום. רעננו את הדף ונסו שוב.")); }
       } else if (proc.url) {
         window.location.href = proc.url;
       } else {
@@ -468,7 +471,7 @@ function PayForm({ d, onPaid }) {
       setBusy(false);
       // Grow's own explanation when there is one (it answers in Hebrew)
       const why = String(err?.message || "").replace(/^Grow:\s*/, "");
-      setError(/[֐-׿]/.test(why) ? `התשלום לא נפתח: ${why}` : "לא הצלחנו להתחיל את התשלום. בדקו את הפרטים ונסו שוב בעוד רגע.");
+      setError(/[֐-׿]/.test(why) ? t("התשלום לא נפתח: {why}", { why }) : t("לא הצלחנו להתחיל את התשלום. בדקו את הפרטים ונסו שוב בעוד רגע."));
     }
   };
 
@@ -484,19 +487,19 @@ function PayForm({ d, onPaid }) {
     <>
       <Receipt d={d} />
       <form onSubmit={pay} className="frm" noValidate>
-        {field("fullName", "שם הלקוח לחשבונית", { autoComplete: "organization" }, "שם החברה, או שם פרטי ושם משפחה")}
-        {field("email", "אימייל לחשבונית", { type: "email", dir: "ltr", autoComplete: "email" })}
+        {field("fullName", t("שם הלקוח לחשבונית"), { autoComplete: "organization" }, t("שם החברה, או שם פרטי ושם משפחה"))}
+        {field("email", t("אימייל לחשבונית"), { type: "email", dir: "ltr", autoComplete: "email" })}
         <div className="grid grid-cols-2 gap-2.5">
-          {field("phone", "טלפון נייד", { type: "tel", dir: "ltr", autoComplete: "tel" })}
-          {field("taxId", "ח.פ / ע.מ / ת.ז", { inputMode: "numeric", dir: "ltr" })}
+          {field("phone", t("טלפון נייד"), { type: "tel", dir: "ltr", autoComplete: "tel" })}
+          {field("taxId", t("ח.פ / ע.מ / ת.ז"), { inputMode: "numeric", dir: "ltr" })}
         </div>
         {error && <p className="err" role="alert">{error}</p>}
         <button type="submit" className="btn" disabled={busy} style={{ width: "100%", marginTop: 16, fontSize: 20 }}>
-          <Lock className="h-5 w-5" aria-hidden="true" />{busy ? "פותח את חלון התשלום..." : <>לתשלום <Num>{nis(p.sum)}</Num></>}
+          <Lock className="h-5 w-5" aria-hidden="true" />{busy ? t("פותח את חלון התשלום...") : tNum("לתשלום {n}", nis(p.sum))}
         </button>
         <p className="fine">
-          {d.hold && <>הזימון ליומן נשלח מיד אחרי אישור התשלום. </>}
-          הסליקה בחלון מאובטח של Grow. פרטי הכרטיס לא נשמרים אצלנו.
+          {d.hold && <>{t("הזימון ליומן נשלח מיד אחרי אישור התשלום.")} </>}
+          {t("הסליקה בחלון מאובטח של Grow. פרטי הכרטיס לא נשמרים אצלנו.")}
         </p>
       </form>
     </>
@@ -523,12 +526,12 @@ function WaitForPayment({ load, onDone, onBack }) {
     return () => { stop = true; };
   }, [load]);
   return (
-    <Sheet title="התשלום התקבל, רגע אחד">
+    <Sheet title={t("התשלום התקבל, רגע אחד")}>
       <div className="space-y-3 px-6 pb-7 text-center">
         <div className="mx-auto h-9 w-9 animate-spin rounded-full border-4 border-[#E0432F]/25 border-t-[#E0432F]" />
-        <p>מאשרים את התשלום מול חברת הסליקה ושולחים את הזימון ליומן.</p>
-        {late && <p className="text-sm" style={{ color: "var(--tk-muted)" }}>זה לוקח יותר מהרגיל. אפשר להשאיר את העמוד פתוח, או לחזור לאותו קישור מאוחר יותר. אחרי האישור הזימון יישלח אליכם במייל.</p>}
-        {late && <button type="button" className="ghost" onClick={onBack}>חזרה לעמוד</button>}
+        <p>{t("מאשרים את התשלום מול חברת הסליקה ושולחים את הזימון ליומן.")}</p>
+        {late && <p className="text-sm" style={{ color: "var(--tk-muted)" }}>{t("זה לוקח יותר מהרגיל. אפשר להשאיר את העמוד פתוח, או לחזור לאותו קישור מאוחר יותר. אחרי האישור הזימון יישלח אליכם במייל.")}</p>}
+        {late && <button type="button" className="ghost" onClick={onBack}>{t("חזרה לעמוד")}</button>}
       </div>
     </Sheet>
   );
@@ -578,7 +581,7 @@ function Schedule({ token, d, paying, onBack, onChange, onHeld, onBooked, onPaid
   const addAttendee = () => {
     const e = email.trim().toLowerCase();
     if (!e) return;
-    if (!isEmail(e)) return setError("כתובת האימייל של המשתתף לא תקינה");
+    if (!isEmail(e)) return setError(t("כתובת האימייל של המשתתף לא תקינה"));
     setError("");
     if (!attendees.includes(e)) setAttendees((a) => [...a, e]);
     setEmail("");
@@ -587,9 +590,9 @@ function Schedule({ token, d, paying, onBack, onChange, onHeld, onBooked, onPaid
   const book = async () => {
     setError("");
     const pending = email.trim();
-    if (pending && !isEmail(pending)) return fail("כתובת האימייל של המשתתף לא תקינה");
+    if (pending && !isEmail(pending)) return fail(t("כתובת האימייל של המשתתף לא תקינה"));
     const list = pending && !attendees.includes(pending.toLowerCase()) ? [...attendees, pending.toLowerCase()] : attendees;
-    if (!d.email && !list.length) return fail("יש להזין אימייל לקבלת הזימון");
+    if (!d.email && !list.length) return fail(t("יש להזין אימייל לקבלת הזימון"));
     setBusy(true);
     try {
       const v = await api(`sales/discovery-public?token=${encodeURIComponent(token)}`, { method: "POST", body: { action: "hold", start: pick.start, attendees: list } });
@@ -607,7 +610,7 @@ function Schedule({ token, d, paying, onBack, onChange, onHeld, onBooked, onPaid
   const choose = (s) => { setPick(s); if (paying) onChange(); };
   const days = (slots || []).slice(0, shownDays);
   const step = Math.max(2, Math.min(4, shownDays));
-  const action = busy ? "רגע..." : !pick ? "בחרו מועד" : <>{payNext ? "המשך לתשלום" : "קביעת הפגישה"} · {shortDay(pick.start)} · <Num>{timeLabel(pick.start)}</Num></>;
+  const action = busy ? t("רגע...") : !pick ? t("בחרו מועד") : <>{payNext ? t("המשך לתשלום") : t("קביעת הפגישה")} · {shortDay(pick.start)} · <Num>{timeLabel(pick.start)}</Num></>;
   const stepsDone = d.paid ? ["done", "done", "here"] : paying ? ["done", "here", ""] : ["here", "", ""];
 
   return (
@@ -615,14 +618,14 @@ function Schedule({ token, d, paying, onBack, onChange, onHeld, onBooked, onPaid
       <TopBar company={d.company} />
       <header className="hero sh">
         <div className="wrap h">
-          <button type="button" className="back" onClick={onBack}><ChevronRight className="h-4 w-4" aria-hidden="true" />לפרטי הספרינט</button>
+          <button type="button" className="back" onClick={onBack}><ChevronRight className="h-4 w-4 ltr:-scale-x-100" aria-hidden="true" />{t("לפרטי הספרינט")}</button>
           <p className="for"><Ticket className="h-4 w-4" aria-hidden="true" />{d.title} · {[d.clientName, d.companyName].filter(Boolean).join(", ")}</p>
-          <h1 className="hd">{d.paid ? "התשלום התקבל. נשאר לבחור מועד" : payNext ? "בוחרים מועד, התשלום בסוף" : "בוחרים מועד לפגישה"}</h1>
+          <h1 className="hd">{d.paid ? t("התשלום התקבל. נשאר לבחור מועד") : payNext ? t("בוחרים מועד, התשלום בסוף") : t("בוחרים מועד לפגישה")}</h1>
           {payNext || d.paid ? (
             <div className="mini" aria-hidden="true">
-              <div className={`n ${stepsDone[0]}`}><i />מועד</div><span className="ln" />
-              <div className={`n ${stepsDone[1]}`}><i />תשלום</div><span className="ln" />
-              <div className={`n ${stepsDone[2]}`}><i />זימון ליומן</div>
+              <div className={`n ${stepsDone[0]}`}><i />{t("מועד")}</div><span className="ln" />
+              <div className={`n ${stepsDone[1]}`}><i />{t("תשלום")}</div><span className="ln" />
+              <div className={`n ${stepsDone[2]}`}><i />{t("זימון ליומן")}</div>
             </div>
           ) : null}
         </div>
@@ -630,9 +633,9 @@ function Schedule({ token, d, paying, onBack, onChange, onHeld, onBooked, onPaid
 
       <div className="wrap sch">
         <div className="brd" ref={top}>
-          <div className="bh"><b><PlaneTakeoff className="h-5 w-5" aria-hidden="true" />מועדים פנויים</b><span>{d.meetingMinutes} דקות · שעון ישראל</span></div>
+          <div className="bh"><b><PlaneTakeoff className="h-5 w-5" aria-hidden="true" />{t("מועדים פנויים")}</b><span>{t("{n} דקות · שעון ישראל", { n: d.meetingMinutes })}</span></div>
           {slots === null ? <div className="empty"><div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#E0432F]/25 border-t-[#E0432F]" /></div>
-            : slots.length === 0 ? <p className="empty">כרגע אין מועדים פנויים בשבועיים הקרובים. נחזור אליכם לתאם, או התקשרו אלינו: <Num>{d.company.phone}</Num></p>
+            : slots.length === 0 ? <p className="empty">{t("כרגע אין מועדים פנויים בשבועיים הקרובים. נחזור אליכם לתאם, או התקשרו אלינו:")} <Num>{d.company.phone}</Num></p>
               : (
                 <>
                   {days.map((day) => {
@@ -652,7 +655,7 @@ function Schedule({ token, d, paying, onBack, onChange, onHeld, onBooked, onPaid
                           })}
                           {day.all.length > day.suggested.length && (
                             <button type="button" className="lnk" style={{ minHeight: 44 }} onClick={() => setMoreTimes((m) => ({ ...m, [day.day]: !open }))} aria-expanded={Boolean(open)}>
-                              {open ? "פחות שעות" : "שעות נוספות"}
+                              {open ? t("פחות שעות") : t("שעות נוספות")}
                             </button>
                           )}
                         </div>
@@ -662,23 +665,23 @@ function Schedule({ token, d, paying, onBack, onChange, onHeld, onBooked, onPaid
                   {shownDays < slots.length && (
                     <div className="dr" style={{ gridTemplateColumns: "1fr" }}>
                       <button type="button" className="ghost" style={{ width: "100%", justifyContent: "center" }} onClick={() => setShownDays((n) => n + step)}>
-                        <CalendarDays className="h-4 w-4" aria-hidden="true" />תאריכים נוספים
+                        <CalendarDays className="h-4 w-4" aria-hidden="true" />{t("תאריכים נוספים")}
                       </button>
                     </div>
                   )}
                 </>
               )}
           <div className="att">
-            <b>מי עוד מצטרף?</b>
-            <p>{d.email ? <>הזימון יישלח אל <span dir="ltr">{d.email}</span> ולכל מי שתוסיפו.</> : "הוסיפו את האימייל שלכם, ואם תרצו גם של אנשי מקצוע מהצוות. הזימון יישלח לכולם."}</p>
+            <b>{t("מי עוד מצטרף?")}</b>
+            <p>{d.email ? <>{t("הזימון יישלח אל")} <span dir="ltr">{d.email}</span> {t("ולכל מי שתוסיפו.")}</> : t("הוסיפו את האימייל שלכם, ואם תרצו גם של אנשי מקצוע מהצוות. הזימון יישלח לכולם.")}</p>
             <div className="addrow">
-              <input className="inp" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addAttendee(); } }} type="email" dir="ltr" placeholder="name@company.co.il" aria-label="אימייל של משתתף נוסף" />
-              <button type="button" className="ghost" onClick={addAttendee}><Plus className="h-4 w-4" aria-hidden="true" />הוספה</button>
+              <input className="inp" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addAttendee(); } }} type="email" dir="ltr" placeholder="name@company.co.il" aria-label={t("אימייל של משתתף נוסף")} />
+              <button type="button" className="ghost" onClick={addAttendee}><Plus className="h-4 w-4" aria-hidden="true" />{t("הוספה")}</button>
             </div>
             {attendees.length > 0 && (
               <ul className="chips">
                 {attendees.map((a) => (
-                  <li key={a} className="chip">{a}<button type="button" onClick={() => setAttendees((x) => x.filter((y) => y !== a))} aria-label={`הסרת ${a}`}><X className="h-3.5 w-3.5" /></button></li>
+                  <li key={a} className="chip">{a}<button type="button" onClick={() => setAttendees((x) => x.filter((y) => y !== a))} aria-label={t("הסרת {a}", { a })}><X className="h-3.5 w-3.5" /></button></li>
                 ))}
               </ul>
             )}
@@ -687,10 +690,10 @@ function Schedule({ token, d, paying, onBack, onChange, onHeld, onBooked, onPaid
 
         <div className="pay" ref={panel}>
           <div className="ph">
-            <small>{pick ? "המועד שבחרתם" : "המועד"}</small>
-            <b>{pick ? <>{dayLabel(pick.start)} · <Num>{timeLabel(pick.start)}</Num></> : "עוד לא נבחר"}</b>
+            <small>{pick ? t("המועד שבחרתם") : t("המועד")}</small>
+            <b>{pick ? <>{dayLabel(pick.start)} · <Num>{timeLabel(pick.start)}</Num></> : t("עוד לא נבחר")}</b>
             {paying && d.hold && (
-              <span className="hold"><Clock className="h-4 w-4" aria-hidden="true" />שמור לכם עד <Num>{timeLabel(d.hold.until)}</Num> · <button type="button" className="lnk" onClick={onChange}>שינוי</button></span>
+              <span className="hold"><Clock className="h-4 w-4" aria-hidden="true" />{tNum("שמור לכם עד {n}", timeLabel(d.hold.until))} · <button type="button" className="lnk" onClick={onChange}>{t("שינוי")}</button></span>
             )}
           </div>
           {paying && d.payment ? <PayForm d={d} onPaid={onPaid} /> : (
@@ -699,7 +702,7 @@ function Schedule({ token, d, paying, onBack, onChange, onHeld, onBooked, onPaid
               <div className="frm">
                 {error && <p className="err" role="alert">{error}</p>}
                 <button ref={go} type="button" className="btn" disabled={!pick || busy} onClick={book} style={{ width: "100%", marginTop: 4, fontSize: 19 }}>{action}</button>
-                <p className="fine">{payNext ? "המועד נשמר לכם לחצי שעה בזמן התשלום. הזימון ליומן יוצא רק אחרי אישור התשלום." : "הזימון ליומן נשלח מיד אחרי הבחירה."}</p>
+                <p className="fine">{payNext ? t("המועד נשמר לכם לחצי שעה בזמן התשלום. הזימון ליומן יוצא רק אחרי אישור התשלום.") : t("הזימון ליומן נשלח מיד אחרי הבחירה.")}</p>
               </div>
             </>
           )}
@@ -709,10 +712,10 @@ function Schedule({ token, d, paying, onBack, onChange, onHeld, onBooked, onPaid
       {pick && !paying && <div className="pdock-space" aria-hidden="true" />}
       <div className={`pdock${pick && !paying && !goSeen ? " up" : ""}`} aria-hidden={!(pick && !paying && !goSeen)}>
         <div className="wrap">
-          <div className="pk"><small>המועד שבחרתם</small><b>{pick && <>{dayLabel(pick.start)} · <Num>{timeLabel(pick.start)}</Num></>}</b></div>
+          <div className="pk"><small>{t("המועד שבחרתם")}</small><b>{pick && <>{dayLabel(pick.start)} · <Num>{timeLabel(pick.start)}</Num></>}</b></div>
           <button type="button" className="btn" disabled={!pick || busy} onClick={book} tabIndex={pick && !paying && !goSeen ? 0 : -1}>
             {payNext ? <CreditCard className="h-5 w-5" aria-hidden="true" /> : <CalendarCheck className="h-5 w-5" aria-hidden="true" />}
-            {busy ? "רגע..." : payNext ? "המשך לתשלום" : "קביעת הפגישה"}
+            {busy ? t("רגע...") : payNext ? t("המשך לתשלום") : t("קביעת הפגישה")}
           </button>
         </div>
       </div>
@@ -741,35 +744,37 @@ const dm = (iso) => new Date(iso).toLocaleDateString("he-IL", { ...TZ, day: "num
 function Booked({ d }) {
   const m = d.meeting;
   const gcal = m ? `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`${d.title} · Pro Algorithm`)}&dates=${new Date(m.start).toISOString().replace(/[-:]|\.\d{3}/g, "")}/${new Date(m.end).toISOString().replace(/[-:]|\.\d{3}/g, "")}${m.meetUrl ? `&location=${encodeURIComponent(m.meetUrl)}` : ""}` : null;
-  const team = [["ראש צוות אחראי", d.contacts?.lead], ["איש מכירות אחראי", d.contacts?.sales], ["מנהלת משרד", d.contacts?.office]].filter(([, p]) => p?.name || p?.phone);
+  const team = [[t("ראש צוות אחראי"), d.contacts?.lead], [t("איש מכירות אחראי"), d.contacts?.sales], [t("מנהלת משרד"), d.contacts?.office]].filter(([, p]) => p?.name || p?.phone);
   return (
     <Page>
       <TopBar company={d.company} />
       <header className="hero sh">
         <div className="wrap h">
           <p className="for"><Ticket className="h-4 w-4" aria-hidden="true" />{d.title} · {[d.clientName, d.companyName].filter(Boolean).join(", ")}</p>
-          <h1 className="hd">{m ? "הפגישה נקבעה" : "התשלום התקבל"}</h1>
-          {m && <p className="sub" style={{ marginTop: 12, fontWeight: 800 }}>{meetingTime(m.start)} · {d.meetingMinutes} דקות</p>}
+          <h1 className="hd">{m ? t("הפגישה נקבעה") : t("התשלום התקבל")}</h1>
+          {m && <p className="sub" style={{ marginTop: 12, fontWeight: 800 }}>{meetingTime(m.start)} · {t("{n} דקות", { n: d.meetingMinutes })}</p>}
         </div>
       </header>
       <div className="wrap" style={{ paddingBottom: 60 }}>
         <section className="done-card">
-          <p>{!m ? "ניצור איתכם קשר לתיאום מועד הפגישה." : m.invited === "manual" ? "זה המועד שתיאמנו איתכם. אפשר להוסיף אותו ליומן." : m.invited === "confirmed" ? "זימון ליומן נשלח אליכם ולמשתתפים." : "שלחנו אליכם אישור במייל עם זימון ליומן."}</p>
+          <p>{!m ? t("ניצור איתכם קשר לתיאום מועד הפגישה.") : m.invited === "manual" ? t("זה המועד שתיאמנו איתכם. אפשר להוסיף אותו ליומן.") : m.invited === "confirmed" ? t("זימון ליומן נשלח אליכם ולמשתתפים.") : t("שלחנו אליכם אישור במייל עם זימון ליומן.")}</p>
           {(m?.meetUrl || gcal) && (
             <div className="mt-4 flex flex-wrap gap-3">
-              {m?.meetUrl && <a className="btn" href={m.meetUrl} target="_blank" rel="noreferrer" style={{ fontSize: 17, padding: "12px 22px" }}><Video className="h-5 w-5" aria-hidden="true" />קישור לפגישה</a>}
-              {gcal && <a className="ghost" href={gcal} target="_blank" rel="noreferrer"><CalendarPlus className="h-4 w-4" aria-hidden="true" />הוספה ל-Google Calendar</a>}
+              {m?.meetUrl && <a className="btn" href={m.meetUrl} target="_blank" rel="noreferrer" style={{ fontSize: 17, padding: "12px 22px" }}><Video className="h-5 w-5" aria-hidden="true" />{t("קישור לפגישה")}</a>}
+              {gcal && <a className="ghost" href={gcal} target="_blank" rel="noreferrer"><CalendarPlus className="h-4 w-4" aria-hidden="true" />{t("הוספה ל-Google Calendar")}</a>}
             </div>
           )}
-          <h2 className="hd" style={{ fontSize: 24, marginTop: 28 }}>עד הפגישה</h2>
+          <h2 className="hd" style={{ fontSize: 24, marginTop: 28 }}>{t("עד הפגישה")}</h2>
           <ol className="prep">
-            <li><span className="k">1</span><div><b>שיחה יום לפני</b><p>יום לפני הפגישה{d.contacts?.lead?.name ? `, ${d.contacts.lead.name}, ראש הצוות שלכם,` : " ראש הצוות שלכם"} יתקשר אליכם לשיחה קצרה. נחדד יחד את הפרטים ונוודא שהמטרה של האיפיון מוגדרת.</p></div></li>
-            <li><span className="k">2</span><div><b>דוגמאות מהעבודה היום</b><p>קבצים, טפסים, צילומי מסך או דוחות שאתם עובדים איתם.</p></div></li>
-            <li><span className="k">3</span><div><b>מטרה אחת ממוקדת</b><p>הדבר שהכי חשוב לכם שהמערכת תפתור.</p></div></li>
+            <li><span className="k">1</span><div><b>{t("שיחה יום לפני")}</b><p>{d.contacts?.lead?.name
+              ? t("יום לפני הפגישה, {name}, ראש הצוות שלכם, יתקשר אליכם לשיחה קצרה. נחדד יחד את הפרטים ונוודא שהמטרה של האיפיון מוגדרת.", { name: d.contacts.lead.name })
+              : t("יום לפני הפגישה ראש הצוות שלכם יתקשר אליכם לשיחה קצרה. נחדד יחד את הפרטים ונוודא שהמטרה של האיפיון מוגדרת.")}</p></div></li>
+            <li><span className="k">2</span><div><b>{t("דוגמאות מהעבודה היום")}</b><p>{t("קבצים, טפסים, צילומי מסך או דוחות שאתם עובדים איתם.")}</p></div></li>
+            <li><span className="k">3</span><div><b>{t("מטרה אחת ממוקדת")}</b><p>{t("הדבר שהכי חשוב לכם שהמערכת תפתור.")}</p></div></li>
           </ol>
           {team.length > 0 && (
             <>
-              <h2 className="hd" style={{ fontSize: 20, marginTop: 20 }}>הצוות שלכם</h2>
+              <h2 className="hd" style={{ fontSize: 20, marginTop: 20 }}>{t("הצוות שלכם")}</h2>
               <div className="team">
                 {team.map(([role, p]) => (
                   <div key={role}><small>{role}</small>{p.name && <b>{p.name}</b>}{p.phone && <a href={`tel:${p.phone}`} className="num">{p.phone}</a>}</div>

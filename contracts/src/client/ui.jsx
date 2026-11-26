@@ -1,6 +1,8 @@
 import React, { useEffect } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { dmy, nis } from "@/sales/lib";
+import { isEn, t } from "@/i18n";
+import LangSwitch from "@/components/LangSwitch";
 
 // Rubik, the client pages' font (loaded here so the app's own pages keep theirs)
 const FONT_HREF = "https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap";
@@ -17,12 +19,15 @@ function useClientFont() {
 export function Shell({ children, wide = false, header = true, company }) {
   useClientFont();
   return (
-    <div className="pa" dir="rtl">
+    <div className="pa" dir={isEn ? "ltr" : "rtl"}>
       {header && (
         <header className="pa-noprint border-b">
           <div className={`mx-auto flex h-14 items-center justify-between px-4 ${wide ? "max-w-5xl" : "max-w-3xl"}`}>
             <img src="/pay-assets/all-dark-logo.png" alt="Pro Algorithm" className="h-5 w-auto" />
-            {company?.phone && <a href={`tel:${company.phone}`} className="text-sm text-muted-foreground hover:text-foreground pa-num">{company.phone}</a>}
+            <div className="flex items-center gap-3">
+              {company?.phone && <a href={`tel:${company.phone}`} className="text-sm text-muted-foreground hover:text-foreground pa-num">{company.phone}</a>}
+              <LangSwitch />
+            </div>
           </div>
         </header>
       )}
@@ -52,9 +57,9 @@ export function Notice({ title, text, children }) {
 // The page did not load and the link is not the reason (no network, a server error): offer to load it again.
 export function LoadFailed() {
   return (
-    <Notice title="העמוד לא נטען" text="כנראה תקלה רגעית בחיבור. נסו לטעון את העמוד שוב.">
+    <Notice title={t("העמוד לא נטען")} text={t("כנראה תקלה רגעית בחיבור. נסו לטעון את העמוד שוב.")}>
       <button type="button" onClick={() => window.location.reload()}
-        className="mt-6 rounded-lg bg-primary px-5 py-2.5 font-semibold text-primary-foreground">טעינה מחדש</button>
+        className="mt-6 rounded-lg bg-primary px-5 py-2.5 font-semibold text-primary-foreground">{t("טעינה מחדש")}</button>
     </Notice>
   );
 }
@@ -75,7 +80,7 @@ export function ErrorLine({ error }) {
 
 export function Stepper({ steps, current }) {
   return (
-    <ol className="flex items-center gap-2 text-sm" aria-label="שלבים">
+    <ol className="flex items-center gap-2 text-sm" aria-label={t("שלבים")}>
       {steps.map((s, i) => {
         const done = s.done;
         const active = i === current;
@@ -96,26 +101,26 @@ export function Stepper({ steps, current }) {
 export function PriceCard({ price }) {
   return (
     <div className="rounded-[1.25rem] bg-[#3A2418] p-5 text-[#F4ECD6] sm:p-6">
-      <p className="inline-block rounded-lg bg-[#E0432F] px-3 py-1 text-sm font-bold text-white">מחיר הפרויקט</p>
+      <p className="inline-block rounded-lg bg-[#E0432F] px-3 py-1 text-sm font-bold text-white">{t("מחיר הפרויקט")}</p>
       {price.listAmount > price.amount && (
         <p className="mt-3 flex flex-wrap items-center gap-2 text-sm">
           <s className="pa-num text-[#E8DCC0]/80">{nis(price.listAmount)}</s>
-          <span className="rounded-full bg-[#F4ECD6]/15 px-2 py-0.5 font-semibold">הנחה של <span className="pa-num">{nis(price.discount)}</span></span>
+          <span className="rounded-full bg-[#F4ECD6]/15 px-2 py-0.5 font-semibold">{t("הנחה של")} <span className="pa-num">{nis(price.discount)}</span></span>
         </p>
       )}
-      <p className="mt-3 text-4xl font-black sm:text-5xl"><span className="pa-num">{nis(price.amount)}</span> <span className="text-base font-medium text-[#E8DCC0]">+ מע"מ</span></p>
-      <p className="mt-1 text-sm text-[#E8DCC0]"><span className="pa-num">{nis(price.total)}</span> כולל מע"מ ({price.vatRate}%)</p>
-      <p className="mt-3 border-t border-dashed border-[#E8DCC0]/50 pt-3 text-sm text-[#F4ECD6]">המחיר קבוע וסגור לתכולה שבאפיון המאושר.</p>
+      <p className="mt-3 text-4xl font-black sm:text-5xl"><span className="pa-num">{nis(price.amount)}</span> <span className="text-base font-medium text-[#E8DCC0]">{t('+ מע"מ')}</span></p>
+      <p className="mt-1 text-sm text-[#E8DCC0]"><span className="pa-num">{nis(price.total)}</span> {t('כולל מע"מ ({rate}%)', { rate: price.vatRate })}</p>
+      <p className="mt-3 border-t border-dashed border-[#E8DCC0]/50 pt-3 text-sm text-[#F4ECD6]">{t("המחיר קבוע וסגור לתכולה שבאפיון המאושר.")}</p>
     </div>
   );
 }
 
-export const METHOD_NAMES = { transfer: "העברה בנקאית", check: "שיק", card: "כרטיס אשראי" };
+export const METHOD_NAMES = { transfer: t("העברה בנקאית"), check: t("שיק"), card: t("כרטיס אשראי") };
 
 export function ScheduleTable({ schedule }) {
-  const label = (r) => (r.kind === "deposit" ? "מקדמה" : `תשלום ${r.n - 1}`);
+  const label = (r) => (r.kind === "deposit" ? t("מקדמה") : t("תשלום {n}", { n: r.n - 1 }));
   // deals made before each payment had its own method: the deposit's date was "by", 3 business days on
-  const when = (r) => (r.kind === "deposit" && !r.method ? `עד ${dmy(r.date)}` : dmy(r.date));
+  const when = (r) => (r.kind === "deposit" && !r.method ? t("עד {date}", { date: dmy(r.date) }) : dmy(r.date));
   const methods = schedule.rows.some((r) => r.method);
   return (
     <div>
@@ -129,13 +134,13 @@ export function ScheduleTable({ schedule }) {
             </div>
             <div className="mt-1 flex items-center justify-between text-sm text-muted-foreground">
               <span>{when(r)}{r.method && ` · ${METHOD_NAMES[r.method]}`}</span>
-              <span><span className="pa-num">{nis(r.before)}</span> + מע"מ</span>
+              <span><span className="pa-num">{nis(r.before)}</span> {t('+ מע"מ')}</span>
             </div>
             {r.dateNote && <p className="mt-1 text-xs text-muted-foreground">{r.dateNote}</p>}
           </li>
         ))}
         <li className="flex items-center justify-between rounded-xl bg-secondary px-3 py-2 font-bold">
-          <span>סה"כ</span><span className="pa-num">{nis(schedule.totals.total)}</span>
+          <span>{t('סה"כ')}</span><span className="pa-num">{nis(schedule.totals.total)}</span>
         </li>
       </ul>
       {/* wider: table */}
@@ -143,10 +148,10 @@ export function ScheduleTable({ schedule }) {
         <thead>
           <tr className="border-b border-border text-muted-foreground">
             <th className="py-2 text-start font-medium">#</th>
-            <th className="py-2 text-start font-medium">מועד</th>
-            {methods && <th className="py-2 text-start font-medium">אמצעי תשלום</th>}
-            <th className="py-2 text-start font-medium">לפני מע"מ</th>
-            <th className="py-2 text-start font-medium">כולל מע"מ</th>
+            <th className="py-2 text-start font-medium">{t("מועד")}</th>
+            {methods && <th className="py-2 text-start font-medium">{t("אמצעי תשלום")}</th>}
+            <th className="py-2 text-start font-medium">{t('לפני מע"מ')}</th>
+            <th className="py-2 text-start font-medium">{t('כולל מע"מ')}</th>
           </tr>
         </thead>
         <tbody>
@@ -160,7 +165,7 @@ export function ScheduleTable({ schedule }) {
             </tr>
           ))}
           <tr className="font-bold">
-            <td className="py-2.5" colSpan={methods ? 3 : 2}>סה"כ</td>
+            <td className="py-2.5" colSpan={methods ? 3 : 2}>{t('סה"כ')}</td>
             <td className="py-2.5 pa-num">{nis(schedule.totals.before)}</td>
             <td className="py-2.5 pa-num">{nis(schedule.totals.total)}</td>
           </tr>
@@ -177,8 +182,8 @@ export function ServiceTimeline({ rows }) {
       {rows.map((r, i) => (
         <li key={i} className={`rounded-xl border p-3 ${r.price ? "border-border" : "border-emerald-200 bg-emerald-50"}`}>
           <p className="text-xs text-muted-foreground">{r.when}</p>
-          <p className="mt-1 font-semibold">{r.price ? <span className="pa-num">{nis(r.price)}</span> : "ללא עלות"}</p>
-          <p className="text-xs text-muted-foreground">{r.price ? `לחודש + מע"מ (${nis(r.priceWithVat)})` : r.label}</p>
+          <p className="mt-1 font-semibold">{r.price ? <span className="pa-num">{nis(r.price)}</span> : t("ללא עלות")}</p>
+          <p className="text-xs text-muted-foreground">{r.price ? t('לחודש + מע"מ ({price})', { price: nis(r.priceWithVat) }) : r.label}</p>
         </li>
       ))}
     </ol>

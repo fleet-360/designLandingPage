@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { t } from "@/i18n";
 
 const TONES = {
   green: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
@@ -10,15 +11,15 @@ const TONES = {
 };
 
 const LABELS = {
-  paid: { label: "שולם", tone: "green" },
-  pending: { label: "ממתין", tone: "amber" },
-  overdue: { label: "באיחור", tone: "red" },
-  cancelled: { label: "בוטל", tone: "gray" },
-  blocked: { label: "לא לגבות", tone: "violet" },
-  scheduled: { label: "מתוכנן", tone: "amber" },
-  collected: { label: "נאסף", tone: "green" },
-  clear: { label: "אין יתרה", tone: "green" },
-  empty: { label: "ללא תשלומים", tone: "gray" },
+  paid: { label: t("שולם"), tone: "green" },
+  pending: { label: t("ממתין"), tone: "amber" },
+  overdue: { label: t("באיחור"), tone: "red" },
+  cancelled: { label: t("בוטל"), tone: "gray" },
+  blocked: { label: t("לא לגבות"), tone: "violet" },
+  scheduled: { label: t("מתוכנן"), tone: "amber" },
+  collected: { label: t("נאסף"), tone: "green" },
+  clear: { label: t("אין יתרה"), tone: "green" },
+  empty: { label: t("ללא תשלומים"), tone: "gray" },
 };
 
 export default function StatusBadge({ status, className }) {

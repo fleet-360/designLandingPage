@@ -1,6 +1,7 @@
 import React from "react";
 import { Banknote, Check, Code2, CreditCard, HeartHandshake, Headset, LifeBuoy, MapPin, Rocket, TrendingDown, TrendingUp, Truck } from "lucide-react";
 import { dmy, nis } from "@/sales/lib";
+import { t } from "@/i18n";
 import { Container } from "./ui.jsx";
 
 // The deal page's selling parts: the hero, the road from the spec to the monthly service, and how to pay.
@@ -25,19 +26,19 @@ export function DealHero({ order, pitch }) {
   const o = order;
   const included = o.service?.enabled ? o.service.rows?.find((r) => !r.price) : null;
   const facts = [
-    "מחיר קבוע לכל מה שבאפיון",
-    o.project.targetWeeks ? `כ-${o.project.targetWeeks} שבועות פיתוח` : null,
-    included ? `ליווי ותחזוקה כלולים ${included.when}` : null,
+    t("מחיר קבוע לכל מה שבאפיון"),
+    o.project.targetWeeks ? t("כ-{n} שבועות פיתוח", { n: o.project.targetWeeks }) : null,
+    included ? t("ליווי ותחזוקה כלולים {when}", { when: included.when }) : null,
   ].filter(Boolean);
   return (
     <header className="pa-mint relative overflow-hidden">
       <Waves stroke="#86C9B0" />
       <Container className="relative py-10 sm:py-16">
         <p className="flex items-center gap-1.5 text-sm font-medium text-[#4F3324]">
-          <MapPin className="h-4 w-4" />הזמנת עבודה מס' <span className="pa-num">{o.number}</span> · הוכנה עבור {o.client.companyName || o.client.signerName}
+          <MapPin className="h-4 w-4" />{t("הזמנת עבודה מס'")} <span className="pa-num">{o.number}</span> · {t("הוכנה עבור {name}", { name: o.client.companyName || o.client.signerName })}
         </p>
         <h1 className="mt-4 text-[44px] font-black leading-[1.02] sm:text-7xl" style={{ color: INK }}>
-          מוכנים לעשות<br />היסטוריה?
+          {t("מוכנים לעשות")}<br />{t("היסטוריה?")}
         </h1>
         <p className="mt-6 text-xl font-extrabold text-[#C2311E] sm:text-2xl">{o.project.name}</p>
         {pitch ? (
@@ -69,20 +70,20 @@ export function DealHero({ order, pitch }) {
 // when, no prices (they are in the price card and the payment schedule below)
 function roadStops(o) {
   const stops = [
-    { t: "איפיון", s: "הושלם", state: "done" },
-    { t: "דמו", s: "הושלם", state: "done" },
-    { t: "אתם כאן", s: "אישור וחתימה", state: "here" },
-    { t: "פיתוח", s: o.project.targetWeeks ? `כ-${o.project.targetWeeks} שבועות` : "מתחיל עם המקדמה", icon: Code2 },
-    { t: "עולים לאוויר", s: "החיסכון מתחיל", s2: "נהנים מהערך בחברה", state: "value", icon: TrendingUp },
+    { t: t("איפיון"), s: t("הושלם"), state: "done" },
+    { t: t("דמו"), s: t("הושלם"), state: "done" },
+    { t: t("אתם כאן"), s: t("אישור וחתימה"), state: "here" },
+    { t: t("פיתוח"), s: o.project.targetWeeks ? t("כ-{n} שבועות", { n: o.project.targetWeeks }) : t("מתחיל עם המקדמה"), icon: Code2 },
+    { t: t("עולים לאוויר"), s: t("החיסכון מתחיל"), s2: t("נהנים מהערך בחברה"), state: "value", icon: TrendingUp },
   ];
   if (o.service?.enabled) {
     let paid = 0;
     for (const r of o.service.rows || []) {
-      if (!r.price) stops.push({ t: "ליווי צמוד", s: "אחרי העלייה לאוויר", s2: r.when, icon: Headset });
+      if (!r.price) stops.push({ t: t("ליווי צמוד"), s: t("אחרי העלייה לאוויר"), s2: r.when, icon: Headset });
       else {
         stops.push({
-          t: paid === 0 ? "תמיכה ותחזוקה" : "תמיכה שוטפת",
-          s: paid === 0 ? "צוות שמכיר את המערכת שלכם" : "ממשיכים לשפר ולתחזק",
+          t: paid === 0 ? t("תמיכה ותחזוקה") : t("תמיכה שוטפת"),
+          s: paid === 0 ? t("צוות שמכיר את המערכת שלכם") : t("ממשיכים לשפר ולתחזק"),
           s2: r.when,
           icon: paid === 0 ? LifeBuoy : HeartHandshake,
         });
@@ -90,7 +91,7 @@ function roadStops(o) {
       }
     }
   } else {
-    stops.push({ t: "המערכת אצלכם", s: "בשימוש יומיומי", icon: Rocket });
+    stops.push({ t: t("המערכת אצלכם"), s: t("בשימוש יומיומי"), icon: Rocket });
   }
   return stops;
 }
@@ -136,12 +137,13 @@ function Label({ stop, className = "", style }) {
       <p className={`text-[15px] font-extrabold leading-tight ${here ? "text-[#E0432F]" : ""}`} style={here ? undefined : { color: INK }}>{stop.t}</p>
       <p className={`mt-0.5 text-[13px] leading-snug ${stop.state === "value" ? "font-semibold text-emerald-700" : stop.s.includes("₪") ? "font-bold text-[#6A4330]" : "text-[#6A4330]"}`}>{stop.s}</p>
       {stop.s2 && <p className="text-[12px] leading-snug text-[#6A4330]">{stop.s2}</p>}
-      {stop.drop && <p className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-1.5 text-[11px] font-semibold text-emerald-700"><TrendingDown className="h-3 w-3" />המחיר יורד</p>}
+      {stop.drop && <p className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-1.5 text-[11px] font-semibold text-emerald-700"><TrendingDown className="h-3 w-3" />{t("המחיר יורד")}</p>}
     </div>
   );
 }
 
-// wide screens: the road runs right to left over a gentle wave, labels above the low stops and below the high ones
+// wide screens: the road runs from the start side (right in Hebrew, left in English) over a gentle wave,
+// labels above the low stops and below the high ones
 function RoadWide({ stops }) {
   const H = 360;
   const n = stops.length;
@@ -155,7 +157,7 @@ function RoadWide({ stops }) {
   const mid = H * 0.5;
   return (
     <div className="relative hidden md:block" style={{ height: H }}>
-      <svg className="absolute inset-0 h-full w-full" viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" aria-hidden="true">
+      <svg className="absolute inset-0 h-full w-full ltr:-scale-x-100" viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" aria-hidden="true">
         <path d={smooth(pts.map(([x, y]) => [x, y]))} fill="none" stroke="#6A4330" strokeWidth="8" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
       </svg>
       {stops.map((s, i) => {
@@ -163,9 +165,9 @@ function RoadWide({ stops }) {
         const above = y >= mid;
         return (
           <React.Fragment key={s.t + i}>
-            <div className="absolute -translate-y-1/2 translate-x-1/2" style={{ right: `${100 - x}%`, top: y }}><Node stop={s} /></div>
-            <Label stop={s} className="absolute translate-x-1/2 text-center" style={{
-              right: `${100 - x}%`, width: `${Math.min(step * 0.98, 16)}%`, minWidth: 92,
+            <div className="absolute -translate-y-1/2 translate-x-1/2 ltr:-translate-x-1/2" style={{ insetInlineStart: `${100 - x}%`, top: y }}><Node stop={s} /></div>
+            <Label stop={s} className="absolute translate-x-1/2 text-center ltr:-translate-x-1/2" style={{
+              insetInlineStart: `${100 - x}%`, width: `${Math.min(step * 0.98, 16)}%`, minWidth: 92,
               ...(above ? { bottom: H - y + 28 } : { top: y + 28 }),
             }} />
           </React.Fragment>
@@ -175,22 +177,22 @@ function RoadWide({ stops }) {
   );
 }
 
-// phones: the road runs down the right side, labels to its left
+// phones: the road runs down the start side, labels beside it
 function RoadTall({ stops }) {
   const R = 92;                                      // px per stop
   const H = stops.length * R;
   const pts = stops.map((_, i) => [86 + 6 * Math.sin(i * 1.1 + 0.4), R / 2 + i * R]);
   return (
     <div className="relative md:hidden" style={{ height: H }}>
-      <svg className="absolute inset-0 h-full w-full" viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" aria-hidden="true">
+      <svg className="absolute inset-0 h-full w-full ltr:-scale-x-100" viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" aria-hidden="true">
         <path d={smooth(pts)} fill="none" stroke="#6A4330" strokeWidth="7" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
       </svg>
       {stops.map((s, i) => {
         const [x, y] = pts[i];
         return (
           <React.Fragment key={s.t + i}>
-            <div className="absolute -translate-y-1/2 translate-x-1/2" style={{ right: `${100 - x}%`, top: y }}><Node stop={s} /></div>
-            <Label stop={s} className="absolute -translate-y-1/2" style={{ right: "30%", left: 0, top: y }} />
+            <div className="absolute -translate-y-1/2 translate-x-1/2 ltr:-translate-x-1/2" style={{ insetInlineStart: `${100 - x}%`, top: y }}><Node stop={s} /></div>
+            <Label stop={s} className="absolute -translate-y-1/2" style={{ insetInlineStart: "30%", insetInlineEnd: 0, top: y }} />
           </React.Fragment>
         );
       })}
@@ -205,14 +207,14 @@ export function JourneyRoad({ order, note }) {
     <section className="pa-cream relative overflow-hidden py-10 sm:py-14">
       <Waves />
       <div className="relative mx-auto max-w-5xl px-4">
-        <h2 className="text-3xl font-black sm:text-4xl" style={{ color: INK }}>הדרך מכאן</h2>
+        <h2 className="text-3xl font-black sm:text-4xl" style={{ color: INK }}>{t("הדרך מכאן")}</h2>
         <p className="mt-2 max-w-2xl text-[17px] text-[#4F3324]">
-          האיפיון והדמו כבר מאחורינו. עכשיו מפתחים, עולים לאוויר, ואנחנו נשארים איתכם גם אחרי: צוות שמכיר את המערכת שלכם עונה, מתקן ומשפר.
+          {t("האיפיון והדמו כבר מאחורינו. עכשיו מפתחים, עולים לאוויר, ואנחנו נשארים איתכם גם אחרי: צוות שמכיר את המערכת שלכם עונה, מתקן ומשפר.")}
         </p>
         <div className="mt-8"><RoadWide stops={stops} /><RoadTall stops={stops} /></div>
         {includes.length > 0 && (
           <div className="mt-6 rounded-2xl border border-[#E3D6B8] bg-white/80 p-4">
-            <p className="flex items-center gap-2 text-sm font-bold" style={{ color: INK }}><Headset className="h-4 w-4 text-[#6A4330]" />מה כולל השירות החודשי</p>
+            <p className="flex items-center gap-2 text-sm font-bold" style={{ color: INK }}><Headset className="h-4 w-4 text-[#6A4330]" />{t("מה כולל השירות החודשי")}</p>
             <ul className="mt-2 flex flex-wrap gap-1.5">
               {includes.map((x) => <li key={x} className="rounded-full bg-[#F4ECD6] px-2.5 py-1 text-[13px]" style={{ color: INK }}>{x}</li>)}
             </ul>
@@ -230,7 +232,7 @@ export function PayHow({ order }) {
   const p = order.payInfo;
   if (!p) {
     // orders frozen before each payment had its own method
-    return <p className="mt-3 text-sm text-muted-foreground">אמצעי תשלום היתרה: {order.balanceMethod === "checks" ? "שיקים דחויים" : "העברה בנקאית"}.</p>;
+    return <p className="mt-3 text-sm text-muted-foreground">{t("אמצעי תשלום היתרה:")} {order.balanceMethod === "checks" ? t("שיקים דחויים") : t("העברה בנקאית")}.</p>;
   }
   const checks = order.schedule.rows.filter((r) => r.method === "check");
   const b = p.transfer;
@@ -238,9 +240,9 @@ export function PayHow({ order }) {
     <div className="mt-4 space-y-3">
       {p.checks && checks.length > 0 && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
-          <p className="text-[15px] font-bold text-amber-950">חשוב: נא להכין את השיקים מראש</p>
+          <p className="text-[15px] font-bold text-amber-950">{t("חשוב: נא להכין את השיקים מראש")}</p>
           <p className="mt-1 text-sm text-amber-950/90">
-            {checks.length === 1 ? "שיק אחד" : `${checks.length} שיקים`} לפקודת {p.checks.payee}. כל שיק על הסכום <strong>כולל מע"מ</strong> ובתאריך שלו:
+            {checks.length === 1 ? t("שיק אחד") : t("{n} שיקים", { n: checks.length })} {t("לפקודת {payee}. כל שיק על הסכום", { payee: p.checks.payee })} <strong>{t('כולל מע"מ')}</strong> {t("ובתאריך שלו:")}
           </p>
           <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
             {checks.map((r) => (
@@ -253,8 +255,8 @@ export function PayHow({ order }) {
           <p className="mt-3 flex items-start gap-2 text-sm font-medium text-amber-950">
             <Truck className="mt-0.5 h-4 w-4 shrink-0" />
             {p.checks.pickupDate
-              ? <span>שליח מטעמנו יגיע לאסוף את השיקים ב-<span className="pa-num">{dmy(p.checks.pickupDate)}</span>. כדאי שיהיו מוכנים עד אז.</span>
-              : <span>שליח מטעמנו יאסוף את השיקים. נתאם איתכם מועד בתוך {p.checks.pickupDays} ימי עסקים מהחתימה.</span>}
+              ? <span>{t("שליח מטעמנו יגיע לאסוף את השיקים ב-")}<span className="pa-num">{dmy(p.checks.pickupDate)}</span>{t(". כדאי שיהיו מוכנים עד אז.")}</span>
+              : <span>{t("שליח מטעמנו יאסוף את השיקים. נתאם איתכם מועד בתוך {days} ימי עסקים מהחתימה.", { days: p.checks.pickupDays })}</span>}
           </p>
         </div>
       )}
@@ -262,16 +264,16 @@ export function PayHow({ order }) {
         <div className="flex gap-3 rounded-2xl border border-border p-4 text-sm">
           <Banknote className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
           <div>
-            <p className="font-bold">העברה בנקאית</p>
-            <p className="text-muted-foreground">מוטב: {b.beneficiary}{b.bank && ` · בנק ${b.bank}`}{b.branch && ` · סניף ${b.branch}`}{b.account && <> · חשבון <span className="pa-num">{b.account}</span></>}</p>
-            <p className="text-muted-foreground">אסמכתה: הזמנה מס' <span className="pa-num">{order.number}</span>. הסכום צריך להגיע עד התאריך שבטבלה.</p>
+            <p className="font-bold">{t("העברה בנקאית")}</p>
+            <p className="text-muted-foreground">{t("מוטב:")} {b.beneficiary}{b.bank && ` · ${t("בנק {bank}", { bank: b.bank })}`}{b.branch && ` · ${t("סניף {branch}", { branch: b.branch })}`}{b.account && <> · {t("חשבון")} <span className="pa-num">{b.account}</span></>}</p>
+            <p className="text-muted-foreground">{t("אסמכתה: הזמנה מס'")} <span className="pa-num">{order.number}</span>{t(". הסכום צריך להגיע עד התאריך שבטבלה.")}</p>
           </div>
         </div>
       )}
       {p.card && (
         <div className="flex gap-3 rounded-2xl border border-border p-4 text-sm">
           <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-          <div><p className="font-bold">כרטיס אשראי</p><p className="text-muted-foreground">לקראת מועד התשלום נשלח אליכם קישור מאובטח לתשלום בכרטיס.</p></div>
+          <div><p className="font-bold">{t("כרטיס אשראי")}</p><p className="text-muted-foreground">{t("לקראת מועד התשלום נשלח אליכם קישור מאובטח לתשלום בכרטיס.")}</p></div>
         </div>
       )}
     </div>

@@ -9,12 +9,14 @@ import { LogIn, User, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import PasswordInput from "@/components/PasswordInput";
 import { safeReturnTo } from "@/lib/authReturnTo";
+import { t } from "@/i18n";
+import LangSwitch from "@/components/LangSwitch";
 
 const ERRORS = {
-  bad_credentials: "שם משתמש או סיסמה שגויים",
-  too_many_attempts: "יותר מדי ניסיונות. נסו שוב בעוד רבע שעה.",
-  not_configured: "המערכת לא מוגדרת בשרת הזה",
-  network: "אין חיבור לשרת. בדקו את החיבור ונסו שוב.",
+  bad_credentials: t("שם משתמש או סיסמה שגויים"),
+  too_many_attempts: t("יותר מדי ניסיונות. נסו שוב בעוד רבע שעה."),
+  not_configured: t("המערכת לא מוגדרת בשרת הזה"),
+  network: t("אין חיבור לשרת. בדקו את החיבור ונסו שוב."),
 };
 
 // Same username and password as /pay-link (PAY_ADMIN_USER / PAY_ADMIN_PASSWORD).
@@ -37,14 +39,15 @@ export default function Login() {
       navigate(returnTo, { replace: true });
     } catch (err) {
       setPassword("");
-      setError(ERRORS[err.data?.error] || "ההתחברות נכשלה, נסו שוב");
+      setError(ERRORS[err.data?.error] || t("ההתחברות נכשלה, נסו שוב"));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <AuthLayout icon={LogIn} title="ברוכים הבאים" subtitle="התחברו כדי לנהל את החוזים">
+    <AuthLayout icon={LogIn} title={t("ברוכים הבאים")} subtitle={t("התחברו כדי לנהל את החוזים")}>
+      <LangSwitch className="fixed end-4 top-4 bg-card" />
       {error && (
         <div className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
           {error}
@@ -53,7 +56,7 @@ export default function Login() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="user">שם משתמש</Label>
+          <Label htmlFor="user">{t("שם משתמש")}</Label>
           <div className="relative">
             <User className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -70,7 +73,7 @@ export default function Login() {
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password">סיסמה</Label>
+          <Label htmlFor="password">{t("סיסמה")}</Label>
           <PasswordInput
             id="password"
             autoComplete="current-password"
@@ -83,10 +86,10 @@ export default function Login() {
           {loading ? (
             <>
               <Loader2 className="ms-2 h-4 w-4 animate-spin" />
-              מתחבר...
+              {t("מתחבר...")}
             </>
           ) : (
-            "התחברות"
+            t("התחברות")
           )}
         </Button>
       </form>

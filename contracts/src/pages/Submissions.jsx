@@ -10,10 +10,11 @@ import SubmissionRow from "@/components/submissions/SubmissionRow";
 import SubmissionCard from "@/components/submissions/SubmissionCard";
 import SubmissionDialog from "@/components/submissions/SubmissionDialog";
 import { fmtDate } from "@/lib/formUtils";
+import { t } from "@/i18n";
 
 const FIELD_COL_MIN = 160;
 
-const fieldLabel = (f) => (f.label || "").trim() || "שדה";
+const fieldLabel = (f) => (f.label || "").trim() || t("שדה");
 const versionFields = (blocks) => (blocks || []).filter((b) => b.type === "field" && b.id);
 
 // בניית עמודות הטבלה מכל גרסאות הטופס: הגרסה הנוכחית ואחריה תמונות המצב של השליחות (מהחדשה לישנה).
@@ -51,8 +52,8 @@ export default function Submissions() {
     queryFn: () => base44.entities.Submission.filter({ form_id: id }, "-created_date", 1000),
     enabled: !!id,
   });
-  if (!id) return <div className="py-20 text-center text-muted-foreground">לא נבחר טופס — חזרו לרשימה ובחרו טופס לצפייה בתוצאות.</div>;
-  if (form === null) return <div className="py-20 text-center text-muted-foreground">הטופס לא נמצא.</div>;
+  if (!id) return <div className="py-20 text-center text-muted-foreground">{t("לא נבחר טופס — חזרו לרשימה ובחרו טופס לצפייה בתוצאות.")}</div>;
+  if (form === null) return <div className="py-20 text-center text-muted-foreground">{t("הטופס לא נמצא.")}</div>;
   if (!form) return <Loader />;
 
   const allFields = collectFieldColumns(form, subs);
@@ -86,7 +87,7 @@ export default function Submissions() {
 
   // ייצוא לאקסל — כל השדות מכל גרסאות הטופס
   const exportCsv = () => {
-    const headers = [...allFields.map((f) => f.label || "שדה"), "סטטוס", "תאריך מילוי"];
+    const headers = [...allFields.map((f) => f.label || t("שדה")), t("סטטוס"), t("תאריך מילוי")];
     const rows = [headers, ...filtered.map((s) => [...allFields.map((f) => getValue(s, f)), "SIGNED", fmtDate(s.created_date)])];
     const csv = "\uFEFF" + rows.map((r) => r.map((v) => `"${(v ?? "").toString().replace(/"/g, '""')}"`).join(",")).join("\n");
     const a = document.createElement("a");
@@ -101,19 +102,19 @@ export default function Submissions() {
 
   return (
     <div className="space-y-8">
-      <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><ArrowRight className="h-4 w-4" />חזרה למסך הטפסים שלי</Link>
+      <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><ArrowRight className="h-4 w-4 ltr:-scale-x-100" />{t("חזרה למסך הטפסים שלי")}</Link>
       <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-4xl font-semibold tracking-tight">תוצאות מילוי · {form.title}</h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">{subs.length} חתימות נקלטו</p>
+          <h1 className="text-4xl font-semibold tracking-tight">{t("תוצאות מילוי")} · {form.title}</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">{t("{n} חתימות נקלטו", { n: subs.length })}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
-            <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="חיפוש חותם..." className="w-56 rounded-full bg-card pr-9" />
+            <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("חיפוש חותם...")} className="w-56 rounded-full bg-card ps-9" />
           </div>
-          <Button variant="outline" onClick={exportCsv} disabled={!filtered.length} className="gap-2 rounded-full"><FileSpreadsheet className="h-4 w-4" />ייצוא לאקסל</Button>
-          <Button asChild className="gap-2 rounded-full"><Link to={`/share?id=${id}`}><Share2 className="h-4 w-4" />שליחת קישור למילוי</Link></Button>
+          <Button variant="outline" onClick={exportCsv} disabled={!filtered.length} className="gap-2 rounded-full"><FileSpreadsheet className="h-4 w-4" />{t("ייצוא לאקסל")}</Button>
+          <Button asChild className="gap-2 rounded-full"><Link to={`/share?id=${id}`}><Share2 className="h-4 w-4" />{t("שליחת קישור למילוי")}</Link></Button>
         </div>
       </div>
 
@@ -122,8 +123,8 @@ export default function Submissions() {
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border py-20 text-center">
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-secondary text-muted-foreground"><Users className="h-5 w-5" /></span>
-          <p className="font-medium">עדיין אין חתימות</p>
-          <p className="text-sm text-muted-foreground">שתפו את הקישור עם הלקוחות כדי להתחיל לקבל חתימות</p>
+          <p className="font-medium">{t("עדיין אין חתימות")}</p>
+          <p className="text-sm text-muted-foreground">{t("שתפו את הקישור עם הלקוחות כדי להתחיל לקבל חתימות")}</p>
         </div>
       ) : (
         <>
@@ -131,8 +132,8 @@ export default function Submissions() {
             <div style={{ minWidth: tableMinWidth }}>
               <div className="grid items-center gap-3 px-5 pb-2 text-xs font-medium text-muted-foreground" style={{ gridTemplateColumns }}>
                 {allFields.map((f) => <span key={f.key} className="truncate" title={f.label}>{f.label}</span>)}
-                <span>סטטוס</span>
-                <span>תאריך מילוי</span>
+                <span>{t("סטטוס")}</span>
+                <span>{t("תאריך מילוי")}</span>
                 <span />
               </div>
               <div className="space-y-2">{filtered.map((s) => <SubmissionRow key={s.id} sub={s} fields={allFields} gridTemplateColumns={gridTemplateColumns} getValue={getValue} onDelete={remove} onView={(sub) => setSelected(sub)} />)}</div>

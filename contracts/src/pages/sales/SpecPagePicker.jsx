@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/use-toast";
 import { api, errorText } from "@/sales/lib";
+import { isEn, t } from "@/i18n";
 
 // Picks the pages of the Canva spec that go into the contract as Appendix B. The PDF is read here in the
 // browser (pdf.js): thumbnails, and each page's text for the AI pick (api/_routes/sales/spec-pages.js),
@@ -117,7 +118,7 @@ export default function SpecPagePicker({ file, onClose, onSave }) {
           if (alive) setThumbs((t) => t.map((x, i) => (i === n - 1 ? src : x)));
         }
       } catch {
-        if (alive) setError("לא הצלחנו לקרוא את הקובץ. ודאו שזה קובץ PDF תקין.");
+        if (alive) setError(t("לא הצלחנו לקרוא את הקובץ. ודאו שזה קובץ PDF תקין."));
       }
     })();
     return () => { alive = false; loaded?.destroy?.(); };
@@ -145,7 +146,7 @@ export default function SpecPagePicker({ file, onClose, onSave }) {
         blob = await shrunkPdf(doc, pages, PDFDocument, setShrinking);
         setShrinking(null);
         if (!blob) {
-          toast({ title: `גם אחרי כיווץ, ${pages.length} העמודים שבחרתם גדולים מדי להעלאה. בחרו פחות עמודים.`, variant: "destructive" });
+          toast({ title: t("גם אחרי כיווץ, {n} העמודים שבחרתם גדולים מדי להעלאה. בחרו פחות עמודים.", { n: pages.length }), variant: "destructive" });
           return;
         }
       }
@@ -162,16 +163,15 @@ export default function SpecPagePicker({ file, onClose, onSave }) {
 
   const count = doc?.numPages || 0;
   // labels only for what the AI found; the first/last default is not a finding
-  const tag = (n) => (ai?.source === "ai" ? [n === ai.summaryPage && "סיכום ההצעה", n === ai.hoursPage && "הערכת שעות"].filter(Boolean).join(" · ") : "");
+  const tag = (n) => (ai?.source === "ai" ? [n === ai.summaryPage && t("סיכום ההצעה"), n === ai.hoursPage && t("הערכת שעות")].filter(Boolean).join(" · ") : "");
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o && !busy) onClose(); }}>
-      <DialogContent className="flex max-h-[92vh] w-[calc(100vw-2rem)] max-w-5xl flex-col gap-0 p-0" dir="rtl">
-        <DialogHeader className="border-b border-border py-4 pl-5 pr-12 text-right sm:text-right">
-          <DialogTitle>אילו עמודים מהאפיון לצרף להסכם?</DialogTitle>
-          <DialogDescription className="text-right">
-            העמודים שתבחרו יצורפו כנספח ב' להסכם ויוצגו ללקוח. בדרך כלל: עמוד סיכום ההצעה ועמוד הערכת השעות.
-            בכל עמוד יירשם שהשעות הן הערכה משוערת והמחיר קבוע.
+      <DialogContent className="flex max-h-[92vh] w-[calc(100vw-2rem)] max-w-5xl flex-col gap-0 p-0" dir={isEn ? "ltr" : "rtl"}>
+        <DialogHeader className="border-b border-border py-4 pl-5 pr-12 text-start sm:text-start">
+          <DialogTitle>{t("אילו עמודים מהאפיון לצרף להסכם?")}</DialogTitle>
+          <DialogDescription className="text-start">
+            {t("העמודים שתבחרו יצורפו כנספח ב' להסכם ויוצגו ללקוח. בדרך כלל: עמוד סיכום ההצעה ועמוד הערכת השעות. בכל עמוד יירשם שהשעות הן הערכה משוערת והמחיר קבוע.")}
           </DialogDescription>
         </DialogHeader>
 
@@ -181,9 +181,9 @@ export default function SpecPagePicker({ file, onClose, onSave }) {
           ) : (
             <>
               <p className="mb-3 flex items-center gap-1.5 text-sm text-muted-foreground">
-                {ai === "loading" ? <><Loader2 className="h-4 w-4 animate-spin" />מזהה את עמוד הסיכום ואת עמוד השעות...</>
-                  : ai?.source === "ai" ? <><Sparkles className="h-4 w-4 text-primary" />זוהו אוטומטית עמוד {ai.summaryPage} (סיכום) ועמוד {ai.hoursPage} (שעות). אפשר לשנות.</>
-                    : <>נבחרו העמוד הראשון והאחרון. אפשר לשנות.</>}
+                {ai === "loading" ? <><Loader2 className="h-4 w-4 animate-spin" />{t("מזהה את עמוד הסיכום ואת עמוד השעות...")}</>
+                  : ai?.source === "ai" ? <><Sparkles className="h-4 w-4 text-primary" />{t("זוהו אוטומטית עמוד {s} (סיכום) ועמוד {h} (שעות). אפשר לשנות.", { s: ai.summaryPage, h: ai.hoursPage })}</>
+                    : <>{t("נבחרו העמוד הראשון והאחרון. אפשר לשנות.")}</>}
               </p>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                 {thumbs.map((src, i) => {
@@ -191,20 +191,20 @@ export default function SpecPagePicker({ file, onClose, onSave }) {
                   const on = picked.has(n);
                   return (
                     <div key={n} className={`group relative overflow-hidden rounded-lg border-2 bg-secondary/40 transition ${on ? "border-primary" : "border-transparent hover:border-border"}`}>
-                      <button type="button" onClick={() => toggle(n)} className="block w-full text-right" aria-pressed={on} aria-label={`עמוד ${n}`}>
+                      <button type="button" onClick={() => toggle(n)} className="block w-full text-start" aria-pressed={on} aria-label={t("עמוד {n}", { n })}>
                         {src ? <img src={src} alt="" className="block w-full" /> : <div className="grid aspect-[4/3] place-items-center"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>}
                         <span className={`flex items-center justify-between gap-2 border-t px-2 py-1.5 text-xs ${on ? "border-primary bg-primary/10" : "border-border bg-background"}`}>
                           <span className="flex items-center gap-1.5 font-medium">
                             <span className={`grid h-4 w-4 shrink-0 place-items-center rounded border ${on ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40 bg-background"}`}>
                               {on ? <Check className="h-3 w-3" /> : null}
                             </span>
-                            עמוד {n}
+                            {t("עמוד {n}", { n })}
                           </span>
                           {tag(n) && <span className="truncate text-primary">{tag(n)}</span>}
                         </span>
                       </button>
                       {src && (
-                        <button type="button" onClick={() => showLarge(n)} className="absolute left-2 top-2 grid h-7 w-7 place-items-center rounded-md bg-background/90 text-muted-foreground opacity-100 shadow-sm hover:text-foreground sm:opacity-0 sm:group-hover:opacity-100" aria-label={`הגדלת עמוד ${n}`}>
+                        <button type="button" onClick={() => showLarge(n)} className="absolute end-2 top-2 grid h-7 w-7 place-items-center rounded-md bg-background/90 text-muted-foreground opacity-100 shadow-sm hover:text-foreground sm:opacity-0 sm:group-hover:opacity-100" aria-label={t("הגדלת עמוד {n}", { n })}>
                           <Maximize2 className="h-3.5 w-3.5" />
                         </button>
                       )}
@@ -217,10 +217,10 @@ export default function SpecPagePicker({ file, onClose, onSave }) {
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-5 py-3">
-          <p className="text-sm text-muted-foreground">{count ? `${picked.size ? `נבחרו ${picked.size === 1 ? "עמוד אחד" : `${picked.size} עמודים`}` : "לא נבחרו עמודים"} מתוך ${count}` : ""}</p>
+          <p className="text-sm text-muted-foreground">{count ? (picked.size ? (picked.size === 1 ? t("נבחרו עמוד אחד מתוך {count}", { count }) : t("נבחרו {n} עמודים מתוך {count}", { n: picked.size, count })) : t("לא נבחרו עמודים מתוך {count}", { count })) : ""}</p>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose} disabled={busy}>ביטול</Button>
-            <Button onClick={save} disabled={busy || !picked.size || !count}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" />{shrinking !== null ? `מכווץ את העמודים (${shrinking + 1}/${SHRINK.length})...` : "מצרף..."}</> : "צירוף העמודים להסכם"}</Button>
+            <Button variant="outline" onClick={onClose} disabled={busy}>{t("ביטול")}</Button>
+            <Button onClick={save} disabled={busy || !picked.size || !count}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" />{shrinking !== null ? t("מכווץ את העמודים ({i}/{total})...", { i: shrinking + 1, total: SHRINK.length }) : t("מצרף...")}</> : t("צירוף העמודים להסכם")}</Button>
           </div>
         </div>
 
@@ -228,13 +228,13 @@ export default function SpecPagePicker({ file, onClose, onSave }) {
           <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-black/70 p-3" onClick={() => setZoom(null)} role="presentation">
             <div className="flex max-h-full max-w-full flex-col rounded-lg bg-background p-2" onClick={(e) => e.stopPropagation()} role="presentation">
               <div className="mb-2 flex shrink-0 items-center justify-between gap-3 px-1">
-                <span className="text-sm font-medium">עמוד {zoom.n}{tag(zoom.n) ? ` · ${tag(zoom.n)}` : ""}</span>
+                <span className="text-sm font-medium">{t("עמוד {n}", { n: zoom.n })}{tag(zoom.n) ? ` · ${tag(zoom.n)}` : ""}</span>
                 <div className="flex gap-2">
-                  <Button size="sm" variant={picked.has(zoom.n) ? "default" : "outline"} onClick={() => toggle(zoom.n)}>{picked.has(zoom.n) ? "נבחר" : "בחירת העמוד"}</Button>
-                  <Button size="sm" variant="ghost" onClick={() => setZoom(null)}>סגירה</Button>
+                  <Button size="sm" variant={picked.has(zoom.n) ? "default" : "outline"} onClick={() => toggle(zoom.n)}>{picked.has(zoom.n) ? t("נבחר") : t("בחירת העמוד")}</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setZoom(null)}>{t("סגירה")}</Button>
                 </div>
               </div>
-              <img src={zoom.src} alt={`עמוד ${zoom.n}`} className="block min-h-0 max-w-full flex-1 object-contain" />
+              <img src={zoom.src} alt={t("עמוד {n}", { n: zoom.n })} className="block min-h-0 max-w-full flex-1 object-contain" />
             </div>
           </div>
         )}
