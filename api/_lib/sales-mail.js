@@ -114,6 +114,48 @@ export function dealSignedMail(deal, settings, pdf) {
   };
 }
 
+// an appendix's extra payments (sales.deal_appendices.content), for its emails
+const appendixPayments = (a) => (a.payments.length
+  ? `<p style="margin:14px 0 0;"><strong>תשלומים נוספים לפי הנספח</strong> (מתווספים ללוח התשלומים שבהזמנה):</p>${table([
+    ["<strong>מועד</strong>", "<strong>אמצעי תשלום</strong>", "<strong>לפני מע\"מ</strong>", "<strong>כולל מע\"מ</strong>"],
+    ...a.payments.map((p) => [ddmmyyyy(p.date), esc(PAYMENT_METHODS[p.method] || ""), nis(p.amount), nis(p.total)]),
+    ["<strong>סה\"כ</strong>", "", `<strong>${nis(a.totals.amount)}</strong>`, `<strong>${nis(a.totals.total)}</strong>`]])}`
+  : "");
+
+// a new appendix to a signed agreement, to read and sign through the deal's link
+export function dealAppendixMail(deal, a, settings, url) {
+  const c = deal.client;
+  const project = deal.data.project?.name || "";
+  return {
+    to: [c.email],
+    replyTo: settings.officeEmail,
+    subject: `נספח ${a.n} להסכם · ${project} · הזמנה ${deal.number}`,
+    html: layout({
+      preheader: a.content.title,
+      title: `${esc(c.signerName || c.companyName || "שלום")}, נספח להסכם מחכה לחתימה`,
+      body: `<p style="margin:0 0 10px;">הכנו נספח מס' ${a.n} להסכם על <strong>${esc(project)}</strong>: <strong>${esc(a.content.title)}</strong>.</p>
+<p style="margin:0;">הנספח מצטרף להסכם שנחתם, ויתר תנאי ההסכם נשארים כפי שהם. אפשר לקרוא ולחתום דרך אותו קישור.</p>${appendixPayments(a.content)}`,
+      button: { href: url, label: "לקריאה וחתימה" },
+      footer: `הזמנה מס' ${deal.number} · ${esc(settings.company.name)} · ${esc(settings.company.phone)}`,
+    }),
+  };
+}
+
+// the signed appendix, to the client with the office and accounting in copy (they enter its payments)
+export function dealAppendixSignedMail(deal, a, settings, pdf) {
+  return {
+    to: [deal.client.email],
+    cc: [settings.officeEmail, deal.client.accountingEmail].filter(Boolean),
+    replyTo: settings.officeEmail,
+    subject: `נספח ${a.n} נחתם · ${deal.data.project?.name || ""} · הזמנה ${deal.number}`,
+    html: layout({
+      title: "תודה, הנספח נחתם",
+      body: `<p>מצורף עותק חתום של נספח מס' ${a.n} להסכם ל<strong>${esc(deal.data.project?.name || "")}</strong>: ${esc(a.content.title)}.</p>${appendixPayments(a.content)}`,
+    }),
+    attachments: pdf ? [{ filename: pdf.name, fileId: pdf.fileId }] : [],
+  };
+}
+
 // The order confirmation, sent by sales at the end of a deal closed by hand (the client signed outside the
 // link): the order, the payment schedule and how to pay, with or without the signed contract attached, and
 // the card link when the standing order still waits for one.

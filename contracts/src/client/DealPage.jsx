@@ -34,6 +34,8 @@ export default function DealPage({ token }) {
   ];
   const current = !d.approvedAt ? 0 : !d.signedAt ? 1 : needsCard && d.subscription && !d.subscription.card && d.subscription.status !== "canceled" && !skipCard ? 2 : 3;
   const post = async (body) => { const v = await api(url, { method: "POST", body }); setD(v); return v; };
+  // an appendix issued after signing waits for its signature before anything else
+  const appendix = d.signedAt && d.appendices?.find((a) => !a.signedAt);
 
   return (
     <Shell company={d.company} wide={current === 1}>
@@ -42,7 +44,8 @@ export default function DealPage({ token }) {
       </div>
       {current === 0 && <OrderStep d={d} post={post} />}
       {current === 1 && <AgreementStep d={d} post={post} />}
-      {current === 2 && (
+      {appendix && <AppendixStep key={appendix.id} d={d} a={appendix} post={post} />}
+      {!appendix && current === 2 && (
         <Container className="py-8">
           <SignedBanner d={d} />
           <Section title={t("הוראת קבע לשירות החודשי")} className="mt-5">
@@ -57,7 +60,7 @@ export default function DealPage({ token }) {
           </Section>
         </Container>
       )}
-      {current === 3 && <Done d={d} />}
+      {!appendix && current === 3 && <Done d={d} />}
     </Shell>
   );
 }
@@ -441,6 +444,18 @@ function Done({ d }) {
         {!d.signature?.manual && <p className="mt-2 text-muted-foreground">{d.signature?.at ? t("עותק חתום של ההסכם נשלח אליכם במייל, {at}.", { at: dateTime(d.signature.at) }) : t("עותק חתום של ההסכם נשלח אליכם במייל.")}</p>}
         {d.links.signedPdf && <Button asChild variant="outline" className="mt-5"><a href={d.links.signedPdf}><Download className="ms-2 h-4 w-4" />{t("הורדת ההסכם החתום (PDF)")}</a></Button>}
       </section>
+      {d.appendices?.length > 0 && (
+        <Section title={t("נספחים להסכם")}>
+          <ul className="space-y-2 text-[15px]">
+            {d.appendices.map((a) => (
+              <li key={a.id} className="flex flex-wrap items-center justify-between gap-2">
+                <span>{t("נספח {n}: {title}", { n: a.n, title: a.title })} <span className="text-sm text-muted-foreground">· {t("נחתם {date}", { date: dmy(a.signedAt) })}</span></span>
+                {a.pdf && <a href={a.pdf} className="text-sm font-semibold underline">{t("הורדה (PDF)")}</a>}
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
       <Section title={t("מה עכשיו")}>
         <ol className="space-y-3 text-[15px]">
           {deposit && (
@@ -477,6 +492,76 @@ function Done({ d }) {
           )}
         </ol>
       </Section>
+    </Container>
+  );
+}
+
+// An appendix to the signed agreement: its text, its extra payments, and the signature
+function AppendixStep({ d, a, post }) {
+  const pad = useRef(null);
+  const [name, setName] = useState(d.signature?.name || d.client.signerName || "");
+  const [role, setRole] = useState(d.signature?.role || d.client.signerRole || "");
+  const [idNumber, setIdNumber] = useState("");
+  const [accept, setAccept] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const sign = async () => {
+    setError("");
+    if (name.trim().length < 2) return setError(t("יש להזין שם מלא"));
+    if (idNumber.trim() && !taxIdIL(idNumber)) return setError(t("מספר תעודת הזהות לא תקין. אפשר גם להשאיר ריק"));
+    if (pad.current.isEmpty()) return setError(t("יש לחתום בתיבת החתימה"));
+    if (!accept) return setError(t("יש לסמן את תיבת האישור"));
+    setBusy(true);
+    try {
+      const signature = await fileToDataUrl(await pad.current.toBlob());
+      await post({ action: "sign_appendix", appendixId: a.id, name: name.trim(), role: role.trim(), idNumber: idNumber.trim() ? taxIdIL(idNumber) : undefined, signature, accept: true });
+    } catch (e) { setBusy(false); setError(errorText(e)); }
+  };
+  return (
+    <Container className="space-y-5 py-8 pb-16">
+      <SignedBanner d={d} />
+      <Section>
+        <h1 className="text-2xl font-bold">{t("נספח מס' {n} להסכם: {title}", { n: a.n, title: a.title })}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{t("הזמנה מס' {number}. הנספח מצטרף להסכם ההתקשרות שנחתם ב-{date} ומהווה חלק בלתי נפרד ממנו. יתר תנאי ההסכם נשארים בתוקף.", { number: d.number, date: dmy(d.signedAt) })}</p>
+        <div className="mt-5 whitespace-pre-line text-[15px] leading-relaxed">{a.body}</div>
+        {a.payments.length > 0 && (
+          <div className="mt-6">
+            <h2 className="mb-2 font-semibold">{t("תשלומים נוספים לפי הנספח")}</h2>
+            <table className="w-full text-sm">
+              <tbody>
+                {a.payments.map((p, i) => (
+                  <tr key={i} className="border-b border-border/60">
+                    <td className="py-2">{dmy(p.date)}</td>
+                    <td className="py-2 text-muted-foreground">{METHOD_NAMES[p.method]}</td>
+                    <td className="hidden py-2 tabular-nums sm:table-cell">{t('{amount} לפני מע"מ', { amount: nis(p.amount) })}</td>
+                    <td className="py-2 text-end font-medium tabular-nums">{nis(p.total)}</td>
+                  </tr>
+                ))}
+                <tr><td className="py-2 font-semibold" colSpan={3}>{t('סה"כ כולל מע"מ')}</td><td className="py-2 text-end font-semibold tabular-nums">{nis(a.totals.total)}</td></tr>
+              </tbody>
+            </table>
+            <p className="mt-2 text-xs text-muted-foreground">{t("התשלומים האלה מתווספים ללוח התשלומים שבהזמנת העבודה, ואינם משנים אותו.")}</p>
+          </div>
+        )}
+      </Section>
+      <section className="pa-card p-5 sm:p-7">
+        <h2 className="flex items-center gap-2 text-lg font-bold"><PenLine className="h-5 w-5 text-primary" />{t("חתימה")}</h2>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <Field label={t("שם החותם")} required><Input value={name} onChange={(e) => setName(e.target.value)} className="h-11" autoComplete="name" /></Field>
+          <Field label={t("תפקיד החותם")}><Input value={role} onChange={(e) => setRole(e.target.value)} className="h-11" /></Field>
+          <Field label={t("תעודת זהות")}><Input value={idNumber} onChange={(e) => setIdNumber(e.target.value)} inputMode="numeric" dir="ltr" className="h-11" /></Field>
+        </div>
+        <div className="mt-4"><SignaturePad ref={pad} /></div>
+        <label className="mt-4 flex items-start gap-3 text-[15px] leading-relaxed">
+          <Checkbox checked={accept} onCheckedChange={(v) => setAccept(v === true)} className="mt-1" />
+          <span>{t("קראתי את הנספח, אני מסכים/ה לתנאיו ומוסמך/ת לחתום בשם {client}. ידוע לי שחתימה אלקטרונית זו מחייבת כחתימה בכתב יד.", { client: d.client.companyName || (isEn ? "the client" : "הלקוח") })}</span>
+        </label>
+        <div className="mt-4 space-y-3">
+          <ErrorLine error={error} />
+          <Button size="lg" disabled={busy} onClick={sign} className="h-12 w-full rounded-xl text-base font-bold">{busy ? t("חותם ושומר את המסמך...") : t("חתימה על הנספח")}</Button>
+          <p className="text-center text-xs text-muted-foreground">{t("אחרי החתימה יישלח אליכם עותק חתום בפורמט PDF.")}</p>
+        </div>
+      </section>
     </Container>
   );
 }

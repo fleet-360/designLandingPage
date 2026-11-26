@@ -248,3 +248,52 @@ export async function generateDealPdf(snapshot, { specBytes } = {}) {
   const bytes = spec && (specBytes || (await specFile(spec.fileId))?.data);
   return bytes ? insertSpec(out, bytes, { afterPage: specAfter, number: order.number, pages: spec.pages, pageCount: spec.pageCount }) : out;
 }
+
+/** An appendix signed after the agreement (sales.deal_appendices.snapshot) -> Buffer. The agreement's
+ *  own PDF is never touched: this one refers to it by its date and hash. */
+export async function generateAppendixPdf(s) {
+  const a = s.appendix;
+  const w = writer({
+    title: `נספח ${a.n} להזמנה ${s.number} · ${s.project}`,
+    subject: `hash ${s.hash || ""}`,
+    header: `${s.company.name} · ${s.company.address || ""} · ${s.company.phone || ""} · ${s.company.website || ""}`,
+  });
+  const c = s.client;
+  w.text(`נספח מס' ${a.n} להסכם ההתקשרות – ${a.title}`, { size: 16, bold: true, after: 4 });
+  w.text(`${s.company.name} · עבור: ${c.companyName || c.signerName} · הזמנה מס' ${s.number} · ${s.project}`, { size: 10, color: [107, 114, 128], after: 10 });
+  w.text(`נספח זה מצורף להסכם ההתקשרות בין ${s.company.name} לבין ${c.companyName || c.signerName}${s.parent.signedOn ? ` שנחתם ביום ${dmy(s.parent.signedOn)}` : ""}, ומהווה חלק בלתי נפרד ממנו. בכל סתירה בין נספח זה להסכם, יגברו הוראות נספח זה. יתר הוראות ההסכם נותרות בתוקפן ללא שינוי.`, { after: 8 });
+  w.text(a.body, { after: 8 });
+  if (a.payments.length) {
+    w.text("תשלומים נוספים לפי נספח זה", { size: 12, bold: true });
+    w.table([26, 160, 85, 80, 70, 82],
+      a.payments.map((p, i) => [i + 1, dmy(p.date), PAYMENT_METHODS[p.method] || "", nis(p.amount), nis(p.vat), nis(p.total)])
+        .concat([["", "סה\"כ", "", nis(a.totals.amount), nis(a.totals.vat), nis(a.totals.total)]]),
+      { head: ["#", "מועד", "אמצעי תשלום", "לפני מע\"מ", "מע\"מ", "כולל מע\"מ"] });
+    w.text("תשלומים אלה מתווספים ללוח התשלומים שבהזמנת העבודה, ואינם משנים אותו.", { size: 9.5, color: [107, 114, 128] });
+  }
+
+  w.gap(10);
+  w.space(190);
+  w.text("ולראיה באו הצדדים על החתום", { size: 11, bold: true, after: 8 });
+  const cs = s.companySigner || {};
+  const on = dmy(String(s.signature.at).slice(0, 10));
+  w.text(`החברה: ${s.company.name}${cs.name ? ` · ${cs.name}${cs.role ? `, ${cs.role}` : ""}` : ""}`, { bold: true });
+  if (s.companySignature) w.image(s.companySignature, 150, 52);
+  w.text(`תאריך: ${on}`, { color: [107, 114, 128], after: 10 });
+  w.text(`הלקוח: ${c.companyName || ""} · ${s.signature.name}${s.signature.role ? `, ${s.signature.role}` : ""}${s.signature.idNumber ? ` · ת.ז ${s.signature.idNumber}` : ""}`, { bold: true });
+  w.image(await fileDataUrl(s.signature.fileId), 180, 63);
+  w.text(`תאריך: ${on}`, { color: [107, 114, 128] });
+
+  w.newPage();
+  w.text("דף אימות חתימה", { size: 14, bold: true, after: 8 });
+  const x = s.signature;
+  w.table([170, 333], [
+    ["שם", x.name || "—"], ["תפקיד", x.role || "—"], ...(x.idNumber ? [["ת.ז", x.idNumber]] : []), ["אימייל", x.email || "—"],
+    ["מועד (שעון ישראל)", ilTime(x.at)], ["מועד (UTC)", new Date(x.at).toISOString()],
+    ["כתובת IP", x.ip || "—"], ["דפדפן", x.userAgent || "—"],
+  ], { size: 8.5 });
+  w.text(`נספח מס' ${a.n} · הזמנה מס' ${s.number}`, { size: 9 });
+  if (s.parent.hash) w.text(`גיבוב (SHA-256) של ההסכם המקורי: ${s.parent.hash}`, { size: 8.5, color: [107, 114, 128] });
+  w.text(`גיבוב הנספח (SHA-256) של כל מה שנחתם: ${s.hash}`, { size: 8.5, color: [107, 114, 128] });
+  return Buffer.from(w.pdf.output("arraybuffer"));
+}

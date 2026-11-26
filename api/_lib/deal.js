@@ -260,3 +260,21 @@ const canonical = (v) => Array.isArray(v) ? `[${v.map(canonical).join(",")}]`
     : JSON.stringify(v ?? null);
 
 export const snapshotHash = (snapshot) => createHash("sha256").update(canonical(snapshot)).digest("hex");
+
+// An appendix to a signed agreement (sales.deal_appendices.content): a title, free text and, optionally,
+// more payments, each with its date, amount before VAT and method. VAT at the deal's rate.
+// The payments are informational: nothing is added to the standing order or to collections.
+export function cleanAppendix(b, vatRate) {
+  const title = str(b.title, 160);
+  const body = String(b.body ?? "").replace(/\r\n/g, "\n").trim().slice(0, 20000);
+  if (!title) throw new HttpError(400, "bad_title");
+  if (!body) throw new HttpError(400, "bad_body");
+  const payments = (Array.isArray(b.payments) ? b.payments : []).slice(0, 36).map((x) => {
+    const amount = Math.round(num(x?.amount) * 100) / 100;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(x?.date || "")) || !(amount > 0) || !PAYMENT_METHODS[x?.method]) throw new HttpError(400, "bad_appendix_payments");
+    const total = withVat(amount, vatRate);
+    return { date: x.date, amount, method: x.method, vat: Math.round((total - amount) * 100) / 100, total };
+  });
+  const sum = (k) => Math.round(payments.reduce((a, p) => a + p[k] * 100, 0)) / 100;
+  return { title, body, vatRate, payments, totals: { amount: sum("amount"), vat: sum("vat"), total: sum("total") } };
+}

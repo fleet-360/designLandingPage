@@ -1,6 +1,7 @@
 // GET /api/sales/deal-file?token=&kind=signed|spec|demo|logo|video     the client's own files (the token is the key)
 // GET /api/sales/deal-file?id=&kind=signed|spec|demo|logo|video        the same for the signed-in admin
 // GET /api/sales/deal-file?draft=&kind=demo|logo|video                 the film of a deal not created yet (admin)
+// kind=appendix&n=   the signed PDF of the deal's appendix number n (token or id, as above)
 // demo: the demo film's HTML with its driver (api/_lib/demo-film.js), sandboxed: it runs without an origin,
 // so it can reach neither the page that frames it nor anyone's cookies.
 import { HttpError, route } from "../../_lib/http.js";
@@ -59,7 +60,10 @@ export default route(["GET"], async (req, res) => {
   }
   // the spec as it was approved and signed, once it was; before that, the one in the deal
   const specId = d.snapshot?.spec?.fileId || d.snapshot?.order?.project?.specFileId || d.data.project?.specFileId;
-  const fileId = { signed: d.signed_pdf_file_id, spec: specId, demo: d.film?.demoFileId, logo: d.film?.logoFileId }[kind];
+  const appendix = kind === "appendix" && d.id && /^\d{1,4}$/.test(q.get("n") || "")
+    ? (await query("SELECT signed_pdf_file_id FROM sales.deal_appendices WHERE deal_id = $1 AND n = $2", [d.id, Number(q.get("n"))])).rows[0]
+    : null;
+  const fileId = { signed: d.signed_pdf_file_id, spec: specId, demo: d.film?.demoFileId, logo: d.film?.logoFileId, appendix: appendix?.signed_pdf_file_id }[kind];
   if (!fileId) throw new HttpError(404, "not_found");
   const f = (await query("SELECT name, content_type, data FROM sign.files WHERE id = $1", [fileId])).rows[0];
   if (!f) throw new HttpError(404, "not_found");
@@ -84,7 +88,7 @@ export default route(["GET"], async (req, res) => {
   res.statusCode = 200;
   res.setHeader("Content-Type", f.content_type);
   res.setHeader("Content-Length", f.data.length);
-  res.setHeader("Content-Disposition", `${kind === "signed" ? "attachment" : "inline"}; filename="document.pdf"; filename*=UTF-8''${encodeURIComponent(f.name || "document.pdf")}`);
+  res.setHeader("Content-Disposition", `${kind === "signed" || kind === "appendix" ? "attachment" : "inline"}; filename="document.pdf"; filename*=UTF-8''${encodeURIComponent(f.name || "document.pdf")}`);
   res.setHeader("Cache-Control", "private, no-store");
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.end(f.data);
