@@ -818,6 +818,8 @@ export function DealDetail() {
         {o.payInfo?.checks?.pickupDate && <p className="mt-3 text-sm">{t("איסוף השיקים על ידי שליח:")} <span className="tabular-nums">{dmy(o.payInfo.checks.pickupDate)}</span></p>}
       </Card>
 
+      {x.signedAt && <DealAppendices id={id} items={data.appendices || []} canEmail={Boolean(x.client.email)} onSaved={reload} />}
+
       {sub && (
         <Card title={t("הוראת קבע")} actions={<Button size="sm" variant="outline" asChild><Link to={`/sales/billing/${sub.id}`}>{t("ניהול")}</Link></Button>}>
           <Info rows={[
@@ -838,6 +840,79 @@ export const subStatus = (s) => ({
   pending_card: ["amber", t("ממתין לכרטיס")], active: ["green", t("פעיל")], paused: ["gray", t("מושהה")],
   failed: ["red", t("חיוב נכשל")], canceled: ["gray", t("בוטל")], ended: ["gray", t("הסתיים")],
 }[s.status] || ["gray", s.status]);
+
+// Appendices to the signed agreement: a title, free text and optional extra payments, signed by the client
+// through the same link. The agreement and its PDF stay as they were; the payments are informational.
+function DealAppendices({ id, items, canEmail, onSaved }) {
+  const [f, setF] = useState(null);         // the new appendix form
+  const [copies, setCopies] = useState(blankCopies);
+  const [confirm, setConfirm] = useState(null);
+  const act = (body, ok) => run(() => api(`sales/deals?id=${id}`, { method: "PATCH", body }), ok).then((r) => { if (r) onSaved(); return r; });
+  const pays = f?.payments || [];
+  const setPay = (i, k, v) => setF({ ...f, payments: pays.map((p, j) => (j === i ? { ...p, [k]: v } : p)) });
+  const sel = "h-9 w-full rounded-md border border-input bg-transparent px-2 text-sm";
+  const submit = async (e) => {
+    e.preventDefault();
+    const cp = f.sendEmail ? copiesOf(copies) : { cc: [] };
+    if (cp.error) return toast({ title: cp.error, variant: "destructive" });
+    const r = await act({ action: "appendix", ...f, cc: cp.cc }, f.sendEmail ? t("הנספח נוצר ונשלח ללקוח") : t("הנספח נוצר"));
+    if (r) setF(null);
+  };
+  return (
+    <Card title={t("נספחים להסכם")} actions={!f && <Button size="sm" variant="outline" onClick={() => setF({ title: "", body: "", payments: [], sendEmail: canEmail })}><Plus className="ms-1 h-4 w-4" />{t("נספח חדש")}</Button>}>
+      <p className="mb-3 text-sm text-muted-foreground">{t("נספח מצטרף להסכם החתום ואינו משנה אותו. הלקוח קורא וחותם עליו דרך אותו קישור, ומקבל עותק חתום. התשלומים שבנספח מופיעים בנספח ובמייל להנהלת החשבונות, ואינם מתווספים להוראת הקבע או לגבייה.")}</p>
+      {items.length > 0 && (
+        <ul className="space-y-3">
+          {items.map((a) => (
+            <li key={a.id} className="rounded-xl border border-border p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-medium">{t("נספח {n}: {title}", { n: a.n, title: a.title })}</p>
+                {a.canceled ? <Pill>{t("בוטל")}</Pill> : a.signedAt ? <Pill tone="green">{t("נחתם {date}", { date: dateTime(a.signedAt) })}</Pill> : <Pill tone="amber">{t("ממתין לחתימה")}</Pill>}
+              </div>
+              <p className="mt-1 line-clamp-3 whitespace-pre-line text-sm text-muted-foreground">{a.body}</p>
+              {a.payments.length > 0 && <p className="mt-1 text-sm">{t("{count} תשלומים נוספים · {total} כולל מע\"מ", { count: a.payments.length, total: nis(a.totals.total) })}</p>}
+              <div className="mt-2 flex flex-wrap gap-2">
+                {a.hasSignedPdf && <Button size="sm" asChild><a href={`/api/sales/deal-file?id=${id}&kind=appendix&n=${a.n}`}>{t("הורדת הנספח החתום")}</a></Button>}
+                {!a.signedAt && !a.canceled && <>
+                  <Button size="sm" variant="outline" disabled={!canEmail} onClick={() => act({ action: "appendix_email", appendixId: a.id, cc: selfCc() }, t("המייל נשלח לתור"))}>{t("שליחה במייל")}</Button>
+                  <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setConfirm({ title: t("לבטל את נספח {n}?", { n: a.n }), description: t("הלקוח לא יוכל לחתום עליו."), danger: true, onConfirm: () => act({ action: "appendix_cancel", appendixId: a.id }, t("בוטל")) })}>{t("ביטול")}</Button>
+                </>}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      {f && (
+        <form className="mt-4 space-y-3 rounded-xl border border-border p-3" onSubmit={submit}>
+          <FieldRow label={t("כותרת")}><Input value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} placeholder={t("למשל: תוספת מודול דוחות")} autoFocus /></FieldRow>
+          <FieldRow label={t("נוסח הנספח")} hint={t("מה משתנה או מתווסף להסכם. יתר תנאי ההסכם נשארים בתוקף.")}>
+            <Textarea value={f.body} onChange={(e) => setF({ ...f, body: e.target.value })} rows={6} />
+          </FieldRow>
+          <div className="space-y-2">
+            <p className="text-sm font-medium">{t("תשלומים נוספים (לא חובה)")}</p>
+            {pays.map((p, i) => (
+              <div key={i} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2">
+                <Input type="date" value={p.date} onChange={(e) => setPay(i, "date", e.target.value)} aria-label={t("מועד")} />
+                <Input value={p.amount} onChange={(e) => setPay(i, "amount", e.target.value)} inputMode="decimal" dir="ltr" placeholder={t('לפני מע"מ')} aria-label={t('סכום לפני מע"מ')} />
+                <select value={p.method} onChange={(e) => setPay(i, "method", e.target.value)} className={sel} aria-label={t("אמצעי תשלום")}>
+                  {METHODS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                </select>
+                <Button type="button" size="icon" variant="ghost" onClick={() => setF({ ...f, payments: pays.filter((_, j) => j !== i) })} aria-label={t("הסרת התשלום")}><Trash2 className="h-4 w-4" /></Button>
+              </div>
+            ))}
+            <Button type="button" size="sm" variant="outline" onClick={() => setF({ ...f, payments: [...pays, { date: todayIL(), amount: "", method: "transfer" }] })}><Plus className="ms-1 h-4 w-4" />{t("הוספת תשלום")}</Button>
+          </div>
+          <label className={`flex items-center gap-2 text-sm ${canEmail ? "" : "text-muted-foreground"}`}>
+            <Switch checked={f.sendEmail} disabled={!canEmail} onCheckedChange={(v) => setF({ ...f, sendEmail: v })} />{t("לשלוח ללקוח במייל עם הקישור לחתימה")}
+          </label>
+          {f.sendEmail && <MailCopies c={copies} onChange={setCopies} />}
+          <div className="flex gap-2"><Button type="submit" size="sm">{t("הוצאת הנספח")}</Button><Button type="button" size="sm" variant="ghost" onClick={() => setF(null)}>{t("ביטול")}</Button></div>
+        </form>
+      )}
+      {confirm && <Confirm {...confirm} onClose={() => setConfirm(null)} />}
+    </Card>
+  );
+}
 
 // the key lines at the top of the client's page and in the order email: edited at any time, even after the
 // client approved, since they are not part of the order

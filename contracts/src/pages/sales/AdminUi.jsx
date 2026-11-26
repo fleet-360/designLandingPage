@@ -108,6 +108,7 @@ const EVENT_LABELS = {
   reminder_sent: t("נשלחה תזכורת"), underpaid: t("התקבל תשלום נמוך מהמחיר"), charge_settled: t("חיוב סומן ידנית"),
   held: t("הלקוח בחר מועד"), hold_lost: t("המועד שנבחר נתפס"), manual: t("פגישה או תשלום עודכנו ידנית"),
   signed_manual: t("סומן כנחתם מחוץ לקישור"), signed_file: t("קובץ החוזה החתום עודכן"), payment_note: t("אופן התשלום עודכן"),
+  appendix_created: t("הוצא נספח להסכם"), appendix_signed: t("הלקוח חתם על נספח"), appendix_canceled: t("נספח בוטל"),
 };
 // the device a visit came from, by its user agent
 const device = (ua) => (!ua ? "" : /iPad|Tablet/i.test(ua) ? t("מטאבלט") : /Mobi|Android|iPhone/i.test(ua) ? t("מהטלפון") : t("מהמחשב"));
@@ -115,7 +116,7 @@ const MAIL_STATUS = { sent: ["green", t("נשלח")], queued: ["amber", t("בת�
 
 export function History({ events = [], mails = [] }) {
   const items = [
-    ...events.filter((e) => e.type !== "email_sent").map((e) => ({ at: e.at, text: [EVENT_LABELS[e.type] || e.type, e.type === "visit" && device(e.detail?.userAgent)].filter(Boolean).join(" "), detail: e.detail })),   // emails are listed from the outbox below
+    ...events.filter((e) => e.type !== "email_sent").map((e) => ({ at: e.at, text: [EVENT_LABELS[e.type] || e.type, e.type === "visit" && device(e.detail?.userAgent), e.detail?.n && e.type.startsWith("appendix_") && `${e.detail.n}`].filter(Boolean).join(" "), detail: e.detail })),   // emails are listed from the outbox below
     ...mails.map((m) => ({ at: m.at, text: t("מייל: {subject}", { subject: m.subject }), sub: (m.to || []).join(", "), mail: m })),
   ].sort((a, b) => (a.at < b.at ? 1 : -1));
   if (!items.length) return <p className="text-sm text-muted-foreground">{t("אין עדיין פעילות.")}</p>;

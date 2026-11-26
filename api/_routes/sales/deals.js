@@ -22,14 +22,19 @@
 //     payment_note { note }          how the client pays or paid (internal), at any time
 //     pitch { pitch }                the key lines at the top of the client's page and in the order email
 //                                    ({ problem, headline, lines } or null), at any time: not part of the order
+//     appendix { title, body, payments, sendEmail, cc }   a numbered appendix to the signed agreement, for the
+//                                    client to sign through the link (deal-public sign_appendix); its payments are
+//                                    informational (not added to the standing order nor to collections)
+//     appendix_email { appendixId, cc }   the appendix's email again (not signed yet)
+//     appendix_cancel { appendixId }      before the client signed it
 import { HttpError, json, origin, readJson, route } from "../../_lib/http.js";
 import { pitchOf } from "./discovery.js";
 import { query } from "../../_lib/db.js";
 import { requireAdmin } from "../../_lib/auth.js";
 import { uuidParam } from "../../_lib/sign.js";
 import { ccOf, events, getSettings, isEmail, logEvent, mailsFor, newToken, sendMail, str } from "../../_lib/sales.js";
-import { buildOrder, cleanClient, cleanDealData } from "../../_lib/deal.js";
-import { dealInviteMail, dealOrderMail, firstChargeDateMail } from "../../_lib/sales-mail.js";
+import { buildOrder, cleanAppendix, cleanClient, cleanDealData } from "../../_lib/deal.js";
+import { dealAppendixMail, dealInviteMail, dealOrderMail, firstChargeDateMail } from "../../_lib/sales-mail.js";
 import { addMonths, billingDayOnOrAfter, israelDate } from "../../_lib/sales-calc.js";
 import { createDealSubscription, firstCharge, subscriptionRow } from "../../_lib/billing.js";
 import { dealDepositPaid, syncSignedDeal } from "../../_lib/collections.js";
@@ -103,6 +108,22 @@ async function closeManually(d, b, user, settings) {
   return signed;
 }
 
+export const appendixRow = (a) => ({
+  id: a.id, n: a.n, createdAt: iso(a.created_at), createdBy: a.created_by, ...a.content,
+  signedAt: iso(a.signed_at), signerName: a.signature?.name || null, snapshotHash: a.snapshot_hash,
+  hasSignedPdf: Boolean(a.signed_pdf_file_id), canceled: Boolean(a.canceled_at),
+});
+
+const appendicesOf = async (dealId) =>
+  (await query("SELECT * FROM sales.deal_appendices WHERE deal_id = $1 ORDER BY n", [dealId])).rows;
+
+/** The appendix's email with the link, to the client (and cc). */
+async function sendAppendix(d, a, settings, base, cc) {
+  if (!isEmail(d.client.email)) throw new HttpError(400, "bad_client_email");
+  const mail = await sendMail({ ...dealAppendixMail(d, a, settings, `${base}/deal/${d.token}`), cc, entity: "deal", entityId: d.id, kind: "deal_appendix" });
+  await logEvent("deal", d.id, "email_sent", { kind: "appendix", n: a.n, to: d.client.email, cc, sent: mail.sent });
+}
+
 /** The order confirmation to the client (accounting and the office in copy). */
 async function sendOrder(d, settings, base, attach) {
   if (!d.signed_at) throw new HttpError(409, "not_signed");
@@ -139,7 +160,8 @@ export default route(["GET", "POST", "PATCH"], async (req, res) => {
       const s = await query("SELECT * FROM billing.subscriptions WHERE id = $1", [d.subscription_id]);
       if (s.rows[0]) subscription = subscriptionRow(s.rows[0], base);
     }
-    return json(res, 200, { item: dealRow(d, base), order, events: await events("deal", id), mails: await mailsFor("deal", id), subscription });
+    return json(res, 200, { item: dealRow(d, base), order, events: await events("deal", id), mails: await mailsFor("deal", id), subscription,
+      appendices: (await appendicesOf(id)).map(appendixRow) });
   }
   if (req.method === "GET") {
     const { rows } = await query("SELECT * FROM sales.deals ORDER BY created_at DESC LIMIT 500");
@@ -255,6 +277,31 @@ export default route(["GET", "POST", "PATCH"], async (req, res) => {
       await query("UPDATE sales.deals SET payment_note = $2, updated_at = now() WHERE id = $1", [id, str(b.note, 1000) || null]);
       await logEvent("deal", id, "payment_note", { by: user });
       break;
+    case "appendix": {
+      if (!d.signed_at) throw new HttpError(409, "not_signed");
+      if (b.sendEmail && !isEmail(d.client.email)) throw new HttpError(400, "bad_client_email");
+      const content = cleanAppendix(b, Number(d.snapshot?.order?.price?.vatRate ?? settings.vatRate));
+      const a = (await query(
+        `INSERT INTO sales.deal_appendices (deal_id, n, created_by, content)
+         SELECT $1, COALESCE(MAX(n), 0) + 1, $2, $3 FROM sales.deal_appendices WHERE deal_id = $1 RETURNING *`,
+        [id, user, JSON.stringify(content)])).rows[0];
+      await logEvent("deal", id, "appendix_created", { by: user, n: a.n, title: content.title });
+      if (b.sendEmail) await sendAppendix(d, a, settings, base, ccOf(b));
+      break;
+    }
+    case "appendix_email":
+    case "appendix_cancel": {
+      const a = (await query("SELECT * FROM sales.deal_appendices WHERE id = $1 AND deal_id = $2", [uuidParam(b.appendixId), id])).rows[0];
+      if (!a) throw new HttpError(404, "not_found");
+      if (a.signed_at) throw new HttpError(409, "already_signed");
+      if (a.canceled_at) throw new HttpError(409, "canceled");
+      if (b.action === "appendix_email") await sendAppendix(d, a, settings, base, ccOf(b));
+      else {
+        await query("UPDATE sales.deal_appendices SET canceled_at = now() WHERE id = $1 AND signed_at IS NULL", [a.id]);
+        await logEvent("deal", id, "appendix_canceled", { by: user, n: a.n });
+      }
+      break;
+    }
     case "cancel":
       if (d.signed_at) throw new HttpError(409, "already_signed");
       await query("UPDATE sales.deals SET canceled_at = now(), updated_at = now() WHERE id = $1", [id]);

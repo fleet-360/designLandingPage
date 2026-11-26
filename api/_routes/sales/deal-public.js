@@ -3,6 +3,8 @@
 //           goes in the history
 //   POST { action: "approve", client, approverName, accept }          step 1: work order and payments
 //   POST { action: "sign", name, role, idNumber (optional), signature (PNG data URL), accept }  step 2: the agreement
+//   POST { action: "sign_appendix", appendixId, name, role, idNumber, signature, accept }  an appendix issued after
+//        signing (sales deals.js action appendix): its own snapshot, hash and PDF; the agreement's stay as they were
 //   POST { action: "card" }  step 3: opens Grow's card page (through Toro) -> { authCode, url }
 // Each step stands on its own: signing does not need the card, and the signed agreement is kept
 // even if the client stops before step 3.
@@ -10,9 +12,9 @@ import { clientIp, HttpError, json, origin, readJson, route } from "../../_lib/h
 import { query } from "../../_lib/db.js";
 import { getSettings, isEmail, logEvent, logVisit, mobileIL, sendMail, str, taxIdIL } from "../../_lib/sales.js";
 import { buildAgreement, buildOrder, cleanClient, snapshotHash } from "../../_lib/deal.js";
-import { dealAccountingMail, dealSignedMail } from "../../_lib/sales-mail.js";
-import { parseDataUrl } from "../../_lib/sign.js";
-import { generateDealPdf } from "../../_lib/deal-pdf.js";
+import { dealAccountingMail, dealAppendixSignedMail, dealSignedMail } from "../../_lib/sales-mail.js";
+import { parseDataUrl, uuidParam } from "../../_lib/sign.js";
+import { generateAppendixPdf, generateDealPdf } from "../../_lib/deal-pdf.js";
 import { sha256, specFile, specPageCount } from "../../_lib/spec-pdf.js";
 import { createDealSubscription, firstCharge, subscriptionRow } from "../../_lib/billing.js";
 import { syncSignedDeal } from "../../_lib/collections.js";
@@ -30,6 +32,9 @@ async function load(token) {
 }
 
 async function view(d, settings, base) {
+  const appendices = d.signed_at
+    ? (await query("SELECT * FROM sales.deal_appendices WHERE deal_id = $1 AND canceled_at IS NULL ORDER BY n", [d.id])).rows
+    : [];
   const order = d.snapshot?.order || buildOrder(d, settings);
   const agreement = d.snapshot?.agreement || buildAgreement(d, settings);
   let subscription = null;
@@ -48,6 +53,10 @@ async function view(d, settings, base) {
     signedAt: iso(d.signed_at),
     signature: d.signature ? { name: d.signature.name, role: d.signature.role, at: d.signature.at, manual: Boolean(d.signature.manual) } : null,
     subscription,
+    appendices: appendices.map((a) => ({
+      id: a.id, n: a.n, ...a.content, signedAt: iso(a.signed_at), signerName: a.signature?.name || null,
+      pdf: a.signed_pdf_file_id ? `${base}/api/sales/deal-file?token=${d.token}&kind=appendix&n=${a.n}` : null,
+    })),
     links: {
       spec: d.data.project?.specFileId ? `${base}/api/sales/deal-file?token=${d.token}&kind=spec` : null,
       signedPdf: d.signed_pdf_file_id ? `${base}/api/sales/deal-file?token=${d.token}&kind=signed` : null,
@@ -68,6 +77,29 @@ async function view(d, settings, base) {
 }
 
 const who = (req, extra) => ({ ...extra, ip: clientIp(req), userAgent: String(req.headers["user-agent"] || "").slice(0, 400), at: new Date().toISOString() });
+
+// the signer of the agreement or of an appendix: checks the form, stores the drawn signature -> the record
+async function signerOf(req, b, d) {
+  if (b.accept !== true) throw new HttpError(400, "not_accepted");
+  const name = str(b.name, 120);
+  if (name.length < 2) throw new HttpError(400, "bad_name");
+  // the signer's ID number is optional; when given it must be a valid one
+  const idNumber = String(b.idNumber || "").trim() ? taxIdIL(b.idNumber) : "";
+  if (String(b.idNumber || "").trim() && !idNumber) throw new HttpError(400, "bad_id_number");
+  const img = parseDataUrl(b.signature, { allowed: ["image/png"], maxBytes: 1024 * 1024 });
+  const sigFile = await query(
+    "INSERT INTO sign.files (is_public, name, content_type, size, data) VALUES (false, 'deal-signature.png', 'image/png', $1, $2) RETURNING id",
+    [img.bytes.length, img.bytes]);
+  return who(req, { name, role: str(b.role, 80), ...(idNumber && { idNumber }), email: d.client.email, fileId: sigFile.rows[0].id });
+}
+
+async function companySignatureOf(settings) {
+  if (!settings.signer.signatureFileId) return null;
+  const f = await query("SELECT content_type, data FROM sign.files WHERE id = $1", [settings.signer.signatureFileId]);
+  return f.rows[0] ? `data:${f.rows[0].content_type};base64,${f.rows[0].data.toString("base64")}` : null;
+}
+
+const safeName = (s) => String(s || "").replace(/[\\/:*?"<>|]+/g, "-");
 
 export default route(["GET", "POST"], async (req, res) => {
   const base = origin(req);
@@ -122,22 +154,9 @@ export default route(["GET", "POST"], async (req, res) => {
   if (b.action === "sign") {
     if (!d.approved_at) throw new HttpError(409, "not_approved");
     if (d.signed_at) throw new HttpError(409, "already_signed");
-    if (b.accept !== true) throw new HttpError(400, "not_accepted");
-    const name = str(b.name, 120);
-    if (name.length < 2) throw new HttpError(400, "bad_name");
-    // the signer's ID number is optional; when given it must be a valid one
-    const idNumber = String(b.idNumber || "").trim() ? taxIdIL(b.idNumber) : "";
-    if (String(b.idNumber || "").trim() && !idNumber) throw new HttpError(400, "bad_id_number");
-    const img = parseDataUrl(b.signature, { allowed: ["image/png"], maxBytes: 1024 * 1024 });
-    const sigFile = await query(
-      "INSERT INTO sign.files (is_public, name, content_type, size, data) VALUES (false, 'deal-signature.png', 'image/png', $1, $2) RETURNING id",
-      [img.bytes.length, img.bytes]);
-    const signature = who(req, { name, role: str(b.role, 80), ...(idNumber && { idNumber }), email: d.client.email, fileId: sigFile.rows[0].id });
-    let companySignature = null;
-    if (settings.signer.signatureFileId) {
-      const f = await query("SELECT content_type, data FROM sign.files WHERE id = $1", [settings.signer.signatureFileId]);
-      if (f.rows[0]) companySignature = `data:${f.rows[0].content_type};base64,${f.rows[0].data.toString("base64")}`;
-    }
+    const signature = await signerOf(req, b, d);
+    const { name } = signature;
+    const companySignature = await companySignatureOf(settings);
     // Appendix B: the spec file as approved (only the pages sales picked), identified by its hash
     const proj = d.snapshot.order.project || {};
     const sf = await specFile(proj.specFileId);
@@ -159,7 +178,7 @@ export default route(["GET", "POST"], async (req, res) => {
     };
     const hash = snapshotHash(snapshot);
     const pdf = await generateDealPdf({ ...snapshot, hash }, { specBytes: sf?.data });
-    const pdfName = `הסכם ${d.number} - ${(d.client.companyName || d.client.signerName || "").replace(/[\\/:*?"<>|]+/g, "-")}.pdf`;
+    const pdfName = `הסכם ${d.number} - ${safeName(d.client.companyName || d.client.signerName)}.pdf`;
     const pf = await query(
       "INSERT INTO sign.files (is_public, name, content_type, size, data) VALUES (false, $1, 'application/pdf', $2, $3) RETURNING id",
       [pdfName, pdf.length, pdf]);
@@ -179,6 +198,42 @@ export default route(["GET", "POST"], async (req, res) => {
 
     const mail = await sendMail({ ...dealSignedMail(d, settings, { fileId: pf.rows[0].id, name: pdfName }), entity: "deal", entityId: d.id, kind: "deal_signed" });
     await logEvent("deal", d.id, "email_sent", { kind: "signed", to: d.client.email, sent: mail.sent });
+    return json(res, 200, await view(d, settings, base));
+  }
+
+  if (b.action === "sign_appendix") {
+    if (!d.signed_at) throw new HttpError(409, "not_signed");
+    const a = (await query("SELECT * FROM sales.deal_appendices WHERE id = $1 AND deal_id = $2 AND canceled_at IS NULL",
+      [uuidParam(b.appendixId), d.id])).rows[0];
+    if (!a) throw new HttpError(404, "not_found");
+    if (a.signed_at) throw new HttpError(409, "already_signed");
+    const signature = await signerOf(req, b, d);
+    const snapshot = {
+      number: d.number,
+      project: d.snapshot?.order?.project?.name || d.data.project?.name || "",
+      company: d.snapshot?.order?.company || settings.company,
+      client: d.client,
+      // the agreement this appendix joins, as it was signed (its own snapshot and PDF are not touched)
+      parent: { signedOn: d.signature?.on || israelDate(d.signed_at), hash: d.snapshot_hash || null },
+      appendix: { n: a.n, ...a.content },
+      signature,
+      companySigner: { name: settings.signer.name, role: settings.signer.role },
+      companySignature: await companySignatureOf(settings),
+    };
+    const hash = snapshotHash(snapshot);
+    const pdf = await generateAppendixPdf({ ...snapshot, hash });
+    const pdfName = `נספח ${a.n} להסכם ${d.number} - ${safeName(d.client.companyName || d.client.signerName)}.pdf`;
+    const pf = await query(
+      "INSERT INTO sign.files (is_public, name, content_type, size, data) VALUES (false, $1, 'application/pdf', $2, $3) RETURNING id",
+      [pdfName, pdf.length, pdf]);
+    const u = await query(
+      `UPDATE sales.deal_appendices SET signed_at = now(), signature = $2, snapshot = $3, snapshot_hash = $4, signed_pdf_file_id = $5
+        WHERE id = $1 AND signed_at IS NULL AND canceled_at IS NULL RETURNING *`,
+      [a.id, JSON.stringify(signature), JSON.stringify(snapshot), hash, pf.rows[0].id]);
+    if (!u.rows[0]) throw new HttpError(409, "already_signed");
+    await logEvent("deal", d.id, "appendix_signed", { n: a.n, name: signature.name, ip: signature.ip, hash });
+    const mail = await sendMail({ ...dealAppendixSignedMail(d, u.rows[0], settings, { fileId: pf.rows[0].id, name: pdfName }), entity: "deal", entityId: d.id, kind: "deal_appendix_signed" });
+    await logEvent("deal", d.id, "email_sent", { kind: "appendix_signed", n: a.n, to: d.client.email, sent: mail.sent });
     return json(res, 200, await view(d, settings, base));
   }
 
